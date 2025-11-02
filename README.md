@@ -1,16 +1,42 @@
-# React + Vite
+# One Map - Interactive World Map Builder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive 2D map application built with React and Leaflet for creating and exploring fantasy world maps with custom locations, lore, and dynamic interactions.
 
-Currently, two official plugins are available:
+## 🎯 Project Vision
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+One Map is designed to be a comprehensive tool for Dungeon Masters and world builders to create, share, and explore interactive fantasy world maps. Users can place locations, add lore, and share their creations with others.
 
-## React Compiler
+## ✨ Current Features (v0.1.0)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Implemented
+- ✅ 2D interactive map with zoom functionality
+- ✅ Pan controls (click & drag, arrow keys, WASD)
+- ✅ Clickable location markers with custom glow effects
+- ✅ Location hover effects (glow + name display)
+- ✅ Side panel for displaying location details and lore
+- ✅ Transparent menu button (top-left) with expandable options
+- ✅ Customizable marker colors per location
+- ✅ Keyboard navigation support
+- ✅ Smooth animations and transitions
 
-## Expanding the ESLint configuration
+### In Progress
+- 🔄 None currently
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Planned
+- [ ] Higher resolution map tiles on zoom
+- [ ] Auto-close side panel when panning away from location
+- [ ] Custom map image overlay support
+- [ ] Vector/SVG map support for infinite zoom
+- [ ] User authentication (for DMs)
+- [ ] Save/load custom worlds
+- [ ] Map creation tools
+- [ ] API for characters and locations
+- [ ] Share maps with community
+- [ ] Procedural terrain generation
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
+
