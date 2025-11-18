@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './UI.css';
 
 function MenuButton({ isOpen, onToggle }) {
@@ -14,14 +15,19 @@ function MenuButton({ isOpen, onToggle }) {
       <button className="menu-button" onClick={handleToggle}>
         <span className="menu-icon">☰</span>
       </button>
-      
       {showMenu && (
         <div className="menu-dropdown">
           <ul className="menu-list">
-            <li className="menu-item">📖 Almanac</li>
-            <li className="menu-item">🔐 Login</li>
-            <li className="menu-item">⚙️ Settings</li>
-            {/* Add more menu items as needed */}
+            <li className="menu-item">
+              <Link to="/" onClick={() => setShowMenu(false)}>Map</Link>
+            </li>
+            <li className="menu-item">
+              <Link to="/almanac" onClick={() => setShowMenu(false)}>Almanac</Link>
+            </li>
+            <li className="menu-item">
+              <Link to="/characters" onClick={() => setShowMenu(false)}>Characters</Link>
+            </li>
+            {/* Add more menu items / navigation links here */}
           </ul>
         </div>
       )}

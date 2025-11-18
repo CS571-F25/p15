@@ -3,8 +3,8 @@
     "id": 1,
     "name": "The Ancient Library",
     "type": "Landmark",
-    "lat": 51.505,
-    "lng": -0.09,
+    "lat": 0,
+    "lng": 0,
     "glowColor": "#FFD700",
     "lore": "Built centuries ago by the Elder Scribes, this magnificent library holds countless tomes of forgotten knowledge. Legend says that those who seek wisdom here may find more than they bargained for.",
     "description": "A towering structure of weathered stone and intricate carvings, the Ancient Library stands as a testament to the pursuit of knowledge throughout the ages."
@@ -13,8 +13,8 @@
     "id": 2,
     "name": "Dragon's Peak",
     "type": "Mountain",
-    "lat": 51.51,
-    "lng": -0.1,
+    "lat": 0,
+    "lng": 0,
     "glowColor": "#FF4500",
     "lore": "The highest point in the realm, shrouded in perpetual mist. Local tales speak of a dragon that once made its lair at the summit, guarding treasures beyond imagination.",
     "description": "Jagged peaks pierce the clouds, their slopes treacherous and unforgiving. Few dare to venture to the summit."
@@ -23,8 +23,8 @@
     "id": 3,
     "name": "Mystic Grove",
     "type": "Forest",
-    "lat": 51.5,
-    "lng": -0.08,
+    "lat": 0,
+    "lng": 0,
     "glowColor": "#00FF00",
     "lore": "An enchanted forest where the trees whisper secrets to those who listen. The grove is said to be protected by ancient nature spirits who guard its sacred heart.",
     "description": "Luminescent fungi light the forest floor, and the air is thick with magic. The trees here are older than memory itself."
@@ -33,8 +33,8 @@
     "id": 4,
     "name": "Port of Echoes",
     "type": "Harbor",
-    "lat": 51.508,
-    "lng": -0.095,
+    "lat": 0,
+    "lng": 0,
     "glowColor": "#4169E1",
     "lore": "A bustling port town where traders from distant lands converge. It's said that every conversation here echoes with the voices of those who have passed through before.",
     "description": "Ships of all sizes crowd the harbor, their sails bearing symbols from kingdoms near and far. The smell of salt and spices fills the air."
