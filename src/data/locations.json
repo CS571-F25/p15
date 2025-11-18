@@ -38,5 +38,35 @@
     "glowColor": "#4169E1",
     "lore": "A bustling port town where traders from distant lands converge. It's said that every conversation here echoes with the voices of those who have passed through before.",
     "description": "Ships of all sizes crowd the harbor, their sails bearing symbols from kingdoms near and far. The smell of salt and spices fills the air."
+  },
+  {
+    "id": 5,
+    "name": "Sunspire Citadel",
+    "type": "City",
+    "lat": 640,
+    "lng": 1280,
+    "glowColor": "#F7B267",
+    "lore": "Forged from mirrored stone, the citadel reflects the dawn across the southern plains, signaling the start of every Azterran day.",
+    "description": "Terraced walls encircle slender towers capped with burnished gold, and skybridges link each tier of the metropolis."
+  },
+  {
+    "id": 6,
+    "name": "Shattered Crescent",
+    "type": "Ruins",
+    "lat": 1420,
+    "lng": 640,
+    "glowColor": "#8E7CC3",
+    "lore": "These ruins were once a moon-temple that exploded outward during a celestial miscast, leaving fragments suspended in slow orbit.",
+    "description": "Cracked marble arcs jut from the ground while faint, floating shards of stone form a broken halo overhead."
+  },
+  {
+    "id": 7,
+    "name": "Verdant Tide",
+    "type": "Jungle",
+    "lat": 980,
+    "lng": 2100,
+    "glowColor": "#2ECC71",
+    "lore": "The tide is a living wall of flora that migrates seasonally, swallowing abandoned forts and sprouting new life in its wake.",
+    "description": "Massive fronds sweep like waves, bioluminescent spores drift through the undergrowth, and the air hums with unseen creatures."
   }
 ]

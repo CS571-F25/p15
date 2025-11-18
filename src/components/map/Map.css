@@ -1,13 +1,25 @@
+:root {
+  --header-height: 56px;
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
 }
 
-.app-container,
-.map-wrapper {
+.app-container {
   height: 100vh;
-  width: 100vw;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.map-wrapper {
+  height: calc(100vh - var(--header-height));
+  width: 100%;
   margin: 0;
   padding: 0;
   position: relative;
@@ -15,8 +27,13 @@ html, body, #root {
 
 /* For MapContainer itself */
 .leaflet-map {
-  height: 100vh !important;
-  width: 100vw !important;
+  height: calc(100vh - var(--header-height)) !important;
+  width: 100% !important;
+}
+
+.map-wrapper--locked .leaflet-map {
+  pointer-events: none;
+  filter: grayscale(0.15) brightness(0.8);
 }
 
 /* Custom marker styles */
@@ -96,4 +113,38 @@ html, body, #root {
 
 .leaflet-popup-tip {
   background: rgba(0, 0, 0, 0.85);
+}
+
+.zoom-controls {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  z-index: 1000;
+}
+
+.zoom-button {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.zoom-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+}
+
+.zoom-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 }
