@@ -29,6 +29,38 @@ html, body, #root {
 .leaflet-map {
   height: calc(100vh - var(--header-height)) !important;
   width: 100% !important;
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+}
+
+.leaflet-map::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center,
+    #1b4c7d 0%,
+    #0f2a4c 55%,
+    #04040a 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.leaflet-map::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle,
+    rgba(7, 15, 27, 0) 45%,
+    rgba(5, 12, 23, 0.45) 75%,
+    rgba(0, 0, 0, 0.85) 100%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.leaflet-map > * {
+  position: relative;
+  z-index: 1;
 }
 
 .map-wrapper--locked .leaflet-map {
