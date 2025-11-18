@@ -41,6 +41,8 @@ const TILESET_CRS = L.extend({}, L.CRS.Simple, {
   transformation: new L.Transformation(1, 0, -1, MAP_PIXEL_HEIGHT),
 });
 
+let introShownThisSession = false;
+
 // Marker with glow
 const createGlowingIcon = (color = '#FFD700', isHovered = false) => (
   L.divIcon({
@@ -146,7 +148,7 @@ function LocationMarker({ location, onLocationClick, isSelected }) {
 function InteractiveMap() {
   // demo set, no props required
   const [selectedLocation, setSelectedLocation] = useState(null);
-  const [isIntroVisible, setIsIntroVisible] = useState(true);
+  const [isIntroVisible, setIsIntroVisible] = useState(() => !introShownThisSession);
   const [mapInstance, setMapInstance] = useState(null);
   const handleLocationClick = (location) => setSelectedLocation(location);
   const handleClosePanel = () => setSelectedLocation(null);
@@ -174,7 +176,45 @@ function InteractiveMap() {
     });
   }, [mapInstance, isIntroVisible]);
 
-  const handleIntroFinish = () => setIsIntroVisible(false);
+  useEffect(() => {
+    if (!isIntroVisible) return;
+
+    const preventWheelZoom = (event) => {
+      if (event.ctrlKey) {
+        event.preventDefault();
+      }
+    };
+
+    const preventKeyZoom = (event) => {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        ['+', '-', '=', '_', '0'].includes(event.key)
+      ) {
+        event.preventDefault();
+      }
+    };
+
+    const preventGesture = (event) => {
+      event.preventDefault();
+    };
+
+    window.addEventListener('wheel', preventWheelZoom, { passive: false });
+    window.addEventListener('keydown', preventKeyZoom, { passive: false });
+    window.addEventListener('gesturestart', preventGesture, { passive: false });
+    window.addEventListener('gesturechange', preventGesture, { passive: false });
+
+    return () => {
+      window.removeEventListener('wheel', preventWheelZoom);
+      window.removeEventListener('keydown', preventKeyZoom);
+      window.removeEventListener('gesturestart', preventGesture);
+      window.removeEventListener('gesturechange', preventGesture);
+    };
+  }, [isIntroVisible]);
+
+  const handleIntroFinish = () => {
+    introShownThisSession = true;
+    setIsIntroVisible(false);
+  };
 
   return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
@@ -189,7 +229,7 @@ function InteractiveMap() {
         scrollWheelZoom={true}
         dragging={true}
         doubleClickZoom={true}
-        zoomControl={true}
+        zoomControl={false}
         zoomSnap={ZOOM_SNAP}
         zoomDelta={ZOOM_DELTA}
         wheelPxPerZoomLevel={WHEEL_PX_PER_ZOOM_LEVEL}

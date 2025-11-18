@@ -193,7 +193,7 @@
   width: 100%;
   background: #dfcaa0;
   box-shadow: 0 2px 8px #b4a27644;
-  z-index: 49;
+  z-index: 1500;
   display: flex;
   border-bottom: 2px solid #b8a078;
   animation: slideDown 0.3s ease;
