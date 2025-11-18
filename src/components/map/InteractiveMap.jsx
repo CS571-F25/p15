@@ -1,10 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import SidePanel from '../UI/SidePanel'; // <-- import your side panel
+import SidePanel from '../UI/SidePanel';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
-import MenuButton from '../UI/MenuButton';
 import locationsData from '../../data/locations.json';
 
 
@@ -113,7 +112,6 @@ function InteractiveMap() {
   const zoom = 5;
   return (
     <div className="map-wrapper">
-      <MenuButton />
       <MapContainer
         center={center}
         zoom={zoom}

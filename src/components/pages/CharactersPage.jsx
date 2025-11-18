@@ -1,11 +1,9 @@
 import React from 'react';
-import MenuButton from '../UI/MenuButton';
 import characters from '../../data/characters';
 
 export default function CharactersPage() {
   return (
     <div className="characters-page">
-      <MenuButton />
       <h1>D&D 5e Party Characters</h1>
       <div className="characters-grid">
         {characters.map(char => (

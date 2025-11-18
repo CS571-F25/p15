@@ -1,10 +1,7 @@
-import MenuButton from '../UI/MenuButton';
-
-
+import React from 'react';
 export default function AlmanacPage() {
   return (
     <div>
-      <MenuButton />
       <h1>Almanac</h1>
       <p>Major locations display here soon!</p>
     </div>
