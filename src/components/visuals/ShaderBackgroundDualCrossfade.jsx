@@ -11,13 +11,13 @@ out vec4 out_color;
 
 vec4 core(vec4 params) {
     vec2 I = gl_FragCoord.xy;
-    float t = u_time*0.1, z = 0.0, d = 0.0, s = 0.0;
+    float t = u_time, z = 0.0, d = 0.0, s = 0.0;
     float i = 0.0;
     vec4 O = vec4(0.0);
     for(O*=i; i++<8e1; O+=(cos(s+params)+1.0)/d*z) {
         vec3 p = z*normalize(vec3(I+I,0.0)-vec3(u_resolution, u_resolution.y));
         vec3 a = normalize(cos(vec3(1,2,0)+t-d*8.0));
-        p.z+=5.0;
+        p.z+=4.5;
         a = a*dot(a,p)-cross(a,p);
         for(d=1.0; d++<9.0;)
             a+=sin(a*d+t).yzx/d;

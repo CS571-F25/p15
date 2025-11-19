@@ -1,11 +1,12 @@
 // src/data/characters.js
 // Sample character data for D&D 5e party
 function randomColor() {
-  // Returns [r, g, b, a] with values in [0.2, 0.95] for nice vibrance
-  const r = Math.floor(Math.random()*5);
-  const g = Math.floor(Math.random()*5);
-  const b = Math.floor(Math.random()*5);
-  const a = Math.floor(Math.random()*5);
+  // Returns [r, g, b, a] 
+  const n = 8;
+  const r = Math.floor(Math.random()*n);
+  const g = Math.floor(Math.random()*n);
+  const b = Math.floor(Math.random()*n);
+  const a = Math.floor(Math.random()*n);
   return [r, g, b, a];
 }
 
