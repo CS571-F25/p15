@@ -1,15 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
-
-// Customize these values to change the shader's appearance
-const x1 = 5; //O = 0
-const x2 = 2; //O = 1
-const x3 = 4; //O = 2
-const x4 = 0; //O = 0
-
 const FRAGMENT_SHADER_SOURCE = `#version 300 es
 precision highp float;
-uniform float u_fade; // 0.0 = show shader A, 1.0 = show shader B, in-between = crossfade
 
 uniform float u_time;
 uniform vec2 u_resolution;
@@ -21,7 +13,7 @@ void main() {
     float i = 0.0;
     vec4 O = vec4(0.0);
 
-    for(O*=i; i++<8e1; O+=(cos(s+vec4(${x1},${x2},${x3},${x4}))+1.)/d*z) {
+    for(O*=i; i++<8e1; O+=(cos(s+vec4(0,1,2,0))+1.)/d*z) {
         vec3 p = z*normalize(vec3(I+I,0.0)-vec3(u_resolution, u_resolution.y));
         vec3 a = normalize(cos(vec3(1,2,0)+t-d*8.0));
         p.z+=5.0;
@@ -134,7 +126,7 @@ export default function ShaderBackground() {
       gl.deleteBuffer(positionBuffer);
       gl.deleteProgram(program);
     };
-  }, [FRAGMENT_SHADER_SOURCE]);
+  }, []);
 
   return <canvas ref={canvasRef} className="gl-shader-canvas" />;
 }

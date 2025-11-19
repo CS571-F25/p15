@@ -7,6 +7,10 @@
           --sun-color: #ffd700;
         }
 
+body, .characters-page {
+  background: var(--bg-dark, #000);
+}
+
 .characters-page {
   font-family: 'Inter', 'Georgia', serif;
   position: relative;
