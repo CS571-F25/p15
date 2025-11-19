@@ -3,10 +3,14 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvent } from 'rea
 import SidePanel from '../UI/SidePanel';
 import IntroOverlay from '../IntroOverlay';
 import EditorInfoPanel from './EditorInfoPanel';
+import { useAuth } from '../../context/AuthContext';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
 import locationsData from '../../data/locations.json';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const getFallbackLocations = () => locationsData.map((location) => ({ ...location }));
 
 // Fix for default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -248,19 +252,9 @@ function LocationMarker({
 }
 
 function InteractiveMap({ isEditorMode = false }) {
-  const readAuthToken = () => {
-    if (typeof window === 'undefined') return null;
-    try {
-      return localStorage.getItem('authToken');
-    } catch {
-      return null;
-    }
-  };
-
-  const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(readAuthToken()));
-  const [locations, setLocations] = useState(() =>
-    locationsData.map((location) => ({ ...location }))
-  );
+  const { role, token } = useAuth();
+  const initialLocations = useMemo(() => getFallbackLocations(), []);
+  const [locations, setLocations] = useState(initialLocations);
   const [selectedLocationId, setSelectedLocationId] = useState(null);
   const [editorSelection, setEditorSelection] = useState(null);
   const [activePlacementTypeId, setActivePlacementTypeId] = useState(null);
@@ -269,11 +263,45 @@ function InteractiveMap({ isEditorMode = false }) {
   const [isIntroVisible, setIsIntroVisible] = useState(() => !introShownThisSession);
   const [mapInstance, setMapInstance] = useState(null);
   const saveTimeoutRef = useRef(null);
-  const lastSavedSnapshotRef = useRef(null);
+  const lastSavedSnapshotRef = useRef(JSON.stringify(initialLocations));
+  const skipNextAutoSaveRef = useRef(false);
+  const [saveWarning, setSaveWarning] = useState('');
   const center = MAP_CENTER;
   const zoom = 2;
   const activeMarkerType = MARKER_TYPES.find((type) => type.id === activePlacementTypeId) || null;
   const serializedLocations = useMemo(() => JSON.stringify(locations), [locations]);
+  const canAutoSave = role === 'editor' || role === 'admin';
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchLocations = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/locations`);
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load locations.');
+        }
+        const nextLocations = Array.isArray(data.locations) ? data.locations : [];
+        if (isMounted) {
+          setLocations(nextLocations);
+          lastSavedSnapshotRef.current = JSON.stringify(nextLocations);
+          skipNextAutoSaveRef.current = true;
+        }
+      } catch (error) {
+        console.error('Unable to load locations', error);
+        if (isMounted) {
+          const fallback = getFallbackLocations();
+          setLocations(fallback);
+          lastSavedSnapshotRef.current = JSON.stringify(fallback);
+          skipNextAutoSaveRef.current = true;
+        }
+      }
+    };
+    fetchLocations();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleLocationClick = (location) => {
     if (isEditorMode) {
@@ -366,6 +394,7 @@ function InteractiveMap({ isEditorMode = false }) {
         glowColor: entry.glowColor ?? '#FFD700',
       }));
       setLocations(normalized);
+      skipNextAutoSaveRef.current = true;
       setSelectedLocationId(null);
       setEditorSelection(null);
       setImportError('');
@@ -376,26 +405,34 @@ function InteractiveMap({ isEditorMode = false }) {
   };
 
   const handleServerSave = useCallback(
-    async (payload) => {
+    async (nextLocations) => {
+      if (!token) {
+        setSaveWarning('Please sign in again to save changes.');
+        return;
+      }
       try {
-        const response = await fetch('/api/saveLocations', {
+        const response = await fetch(`${API_BASE_URL}/locations/save`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
-          credentials: 'include',
-          body: payload,
+          body: JSON.stringify({ locations: nextLocations }),
         });
+        const data = await response.json();
         if (!response.ok) {
-          console.error('Failed to save locations', response.statusText);
-          return;
+          throw new Error(data.error || 'Failed to save locations.');
         }
-        lastSavedSnapshotRef.current = payload;
+        skipNextAutoSaveRef.current = true;
+        setLocations(data.locations);
+        lastSavedSnapshotRef.current = JSON.stringify(data.locations);
+        setSaveWarning('');
       } catch (error) {
         console.error('Unable to save locations', error);
+        setSaveWarning(error.message || 'Unable to save locations right now.');
       }
     },
-    []
+    [token]
   );
 
   useEffect(() => {
@@ -408,22 +445,37 @@ function InteractiveMap({ isEditorMode = false }) {
   }, [isEditorMode]);
 
   useEffect(() => {
-    if (!isEditorMode || !isLoggedIn) {
+    if (!isEditorMode) {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = null;
       }
-      lastSavedSnapshotRef.current = null;
+      lastSavedSnapshotRef.current = serializedLocations;
+      setSaveWarning('');
       return;
     }
 
-    if (lastSavedSnapshotRef.current === null) {
-      lastSavedSnapshotRef.current = serializedLocations;
+    if (!canAutoSave) {
+      if (serializedLocations !== lastSavedSnapshotRef.current) {
+        setSaveWarning('Only approved editors can save changes to the shared map.');
+        lastSavedSnapshotRef.current = serializedLocations;
+      }
+      return;
     }
-  }, [isEditorMode, isLoggedIn, serializedLocations]);
 
-  useEffect(() => {
-    if (!isEditorMode || !isLoggedIn) return;
+    if (!token) {
+      setSaveWarning('Please sign in again to save changes.');
+      return;
+    }
+
+    setSaveWarning('');
+
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      lastSavedSnapshotRef.current = serializedLocations;
+      return;
+    }
+
     if (serializedLocations === lastSavedSnapshotRef.current) return;
 
     if (saveTimeoutRef.current) {
@@ -432,8 +484,8 @@ function InteractiveMap({ isEditorMode = false }) {
 
     saveTimeoutRef.current = setTimeout(() => {
       saveTimeoutRef.current = null;
-      handleServerSave(serializedLocations);
-    }, 300);
+      handleServerSave(locations);
+    }, 400);
 
     return () => {
       if (saveTimeoutRef.current) {
@@ -441,7 +493,7 @@ function InteractiveMap({ isEditorMode = false }) {
         saveTimeoutRef.current = null;
       }
     };
-  }, [serializedLocations, isEditorMode, isLoggedIn, handleServerSave]);
+  }, [serializedLocations, isEditorMode, canAutoSave, handleServerSave, locations, token]);
 
   const selectedLocation =
     locations.find((location) => location.id === selectedLocationId) || null;
@@ -473,18 +525,14 @@ function InteractiveMap({ isEditorMode = false }) {
       )
     );
     setEditorSelection(null);
+    if (!canAutoSave) {
+      setSaveWarning('Only approved editors can save changes to the shared map.');
+    }
   };
 
   const handleEditorCancel = () => {
     setEditorSelection(null);
   };
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    const handleStorageChange = () => setIsLoggedIn(Boolean(readAuthToken()));
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -619,6 +667,8 @@ function InteractiveMap({ isEditorMode = false }) {
           onFieldChange={handleEditorFieldChange}
           onSave={handleEditorSave}
           onCancel={handleEditorCancel}
+          canAutoSave={canAutoSave}
+          saveWarning={saveWarning}
         />
       )}
       {isIntroVisible && (

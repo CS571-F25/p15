@@ -7,6 +7,8 @@ function EditorInfoPanel({
   onFieldChange,
   onSave,
   onCancel,
+  canAutoSave = false,
+  saveWarning = '',
 }) {
   if (!isOpen || !draft) return null;
 
@@ -70,6 +72,11 @@ function EditorInfoPanel({
             Save
           </button>
         </div>
+        {(!canAutoSave || saveWarning) && (
+          <p className="editor-warning">
+            {canAutoSave ? saveWarning : 'Only approved editors can save changes to the shared map.'}
+          </p>
+        )}
       </form>
     </aside>
   );

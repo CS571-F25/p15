@@ -4,6 +4,14 @@ export default defineConfig({
   plugins: [react()],
   base: '/p15/',
   build: {
-  outDir: 'docs'
+    outDir: 'docs'
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true
+      }
+    }
   }
 })
