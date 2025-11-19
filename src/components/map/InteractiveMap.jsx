@@ -23,18 +23,24 @@ const DEMO_LOCATIONS = [
 ];
 
 const TILE_SIZE = 256;
-const MAX_ZOOM_LEVEL = 5;
-const MIN_ZOOM_LEVEL = 0;
+const TILE_MIN_ZOOM_LEVEL = 0;
+const TILE_MAX_ZOOM_LEVEL = 5;
+const INTERACTIVE_MAX_ZOOM_LEVEL = 7;
+const INTERACTIVE_MIN_ZOOM_LEVEL = 3;
 const MAP_PIXEL_WIDTH = TILE_SIZE * 20; // max zoom has 20 columns of tiles
 const MAP_PIXEL_HEIGHT = TILE_SIZE * 15; // max zoom has 15 rows of tiles
 const MAP_CENTER = [MAP_PIXEL_HEIGHT / 2, MAP_PIXEL_WIDTH / 2];
-const MAP_BOUNDS = L.latLngBounds([0, 0], [MAP_PIXEL_HEIGHT, MAP_PIXEL_WIDTH]);
+const MAP_BOUNDS_PADDING = TILE_SIZE * .8; // allow slight overscroll to reveal background
+const MAP_BOUNDS = L.latLngBounds(
+  [-MAP_BOUNDS_PADDING, -MAP_BOUNDS_PADDING],
+  [MAP_PIXEL_HEIGHT + MAP_BOUNDS_PADDING, MAP_PIXEL_WIDTH + MAP_BOUNDS_PADDING],
+);
 const TILE_URL = `${import.meta.env.BASE_URL}tiles/{z}/{x}/{y}.jpg`;
 const PAN_STEP = 200;
 const ZOOM_SNAP = 0.25;
 const ZOOM_DELTA = 0.5;
 const WHEEL_PX_PER_ZOOM_LEVEL = 100;
-const MAX_SCALE = Math.pow(2, MAX_ZOOM_LEVEL);
+const MAX_SCALE = Math.pow(2, TILE_MAX_ZOOM_LEVEL);
 const TILESET_CRS = L.extend({}, L.CRS.Simple, {
   scale: (zoom) => Math.pow(2, zoom) / MAX_SCALE,
   zoom: (scale) => Math.log(scale * MAX_SCALE) / Math.LN2,
@@ -221,9 +227,10 @@ function InteractiveMap() {
       <MapContainer
         center={center}
         zoom={zoom}
-        minZoom={MIN_ZOOM_LEVEL}
-        maxZoom={MAX_ZOOM_LEVEL}
+        minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
+        maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
         maxBounds={MAP_BOUNDS}
+        maxBoundsViscosity={0.8}
         crs={TILESET_CRS}
         className="leaflet-map"
         scrollWheelZoom={true}
@@ -239,10 +246,10 @@ function InteractiveMap() {
         <TileLayer
           url={TILE_URL}
           tileSize={TILE_SIZE}
-          minZoom={MIN_ZOOM_LEVEL}
-          maxZoom={MAX_ZOOM_LEVEL}
-          maxNativeZoom={MAX_ZOOM_LEVEL}
-          minNativeZoom={MIN_ZOOM_LEVEL}
+          minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
+          maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
+          maxNativeZoom={TILE_MAX_ZOOM_LEVEL}
+          minNativeZoom={TILE_MIN_ZOOM_LEVEL}
           noWrap={true}
           keepBuffer={4}
         />
