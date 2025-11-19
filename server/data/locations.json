@@ -1,0 +1,14 @@
+{
+  "locations": [
+    {
+      "lat": 100,
+      "id": 1,
+      "name": "Sample City",
+      "type": "City",
+      "description": "Test",
+      "lore": "",
+      "lng": 200,
+      "glowColor": "#FFD700"
+    }
+  ]
+}

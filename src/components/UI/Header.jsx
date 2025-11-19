@@ -1,8 +1,11 @@
-import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import './UI.css';
+import LoginModal from '../auth/LoginModal';
+import SignupModal from '../auth/SignupModal';
+import { useAuth } from '../../context/AuthContext';
 
-const navLinks = [
+const baseNavLinks = [
   { to: "/", label: "Map" },
   { to: "/almanac", label: "Almanac" },
   { to: "/characters", label: "Characters" },
@@ -22,9 +25,21 @@ export default function Header() {
   const location = useLocation();
   const title = getTitle(location.pathname);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const { user, role, login, signup, logout } = useAuth();
+  const navLinks = role === 'admin' ? [...baseNavLinks, { to: '/admin', label: 'Admin' }] : baseNavLinks;
 
   const handleToggleMenu = () => setMenuOpen((open) => !open);
   const handleCloseMenu = () => setMenuOpen(false);
+
+  const handleLogin = (formData) => {
+    return login(formData);
+  };
+
+  const handleSignup = (formData) => {
+    return signup(formData);
+  };
 
   return (
     <>
@@ -39,12 +54,27 @@ export default function Header() {
           <span className="header-title">{title}</span>
         </div>
         <div className="header-right">
-          <Link to="/login" className="auth-btn login-btn">
-            Login
-          </Link>
-          <Link to="/signup" className="auth-btn signup-btn">
-            Sign Up
-          </Link>
+          {!user && (
+            <>
+              <button type="button" className="auth-btn login-btn" onClick={() => setIsLoginOpen(true)}>
+                Login
+              </button>
+              <button type="button" className="auth-btn signup-btn" onClick={() => setIsSignupOpen(true)}>
+                Sign Up
+              </button>
+            </>
+          )}
+          {user && (
+            <div className="auth-status">
+              <span>
+                Logged in as <strong>{user.name}</strong>{' '}
+                <span className="auth-status__role">({role})</span>
+              </span>
+              <button type="button" className="auth-btn logout-btn" onClick={logout}>
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </header>
       {menuOpen && (
@@ -56,7 +86,7 @@ export default function Header() {
               className="dropdown-link"
               onClick={handleCloseMenu}
               style={{
-                fontWeight: location.pathname === to ? "bold" : "normal",
+                fontWeight: location.pathname === to ? 'bold' : 'normal',
               }}
             >
               {label}
@@ -64,6 +94,8 @@ export default function Header() {
           ))}
         </nav>
       )}
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onSubmit={handleLogin} />
+      <SignupModal isOpen={isSignupOpen} onClose={() => setIsSignupOpen(false)} onSubmit={handleSignup} />
     </>
   );
 }

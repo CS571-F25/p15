@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "email": "admin@azterra.com",
+    "passwordHash": "$2b$10$Toe1JLkptQlv8KzeBW6z4eLCaScLGhSlt2X.EGiOI6jZlmUoa5L/W",
+    "name": "Azterra Admin",
+    "role": "admin",
+    "createdAt": "2025-11-19T09:33:29.389Z"
+  },
+  {
+    "email": "tester20251119033519@example.com",
+    "passwordHash": "$2b$10$tmPAVMkRqAJoBufKhG04OOXQwJRonJasVk5cLtSQSoFJ8M35Q1/d2",
+    "name": "Test User",
+    "role": "pending",
+    "createdAt": "2025-11-19T09:35:19.734Z",
+    "id": 2
+  }
+]
