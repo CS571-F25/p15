@@ -306,14 +306,13 @@ function InteractiveMap({ isEditorMode = false }) {
 
   const handlePlaceMarker = (latlng, markerType) => {
     if (!markerType) return;
-    let createdLocation = null;
-    setLocations((prev) => {
+    const newLocation = (() => {
       const nextId =
-        prev.reduce(
+        locations.reduce(
           (maxId, location) => (typeof location.id === 'number' ? Math.max(maxId, location.id) : maxId),
           0
         ) + 1;
-      createdLocation = {
+      return {
         id: nextId,
         name: `New ${markerType.label}`,
         type: markerType.label,
@@ -323,19 +322,17 @@ function InteractiveMap({ isEditorMode = false }) {
         lng: latlng.lng,
         glowColor: markerType.glowColor,
       };
-      return [...prev, createdLocation];
-    });
+    })();
+    setLocations((prev) => [...prev, newLocation]);
     setSelectedLocationId(null);
-    if (createdLocation) {
-      setEditorSelection({
-        id: createdLocation.id,
-        draft: {
-          name: createdLocation.name,
-          type: createdLocation.type,
-          description: createdLocation.description,
-        },
-      });
-    }
+    setEditorSelection({
+      id: newLocation.id,
+      draft: {
+        name: newLocation.name,
+        type: newLocation.type,
+        description: newLocation.description,
+      },
+    });
   };
 
   const handleJsonBufferChange = (value) => {
@@ -478,7 +475,9 @@ function InteractiveMap({ isEditorMode = false }) {
     setEditorSelection(null);
   };
 
-  const handleEditorCancel = () => setEditorSelection(null);
+  const handleEditorCancel = () => {
+    setEditorSelection(null);
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -579,7 +578,7 @@ function InteractiveMap({ isEditorMode = false }) {
           keepBuffer={4}
         />
         <EditorPlacementHandler
-          isEnabled={isEditorMode}
+          isEnabled={isEditorMode && !editorSelection}
           selectedType={activeMarkerType}
           onPlaceMarker={handlePlaceMarker}
         />
