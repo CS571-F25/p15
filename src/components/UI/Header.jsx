@@ -5,12 +5,14 @@ import './UI.css';
 const navLinks = [
   { to: "/", label: "Map" },
   { to: "/almanac", label: "Almanac" },
+  { to: "/world", label: "Azterra Races" },
   { to: "/characters", label: "Characters" },
 ];
 
 const pageTitles = {
   "/": "Map",
   "/almanac": "Almanac",
+  "/world": "Azterra Races",
   "/characters": "Characters",
 };
 
