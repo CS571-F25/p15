@@ -1,5 +1,5 @@
 import React from 'react';
-import '../UI/CharactersPage.css';
+import '../UI/PageUI.css';
 import ShaderBackground from '../visuals/ShaderBackground';
 
 const featuredLocations = [

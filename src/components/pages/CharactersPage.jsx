@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import characters from '../../data/characters';
-import '../UI/CharactersPage.css';
+import '../UI/PageUI.css';
 import ShaderBackground from '../visuals/ShaderBackground';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
