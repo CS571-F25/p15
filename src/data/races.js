@@ -63,7 +63,7 @@
         name: "Dragonborn",
         image: `${base}images/races/dragonborn.jpg`,
         blurb: "Proud, draconic humanoids who breathe elemental power.",
-        tags: ["Size: 6ft+", "Speed: 30 ft walking speed", "Alignment: "],
+        tags: ["Size: 6ft+", "Speed: 30 ft walking speed", "Alignment: Extreme Good / Bad"],
         description:
             "Dragonborn carry echoes of dragon heritage in their blood. Many are driven by honor, personal excellence, or the expectations of their clan or ancestry.",
         traits: [
