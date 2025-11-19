@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import InteractiveMap from './components/map/InteractiveMap';
+import MapPage from './components/pages/MapPage';
 import AlmanacPage from './components/pages/AlmanacPage';
 import CharactersPage from './components/pages/CharactersPage';
 import Header from './components/UI/Header';
@@ -9,7 +9,7 @@ function App() {
     <Router basename='/p15'>
       <Header />
       <Routes>
-        <Route path="/" element={<InteractiveMap />} />
+        <Route path="/" element={<MapPage />} />
         <Route path="/almanac" element={<AlmanacPage />} />
         <Route path="/characters" element={<CharactersPage />} />
       </Routes>
