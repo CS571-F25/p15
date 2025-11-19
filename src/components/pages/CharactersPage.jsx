@@ -1,103 +1,181 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import characters from '../../data/characters';
+import '../UI/CharactersPage.css';
+import ShaderBackground from '../visuals/ShaderBackground';
+
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+const getCardClass = (index, activeIndex) => {
+  if (index === activeIndex) return 'card card-active';
+  if (index === activeIndex - 1) return 'card card-left';
+  if (index === activeIndex + 1) return 'card card-right';
+  return 'card card-hidden';
+};
+
+const formatList = (items) => (items && items.length ? items.join(', ') : '—');
 
 export default function CharactersPage() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const goPrev = useCallback(() => {
+    setActiveIndex((prev) => clamp(prev - 1, 0, characters.length - 1));
+  }, []);
+
+  const goNext = useCallback(() => {
+    setActiveIndex((prev) => clamp(prev + 1, 0, characters.length - 1));
+  }, []);
+
+  useEffect(() => {
+    const handleKey = (event) => {
+      if (event.key === 'ArrowLeft') {
+        goPrev();
+      } else if (event.key === 'ArrowRight') {
+        goNext();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [goNext, goPrev]);
+
+  const renderCardSections = (char) => (
+    <>
+      <header className="card-header">
+        <div>
+          <h2 className="card-name">
+            {char.name} <span className="char-level">Lv {char.level}</span>
+          </h2>
+          <div className="char-subhead">
+            {char.race} <span className="card-divider">|</span> {char.class}{' '}
+            <span className="card-divider">|</span> {char.background}
+          </div>
+        </div>
+        <div className="card-vitals">
+          <div>
+            <span>HP</span>
+            <strong>{char.hp}</strong>
+          </div>
+          <div>
+            <span>AC</span>
+            <strong>{char.ac}</strong>
+          </div>
+          <div>
+            <span>Speed</span>
+            <strong>{char.speed} ft</strong>
+          </div>
+        </div>
+      </header>
+
+      <section className="card-section info-row">
+        <div>
+          <p>
+            <span>Alignment</span> {char.alignment}
+          </p>
+          <p>
+            <span>Passive Perception</span> {char.passivePerception}
+          </p>
+        </div>
+        <div>
+          <p>
+            <span>Inspiration</span> {char.inspiration ? 'Yes' : 'No'}
+          </p>
+          {char.profBonus && (
+            <p>
+              <span>Prof. Bonus</span> +{char.profBonus}
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="card-section">
+        <h3>Ability Scores</h3>
+        <div className="stat-grid">
+          {Object.entries(char.stats).map(([key, value]) => (
+            <div key={key} className="stat-pill">
+              <span>{key.toUpperCase()}</span>
+              <strong>{value}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card-section">
+        <h3>Equipment</h3>
+        <p>{formatList(char.equipment)}</p>
+      </section>
+
+      <section className="card-section">
+        <h3>Abilities</h3>
+        <p>{formatList(char.abilities)}</p>
+      </section>
+
+      <section className="card-section">
+        <h3>Skills</h3>
+        <div className="list-row">
+          {char.skills.map((skill) => (
+            <span key={skill} className="list-pill">
+              {skill}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {char.spells.length > 0 && (
+        <section className="card-section">
+          <h3>Spells</h3>
+          <div className="list-row">
+            {char.spells.map((spell) => (
+              <span key={spell} className="list-pill subtle">
+                {spell}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {char.notes && (
+        <section className="card-section">
+          <h3>Notes</h3>
+          <p className="card-notes">{char.notes}</p>
+        </section>
+      )}
+    </>
+  );
+
   return (
     <div className="characters-page">
-      <h1>D&D 5e Party Characters</h1>
-      <div className="characters-grid">
-        {characters.map(char => (
-          <div key={char.id} className="character-card">
-            <h2>{char.name} <span className="char-level">Lv {char.level}</span></h2>
-            <div className="char-subhead">
-              {char.race} <span>•</span> {char.class} <span>•</span> {char.background}
+      <ShaderBackground />
+      <h1 className="page-title">Stars of Azterra</h1>
+      <div className="characters-wrapper">
+        <p className="nav-hint">Use the arrow keys or buttons to browse the codex</p>
+        <div className="carousel-controls">
+          <button
+            className="arrow-btn arrow-left"
+            onClick={goPrev}
+            aria-label="Previous character"
+            disabled={activeIndex === 0}
+          >
+            ‹
+          </button>
+          <div className="carousel-frame" role="region" aria-live="polite">
+            <div className="sun-overlay" aria-hidden="true" />
+            <div className="carousel-track">
+              {characters.map((char, index) => (
+                <div key={char.id} className={getCardClass(index, activeIndex)}>
+                  {renderCardSections(char)}
+                </div>
+              ))}
             </div>
-            <div className="char-main-info">
-              <div><b>HP:</b> {char.hp} <b>AC:</b> {char.ac} <b>Speed:</b> {char.speed}ft</div>
-              <div><b>Alignment:</b> {char.alignment}</div>
-            </div>
-            <div className="char-stats">
-              <h3>Stats</h3>
-              <ul>
-                {Object.entries(char.stats).map(([k, v]) => (
-                  <li key={k}><b>{k.toUpperCase()}</b>: {v}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="char-abilities">
-              <b>Skills:</b> {char.skills.join(', ')}<br/>
-              <b>Abilities:</b> {char.abilities.join(', ')}<br/>
-              {char.spells.length > 0 &&
-                <><b>Spells:</b> {char.spells.join(', ')}<br/></>
-              }
-              <b>Equipment:</b> {char.equipment.join(', ')}
-            </div>
-            <div className="char-footer">
-              <b>Passive Perception:</b> {char.passivePerception} &nbsp;
-              <b>Inspiration:</b> {char.inspiration ? "Yes" : "No"}
-            </div>
-            {char.notes && <div className="char-notes"><i>Notes:</i> {char.notes}</div>}
           </div>
-        ))}
+          <button
+            className="arrow-btn arrow-right"
+            onClick={goNext}
+            aria-label="Next character"
+            disabled={activeIndex === characters.length - 1}
+          >
+            ›
+          </button>
+        </div>
       </div>
-      <style>{`
-        .characters-page {
-          padding: 1rem 2rem 2rem 2rem;
-        }
-        .characters-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-          gap: 1.5rem;
-        }
-        .character-card {
-          border: 1.5px solid #b0aa98;
-          border-radius: 10px;
-          background: #f8f4e8;
-          padding: 1.2rem 1rem 1rem 1rem;
-          box-shadow: 0 2px 6px #bbb4a333;
-          min-height: 340px;
-        }
-        .character-card h2 {
-          font-size: 1.5rem;
-          margin-bottom: .3rem;
-        }
-        .char-level {
-          font-size: 1rem; 
-          font-weight: normal; 
-          color: #554e2c;
-        }
-        .char-subhead {
-          font-size: 1.01rem;
-          color: #7b753d;
-          margin-bottom: .6rem;
-        }
-        .char-main-info {
-          margin-bottom: .7rem;
-          font-size: 1rem;
-        }
-        .char-stats ul {
-          display: flex;
-          flex-wrap: wrap;
-          list-style: none;
-          gap: .8rem;
-          padding: 0;
-          margin: 0 0 .4rem 0;
-        }
-        .char-abilities {
-          font-size: .97rem;
-          margin-bottom: .5rem;
-        }
-        .char-footer {
-          font-size: .93rem;
-          color: #5a512c;
-          margin-bottom: 0.2rem;
-        }
-        .char-notes {
-          font-size: .88rem;
-          margin-top: 0.3rem;
-          color: #517d6a;
-        }
-      `}</style>
     </div>
   );
 }
