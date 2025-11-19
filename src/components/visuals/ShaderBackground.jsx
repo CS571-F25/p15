@@ -1,36 +1,29 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 
-
-// Customize these values to change the shader's appearance
-const x1 = 5; //O = 0
-const x2 = 2; //O = 1
-const x3 = 4; //O = 2
-const x4 = 0; //O = 0
-
+// -- GLSL Shader, uses u_modA as a uniform vec4 --
 const FRAGMENT_SHADER_SOURCE = `#version 300 es
 precision highp float;
-uniform float u_fade; // 0.0 = show shader A, 1.0 = show shader B, in-between = crossfade
-
 uniform float u_time;
 uniform vec2 u_resolution;
+uniform vec4 u_modA;  // Accepts the modA prop
 out vec4 out_color;
 
 void main() {
     vec2 I = gl_FragCoord.xy;
-    float t = u_time, z = 0.0, d = 0.0, s = 0.0;
+    float t = u_time * 0.2, z = 0.0, d = 0.0, s = 0.0;
     float i = 0.0;
     vec4 O = vec4(0.0);
 
-    for(O*=i; i++<8e1; O+=(cos(s+vec4(${x1},${x2},${x3},${x4}))+1.)/d*z) {
-        vec3 p = z*normalize(vec3(I+I,0.0)-vec3(u_resolution, u_resolution.y));
+    for(O*=i; i++<8e1; O+=(cos(s+u_modA)+1.0)/d*z) {  // <--- uses uniform
+        vec3 p = z * normalize(vec3(I+I,0.0)-vec3(u_resolution, u_resolution.y));
         vec3 a = normalize(cos(vec3(1,2,0)+t-d*8.0));
-        p.z+=5.0;
-        a = a*dot(a,p)-cross(a,p);
+        p.z += 5.0;
+        a = a * dot(a,p) - cross(a,p);
 
         for(d=1.0; d++<9.0;)
-            a+=sin(a*d+t).yzx/d;
+            a += sin(a*d+t).yzx/d;
 
-        z+=d=.1*abs(length(p)-3.0)+.04*abs(s=a.y);
+        z += d = .1*abs(length(p)-3.0) + .04 * abs(s=a.y);
     }
     out_color = tanh(O/3e4);
 }
@@ -83,20 +76,24 @@ function resizeCanvasToDisplaySize(canvas) {
   return false;
 }
 
-export default function ShaderBackground() {
+export default function ShaderBackground({ modA = [0, 1, 2, 0] }) {
   const canvasRef = useRef(null);
+  const modARef = useRef(modA);
+
+  // keep modARef in sync with latest prop
+  useEffect(() => { modARef.current = modA; }, [modA]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return undefined;
+    if (!canvas) return;
     const gl = canvas.getContext('webgl2', { antialias: false });
     if (!gl) {
       console.warn('WebGL2 not supported in this browser.');
-      return undefined;
+      return;
     }
 
     const program = createProgram(gl, VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
-    if (!program) return undefined;
+    if (!program) return;
     gl.useProgram(program);
 
     const positionBuffer = gl.createBuffer();
@@ -113,6 +110,7 @@ export default function ShaderBackground() {
 
     const timeLocation = gl.getUniformLocation(program, 'u_time');
     const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+    const modALocation = gl.getUniformLocation(program, 'u_modA');
 
     let startTime = performance.now();
     let frameId;
@@ -123,6 +121,7 @@ export default function ShaderBackground() {
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
       gl.uniform1f(timeLocation, time);
       gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
+      gl.uniform4fv(modALocation, modARef.current);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       frameId = requestAnimationFrame(render);
     };
@@ -134,7 +133,7 @@ export default function ShaderBackground() {
       gl.deleteBuffer(positionBuffer);
       gl.deleteProgram(program);
     };
-  }, [FRAGMENT_SHADER_SOURCE]);
+  }, []);
 
   return <canvas ref={canvasRef} className="gl-shader-canvas" />;
 }

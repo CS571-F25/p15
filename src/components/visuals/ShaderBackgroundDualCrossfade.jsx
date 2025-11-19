@@ -16,10 +16,10 @@ vec4 core(vec4 params) {
     vec4 O = vec4(0.0);
     for(O*=i; i++<8e1; O+=(cos(s+params)+1.0)/d*z) {
         vec3 p = z*normalize(vec3(I+I,0.0)-vec3(u_resolution, u_resolution.y));
-        vec3 a = normalize(cos(vec3(1,2,0)+t-d*8.0));
-        p.z+=4.5;
+        vec3 a = normalize(cos(vec3(1,2,0)+t-d*7.0));
+        p.z+=5.0;
         a = a*dot(a,p)-cross(a,p);
-        for(d=1.0; d++<9.0;)
+        for(d=1.0; d++<1.0;)
             a+=sin(a*d+t).yzx/d;
         z+=d=.1*abs(length(p)-3.0)+.04*abs(s=a.y);
     }
