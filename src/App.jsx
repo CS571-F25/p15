@@ -8,14 +8,14 @@ import Header from './components/UI/Header';
 
 function App() {
   return (
-    <Router basename='/p15'>
+    <Router basename='/p15/'>
       <Header />
       <Routes>
-        <Route path="/" element={<MapPage />} />
-        <Route path="/almanac" element={<AlmanacPage />} />
-        <Route path="/world" element={<WorldRaces />} />
-        <Route path="/characters" element={<CharactersPage />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="" element={<MapPage />} />
+        <Route path="almanac" element={<AlmanacPage />} />
+        <Route path="world-races" element={<WorldRaces />} />
+        <Route path="characters" element={<CharactersPage />} />
+        <Route path="admin" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );
