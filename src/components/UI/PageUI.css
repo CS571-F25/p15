@@ -18,6 +18,11 @@ body,
   min-height: calc(100vh - 56px);
   color: var(--card-parchment);
   padding: 0.5rem 1.5rem 3.5rem;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  max-width: none;
+  box-sizing: border-box;
   overflow: hidden;
   background-color: transparent;
 }
@@ -26,6 +31,7 @@ body,
   content: "";
   position: absolute;
   inset: 0;
+  /*
   background:
     radial-gradient(circle at 50% 8%,
       rgba(0, 0, 0, 0.18) 0%,
@@ -34,6 +40,7 @@ body,
     linear-gradient(180deg,
       rgba(26, 18, 12, 0) 30%,
       rgba(22, 19, 9, 0.65) 100%);
+  */
   z-index: 0;
   pointer-events: none;
 }
