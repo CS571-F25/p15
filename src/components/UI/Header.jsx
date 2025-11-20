@@ -109,73 +109,94 @@ export default function Header() {
     <>
       <button
         type="button"
-        className="sidebar-mobile-toggle"
+        className="fixed top-4 left-4 w-[46px] h-[46px] rounded-xl border border-[#fae4be66] bg-[#19120dbf] flex flex-col justify-center gap-1 z-[1500] cursor-pointer transition-all duration-200 hover:-translate-y-px hover:shadow-[0_12px_26px_rgba(0,0,0,0.45)] min-[900px]:hidden"
         onClick={toggleSidebar}
         aria-controls="azterra-sidebar"
         aria-expanded={sidebarOpen}
       >
         <span className="sr-only">Toggle Azterra navigation</span>
-        <span />
-        <span />
-        <span />
+        <span className="block w-[60%] h-[3px] rounded-sm bg-[#ffe7c7] mx-auto" />
+        <span className="block w-[60%] h-[3px] rounded-sm bg-[#ffe7c7] mx-auto" />
+        <span className="block w-[60%] h-[3px] rounded-sm bg-[#ffe7c7] mx-auto" />
       </button>
 
       <aside
         id="azterra-sidebar"
-        className={`azterra-sidebar ${sidebarOpen ? 'is-open' : ''}`}
+        className={`fixed top-0 left-0 h-screen w-[clamp(240px,18vw,300px)] bg-gradient-to-b from-[#18120cfa] to-[#221a15f2] text-[#f7ecda] flex flex-col p-6 gap-6 shadow-[18px_0_40px_rgba(0,0,0,0.55)] z-[1400] border-r border-[#ffd6af33] transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } min-[900px]:translate-x-0`}
         aria-label="Azterra navigation"
       >
-        <div className="sidebar-brand">
-          <div className="brand-mark">A</div>
-          <div className="brand-copy">
-            <span className="brand-label">Azterra</span>
-            <span className="brand-subtitle">{title}</span>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-[14px] border border-[#ffdc9673] flex items-center justify-center font-serif text-[1.4rem] tracking-[0.12rem] bg-[radial-gradient(circle_at_30%_30%,rgba(255,226,185,0.3),rgba(27,20,15,0.8))] font-[Cinzel]">
+            A
           </div>
-          <button type="button" className="sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close navigation">
+          <div className="flex flex-col gap-[0.15rem]">
+            <span className="font-[Cinzel] text-[1.4rem] tracking-[0.2rem] uppercase">Azterra</span>
+            <span className="text-[0.95rem] tracking-[0.08rem] text-[#ffe9c8bf]">{title}</span>
+          </div>
+          <button
+            type="button"
+            className="ml-auto border-none bg-transparent text-[#fff7eacc] text-2xl cursor-pointer inline-flex min-[900px]:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close navigation"
+          >
             &times;
           </button>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="flex flex-col gap-[0.35rem]">
           {navLinks.map(({ to, label, icon }) => {
             const isActive = location.pathname === to;
             return (
               <Link
                 key={to}
                 to={to}
-                className={`sidebar-link ${isActive ? 'is-active' : ''}`}
+                className={`flex items-center gap-[0.8rem] rounded-xl px-[0.85rem] py-[0.65rem] text-[#faeacd] no-underline tracking-[0.04rem] font-semibold transition-all duration-200 hover:bg-[#ffd7001f] hover:text-[#ffe5ba] hover:translate-x-1 ${isActive ? 'bg-[#ffd70040] text-[#ffe5ba] shadow-[inset_0_0_0_1px_rgba(255,215,0,0.4)]' : ''
+                  }`}
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => setSidebarOpen(false)}
               >
-                <span className="sidebar-icon" aria-hidden="true">
+                <span className="w-6 h-6" aria-hidden="true">
                   {icon}
                 </span>
-                <span className="sidebar-label">{label}</span>
+                <span className="flex-1">{label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="sidebar-footer">
+        <div className="mt-auto pt-6 border-t border-[#ffd7aa33]">
           {!user && (
-            <div className="sidebar-auth">
-              <button type="button" className="auth-btn login-btn" onClick={() => setIsLoginOpen(true)}>
+            <div className="flex flex-col gap-[0.6rem]">
+              <button
+                type="button"
+                className="w-full text-center no-underline text-[#fff4dc] bg-transparent border border-[#f7e0bb73] rounded-full py-[0.45rem] px-6 font-semibold cursor-pointer tracking-[0.04rem] transition-all duration-200 shadow-[0_6px_18px_rgba(0,0,0,0.35)] hover:bg-[#ffswcf1f] hover:-translate-y-px hover:shadow-[0_12px_30px_rgba(0,0,0,0.45)]"
+                onClick={() => setIsLoginOpen(true)}
+              >
                 Login
               </button>
-              <button type="button" className="auth-btn signup-btn" onClick={() => setIsSignupOpen(true)}>
+              <button
+                type="button"
+                className="w-full text-center no-underline text-[#fff4dc] bg-transparent border border-[#afd994b3] rounded-full py-[0.45rem] px-6 font-semibold cursor-pointer tracking-[0.04rem] transition-all duration-200 shadow-[0_6px_18px_rgba(0,0,0,0.35)] hover:bg-[#bbe6a41f] hover:-translate-y-px hover:shadow-[0_12px_30px_rgba(0,0,0,0.45)]"
+                onClick={() => setIsSignupOpen(true)}
+              >
                 Sign Up
               </button>
             </div>
           )}
           {user && (
-            <div className="auth-status">
+            <div className="flex flex-col items-start gap-2 text-[#ffe9c9] text-sm">
               <div>
-                <span className="auth-status__label">Signed in</span>
-                <span>
-                  {user.name} <span className="auth-status__role">({role})</span>
+                <span className="text-[0.78rem] uppercase tracking-[0.2rem] text-[#ffe9c999]">Signed in</span>
+                <span className="block">
+                  {user.name} <span className="font-semibold capitalize">({role})</span>
                 </span>
               </div>
-              <button type="button" className="auth-btn logout-btn" onClick={logout}>
+              <button
+                type="button"
+                className="no-underline text-[#fff4dc] bg-transparent border border-[#ffa38cb3] rounded-full py-[0.45rem] px-6 font-semibold cursor-pointer tracking-[0.04rem] transition-all duration-200 shadow-[0_6px_18px_rgba(0,0,0,0.35)] hover:bg-[#ffa38c26] hover:-translate-y-px hover:shadow-[0_12px_30px_rgba(0,0,0,0.45)]"
+                onClick={logout}
+              >
                 Logout
               </button>
             </div>
@@ -183,7 +204,13 @@ export default function Header() {
         </div>
       </aside>
 
-      {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/55 backdrop-blur-[2px] z-[1300]"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onSubmit={handleLogin} />
       <SignupModal isOpen={isSignupOpen} onClose={() => setIsSignupOpen(false)} onSubmit={handleSignup} />
