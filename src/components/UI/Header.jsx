@@ -9,12 +9,14 @@ const baseNavLinks = [
   { to: "/", label: "Map" },
   { to: "/almanac", label: "Almanac" },
   { to: "/characters", label: "Characters" },
+  { to: "/locations", label: "Locations" },
 ];
 
 const pageTitles = {
   "/": "Map",
   "/almanac": "Almanac",
   "/characters": "Characters",
+  "/locations": "Locations",
 };
 
 const getTitle = (pathname) =>

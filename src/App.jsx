@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MapPage from './components/pages/MapPage';
 import AlmanacPage from './components/pages/AlmanacPage';
 import CharactersPage from './components/pages/CharactersPage';
+import LocationsPage from './components/pages/LocationsPage';
 import AdminDashboard from './components/pages/AdminDashboard';
 import Header from './components/UI/Header';
 
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<MapPage />} />
         <Route path="/almanac" element={<AlmanacPage />} />
         <Route path="/characters" element={<CharactersPage />} />
+        <Route path="/locations" element={<LocationsPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </Router>

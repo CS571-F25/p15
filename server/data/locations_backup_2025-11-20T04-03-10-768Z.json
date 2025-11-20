@@ -9,7 +9,7 @@
       "lng": 3728.0286197132973,
       "x": 1756.0650955576998,
       "y": 3728.0286197132973,
-      "description": "EEEEEEEEE",
+      "description": "",
       "category": "City",
       "tags": [],
       "regionId": null,
@@ -89,21 +89,6 @@
       "tags": [],
       "regionId": null,
       "glowColor": "#F7B267"
-    },
-    {
-      "id": 10,
-      "name": "New Abyss Dungeon",
-      "type": "dungeon",
-      "iconKey": "dungeon-abyss",
-      "lat": 2713.94564143529,
-      "lng": 1913.8802411174543,
-      "x": 2713.94564143529,
-      "y": 1913.8802411174543,
-      "description": "Hello There",
-      "category": "Dungeon",
-      "tags": [],
-      "regionId": null,
-      "glowColor": "#8E7CC3"
     }
   ]
 }
