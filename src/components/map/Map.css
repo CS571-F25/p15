@@ -69,30 +69,47 @@ html, body, #root {
   filter: saturate(1.05) contrast(1.05) brightness(0.94);
 }
 
+.map-container-wrapper {
+  position: relative;
+  height: calc(100vh - var(--header-height));
+}
+
 .map-wrapper--locked .leaflet-map {
   pointer-events: none;
   filter: grayscale(0.15) brightness(0.8);
 }
 
-.map-vignette,
-.map-clouds {
+.map-layer {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 5;
 }
 
-.map-vignette {
+.map-layer--vignette {
   box-shadow: inset 0 0 180px rgba(5, 5, 15, 0.85);
   mix-blend-mode: multiply;
 }
 
-.map-clouds {
+.map-layer--fog {
+  background-image: url('/fog.png'), radial-gradient(circle, rgba(255, 255, 255, 0.08), transparent 65%);
+  background-size: 800px auto;
+  animation: driftFog 120s linear infinite;
+  opacity: 0.08;
+}
+
+.map-layer--clouds {
   background-image: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 55%),
     radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.05), transparent 60%);
   opacity: 0.25;
   animation: driftClouds 180s linear infinite;
   mix-blend-mode: screen;
+}
+
+.map-layer--heatmap,
+.map-layer--regions,
+.map-layer--parallax {
+  z-index: 4;
 }
 
 @keyframes driftClouds {
@@ -101,6 +118,15 @@ html, body, #root {
   }
   to {
     transform: translateX(-200px);
+  }
+}
+
+@keyframes driftFog {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(150px);
   }
 }
 

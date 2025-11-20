@@ -4,6 +4,13 @@ import SidePanel from '../UI/SidePanel';
 import IntroOverlay from '../IntroOverlay';
 import EditorInfoPanel from './EditorInfoPanel';
 import { useAuth } from '../../context/AuthContext';
+import { useMapEffects } from '../../context/MapEffectsContext';
+import VignetteLayer from './layers/VignetteLayer';
+import FogLayer from './layers/FogLayer';
+import CloudLayer from './layers/CloudLayer';
+import HeatmapLayer from './layers/HeatmapLayer';
+import RegionLayer from './layers/RegionLayer';
+import ParallaxLayer from './layers/ParallaxLayer';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
@@ -277,6 +284,7 @@ function LocationMarker({
 
 function InteractiveMap({ isEditorMode = false }) {
   const { role, token } = useAuth();
+  const { cloudsEnabled, fogEnabled, vignetteEnabled, heatmapMode } = useMapEffects();
   const initialLocations = useMemo(() => normalizeLocations(getFallbackLocations()), []);
   const [locations, setLocations] = useState(initialLocations);
   const [selectedLocationId, setSelectedLocationId] = useState(null);
@@ -637,7 +645,8 @@ function InteractiveMap({ isEditorMode = false }) {
 
   return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
-      <MapContainer
+      <div className="map-container-wrapper">
+        <MapContainer
         center={center}
         zoom={zoom}
         minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
@@ -683,10 +692,14 @@ function InteractiveMap({ isEditorMode = false }) {
             onDragEnd={handleMarkerDragEnd}
           />
         ))}
-      </MapContainer>
-      {/* TODO: Hook in a future parallax/3D heightmap layer here (e.g. using WebGL or layered canvases). */}
-      <div className="map-vignette" aria-hidden="true" />
-      <div className="map-clouds" aria-hidden="true" />
+        </MapContainer>
+        <VignetteLayer enabled={vignetteEnabled} />
+        <FogLayer enabled={fogEnabled} map={mapInstance} />
+        <CloudLayer enabled={cloudsEnabled} map={mapInstance} />
+        <HeatmapLayer enabled={heatmapMode !== 'none'} map={mapInstance} />
+        <RegionLayer enabled />
+        <ParallaxLayer enabled />
+      </div>
       <EditorToolbox
         isEditorMode={isEditorMode}
         selectedTypeId={activePlacementTypeId}
