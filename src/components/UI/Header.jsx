@@ -81,11 +81,11 @@ export default function Header() {
         aria-label="Azterra navigation"
       >
         {/* Brand / Logo Area */}
-        <div className="flex items-center h-[70px] px-[10px] shrink-0 overflow-hidden whitespace-nowrap">
-          <div className="w-[40px] h-[40px] rounded-[10px] border border-[#ffdc9673] flex items-center justify-center font-serif text-[1.2rem] bg-[radial-gradient(circle_at_30%_30%,rgba(255,226,185,0.3),rgba(27,20,15,0.8))] font-[Cinzel] shrink-0 text-[#ffd700]">
+        <div className="flex items-center h-[70px] px-[10px] shrink-0 whitespace-nowrap relative">
+          <div className="w-[40px] h-[40px] rounded-[10px] border border-[#ffdc9673] flex items-center justify-center font-serif text-[1.2rem] bg-[radial-gradient(circle_at_30%_30%,rgba(255,226,185,0.3),rgba(27,20,15,0.8))] font-[Cinzel] shrink-0 text-[#ffd700] relative z-20">
             A
           </div>
-          <div className="flex flex-col ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-10">
+          <div className="flex flex-col ml-4 opacity-100 transition-opacity duration-200 delay-75 relative z-50">
             <span className="font-[Cinzel] text-[1.2rem] tracking-[0.2rem] uppercase text-[#ffd700]">Azterra</span>
           </div>
         </div>
@@ -98,14 +98,14 @@ export default function Header() {
               <Link
                 key={to}
                 to={to}
-                className={`flex items-center h-[44px] rounded-lg px-[10px] text-[#faeacd] no-underline tracking-[0.04rem] font-semibold transition-all duration-200 hover:bg-[#ffd7001f] hover:text-[#ffe5ba] whitespace-nowrap overflow-hidden ${isActive ? 'bg-[#ffd70040] text-[#ffe5ba] shadow-[inset_0_0_0_1px_rgba(255,215,0,0.4)]' : ''
+                className={`flex items-center h-[44px] rounded-lg px-[10px] text-[#faeacd] no-underline tracking-[0.04rem] font-semibold transition-all duration-200 hover:bg-[#ffd7001f] hover:text-[#ffe5ba] whitespace-nowrap relative ${isActive ? 'bg-[#ffd70040] text-[#ffe5ba] shadow-[inset_0_0_0_1px_rgba(255,215,0,0.4)]' : ''
                   }`}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <span className="w-6 h-6 shrink-0 flex items-center justify-center" aria-hidden="true">
+                <span className="w-6 h-6 shrink-0 flex items-center justify-center relative z-20" aria-hidden="true">
                   {icon}
                 </span>
-                <span className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-10">
+                <span className="ml-4 opacity-100 transition-opacity duration-200 delay-75 relative z-50">
                   {label}
                 </span>
                 {isActive && (
@@ -131,7 +131,7 @@ export default function Header() {
                   <circle cx="12" cy="7" r="4" />
                 </svg>
               </span>
-              <span className="ml-4 font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-10">
+              <span className="ml-4 font-semibold opacity-100 transition-opacity duration-200 delay-75 relative z-50">
                 Login
               </span>
             </button>
@@ -146,7 +146,7 @@ export default function Header() {
                     <circle cx="12" cy="7" r="4" />
                   </svg>
                 </span>
-                <div className="ml-4 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-10">
+                <div className="ml-4 flex flex-col opacity-100 transition-opacity duration-200 delay-75 relative z-50">
                   <span className="text-sm font-semibold text-[#ffe5ba]">{user.name}</span>
                   <span className="text-xs text-[#ffffff80] capitalize">{role}</span>
                 </div>
@@ -164,7 +164,7 @@ export default function Header() {
                     <line x1="21" y1="12" x2="9" y2="12" />
                   </svg>
                 </span>
-                <span className="ml-4 text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-10">
+                <span className="ml-4 text-sm opacity-100 transition-opacity duration-200 delay-75 relative z-50">
                   Logout
                 </span>
               </button>
