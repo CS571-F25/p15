@@ -9,6 +9,8 @@ function EditorInfoPanel({
   onCancel,
   canAutoSave = false,
   saveWarning = '',
+  canDelete = false,
+  onDelete,
 }) {
   if (!isOpen || !draft) return null;
 
@@ -68,6 +70,15 @@ function EditorInfoPanel({
           <button type="button" className="panel-button" onClick={onCancel}>
             Cancel
           </button>
+          {canDelete && (
+            <button
+              type="button"
+              className="panel-button panel-button--danger"
+              onClick={onDelete}
+            >
+              Delete
+            </button>
+          )}
           <button type="submit" className="panel-button panel-button--primary">
             Save
           </button>

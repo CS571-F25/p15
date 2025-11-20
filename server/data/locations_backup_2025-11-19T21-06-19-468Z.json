@@ -29,16 +29,6 @@
       "lat": 1718.5013656101964,
       "lng": 1688.6999038528006,
       "glowColor": "#FFDAB9"
-    },
-    {
-      "id": 7,
-      "name": "New Landmark",
-      "type": "landmark",
-      "description": "",
-      "lore": "",
-      "lat": 1667.9745541865454,
-      "lng": 5591.206033760143,
-      "glowColor": "#FFDAB9"
     }
   ]
 }
