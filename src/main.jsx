@@ -8,15 +8,13 @@ import { LocationDataProvider } from './context/LocationDataContext';
 import { RegionDataProvider } from './context/RegionDataContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React>
-    <AuthProvider>
-      <MapEffectsProvider>
-        <LocationDataProvider>
-          <RegionDataProvider>
-            <App />
-          </RegionDataProvider>
-        </LocationDataProvider>
-      </MapEffectsProvider>
-    </AuthProvider>
-  </React>
+  <AuthProvider>
+    <MapEffectsProvider>
+      <LocationDataProvider>
+        <RegionDataProvider>
+          <App />
+        </RegionDataProvider>
+      </LocationDataProvider>
+    </MapEffectsProvider>
+  </AuthProvider>
 );

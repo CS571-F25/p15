@@ -4,8 +4,10 @@ import AlmanacPage from './components/pages/AlmanacPage';
 import CharactersPage from './components/pages/CharactersPage';
 import WorldRaces from './components/pages/WorldRaces';
 import AdminDashboard from './components/pages/AdminDashboard';
+import LocationsPage from './components/pages/LocationsPage';
 import Header from './components/UI/Header';
 import PageLayout from './components/UI/PageLayout';
+import './components/UI/PageUI.css';
 
 // Placeholder components for missing tabs
 const Placeholder = ({ title }) => (
@@ -32,7 +34,14 @@ function App() {
           <Route path="geography" element={<Placeholder title="Geography" />} />
         </Route>
 
-        {/* 3. People */}
+        {/* 3. Locations */}
+        <Route path="/locations" element={<PageLayout title="Locations" tabs={[
+          { to: "", label: "Atlas", end: true },
+        ]} />}>
+          <Route index element={<LocationsPage />} />
+        </Route>
+
+        {/* 4. People */}
         <Route path="/people" element={<PageLayout title="People of Azterra" tabs={[
           { to: "", label: "Races", end: true },
           { to: "factions", label: "Factions" },
@@ -43,7 +52,7 @@ function App() {
           <Route path="cultures" element={<Placeholder title="Cultures" />} />
         </Route>
 
-        {/* 4. Magic & Lore */}
+        {/* 5. Magic & Lore */}
         <Route path="/magic" element={<PageLayout title="Magic & Lore" tabs={[
           { to: "", label: "Magic System", end: true },
           { to: "deities", label: "Deities" },
@@ -54,7 +63,7 @@ function App() {
           <Route path="monsters" element={<Placeholder title="Monsters" />} />
         </Route>
 
-        {/* 5. Campaign */}
+        {/* 6. Campaign */}
         <Route path="/campaign" element={<PageLayout title="Campaign" tabs={[
           { to: "", label: "Characters", end: true },
           { to: "logbook", label: "Logbook" },

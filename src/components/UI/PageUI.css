@@ -48,7 +48,6 @@ body,
   pointer-events: none;
 }
 
-
 .characters-page>*:not(.gl-shader-canvas) {
   position: relative;
   z-index: 1;
