@@ -2,7 +2,7 @@
 
 @layer utilities {
   body.has-azterra-sidebar {
-    padding-left: clamp(240px, 18vw, 300px);
+    padding-left: 60px;
     transition: padding-left 0.3s ease;
   }
 
