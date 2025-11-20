@@ -31,7 +31,31 @@ const MARKER_TYPES = [
   { id: 'city', label: 'City', glowColor: '#F7B267' },
   { id: 'town', label: 'Town', glowColor: '#74c2e1' },
   { id: 'dungeon', label: 'Dungeon', glowColor: '#8E7CC3' },
+  { id: 'landmark', label: 'Landmark', glowColor: '#FFDAB9' },
 ];
+
+const GENERIC_MARKER_TYPE = { id: 'generic', label: 'Generic', glowColor: '#9ca3af' };
+const TYPE_CONFIG = MARKER_TYPES.reduce(
+  (acc, type) => ({ ...acc, [type.id]: type }),
+  { [GENERIC_MARKER_TYPE.id]: GENERIC_MARKER_TYPE }
+);
+
+const getTypeConfig = (type) => {
+  if (!type) return GENERIC_MARKER_TYPE;
+  const key = typeof type === 'string' ? type.toLowerCase() : type;
+  return TYPE_CONFIG[key] || GENERIC_MARKER_TYPE;
+};
+
+const normalizeLocationEntry = (location) => {
+  const typeConfig = getTypeConfig(location.type);
+  return {
+    ...location,
+    type: typeConfig.id,
+    glowColor: location.glowColor || typeConfig.glowColor,
+  };
+};
+
+const normalizeLocations = (locations) => locations.map((location) => normalizeLocationEntry(location));
 
 const TILE_SIZE = 256;
 const TILE_MIN_ZOOM_LEVEL = 0;
@@ -61,9 +85,9 @@ const TILESET_CRS = L.extend({}, L.CRS.Simple, {
 let introShownThisSession = false;
 
 // Marker with glow
-const createGlowingIcon = (color = '#FFD700', isHovered = false) => (
+const createGlowingIcon = (color = '#FFD700', typeId = 'generic', isHovered = false) => (
   L.divIcon({
-    className: 'custom-marker',
+    className: `custom-marker custom-marker--${typeId}`,
     html: `
       <div class="marker-pin ${isHovered ? 'marker-hover' : ''}" 
            style="--glow-color: ${color}">
@@ -228,7 +252,7 @@ function LocationMarker({
     <Marker
       position={[location.lat, location.lng]}
       draggable={isEditorMode}
-      icon={createGlowingIcon(location.glowColor, isHovered || isSelected)}
+      icon={createGlowingIcon(location.glowColor, location.type, isHovered || isSelected)}
       eventHandlers={{
         mouseover: () => setIsHovered(true),
         mouseout: () => setIsHovered(false),
@@ -253,7 +277,7 @@ function LocationMarker({
 
 function InteractiveMap({ isEditorMode = false }) {
   const { role, token } = useAuth();
-  const initialLocations = useMemo(() => getFallbackLocations(), []);
+  const initialLocations = useMemo(() => normalizeLocations(getFallbackLocations()), []);
   const [locations, setLocations] = useState(initialLocations);
   const [selectedLocationId, setSelectedLocationId] = useState(null);
   const [editorSelection, setEditorSelection] = useState(null);
@@ -281,7 +305,7 @@ function InteractiveMap({ isEditorMode = false }) {
         if (!response.ok) {
           throw new Error(data.error || 'Failed to load locations.');
         }
-        const nextLocations = Array.isArray(data.locations) ? data.locations : [];
+        const nextLocations = Array.isArray(data.locations) ? normalizeLocations(data.locations) : initialLocations;
         if (isMounted) {
           setLocations(nextLocations);
           lastSavedSnapshotRef.current = JSON.stringify(nextLocations);
@@ -290,7 +314,7 @@ function InteractiveMap({ isEditorMode = false }) {
       } catch (error) {
         console.error('Unable to load locations', error);
         if (isMounted) {
-          const fallback = getFallbackLocations();
+          const fallback = normalizeLocations(getFallbackLocations());
           setLocations(fallback);
           lastSavedSnapshotRef.current = JSON.stringify(fallback);
           skipNextAutoSaveRef.current = true;
@@ -334,23 +358,22 @@ function InteractiveMap({ isEditorMode = false }) {
 
   const handlePlaceMarker = (latlng, markerType) => {
     if (!markerType) return;
-    const newLocation = (() => {
-      const nextId =
-        locations.reduce(
-          (maxId, location) => (typeof location.id === 'number' ? Math.max(maxId, location.id) : maxId),
-          0
-        ) + 1;
-      return {
-        id: nextId,
-        name: `New ${markerType.label}`,
-        type: markerType.label,
-        description: '',
-        lore: '',
-        lat: latlng.lat,
-        lng: latlng.lng,
-        glowColor: markerType.glowColor,
-      };
-    })();
+    const typeConfig = getTypeConfig(markerType.id);
+    const nextId =
+      locations.reduce(
+        (maxId, location) => (typeof location.id === 'number' ? Math.max(maxId, location.id) : maxId),
+        0
+      ) + 1;
+    const newLocation = normalizeLocationEntry({
+      id: nextId,
+      name: `New ${markerType.label}`,
+      type: typeConfig.id,
+      description: '',
+      lore: '',
+      lat: latlng.lat,
+      lng: latlng.lng,
+      glowColor: typeConfig.glowColor,
+    });
     setLocations((prev) => [...prev, newLocation]);
     setSelectedLocationId(null);
     setEditorSelection({
@@ -383,16 +406,17 @@ function InteractiveMap({ isEditorMode = false }) {
       if (!Array.isArray(parsed)) {
         throw new Error('JSON must be an array of locations.');
       }
-      const normalized = parsed.map((entry, index) => ({
+      const parsedLocations = parsed.map((entry, index) => ({
         id: typeof entry.id === 'number' ? entry.id : index + 1,
         name: entry.name ?? `Location ${index + 1}`,
-        type: entry.type ?? 'Unknown',
+        type: entry.type ?? 'generic',
         description: entry.description ?? '',
         lore: entry.lore ?? '',
         lat: typeof entry.lat === 'number' ? entry.lat : 0,
         lng: typeof entry.lng === 'number' ? entry.lng : 0,
-        glowColor: entry.glowColor ?? '#FFD700',
+        glowColor: entry.glowColor,
       }));
+      const normalized = normalizeLocations(parsedLocations);
       setLocations(normalized);
       skipNextAutoSaveRef.current = true;
       setSelectedLocationId(null);
@@ -424,8 +448,9 @@ function InteractiveMap({ isEditorMode = false }) {
           throw new Error(data.error || 'Failed to save locations.');
         }
         skipNextAutoSaveRef.current = true;
-        setLocations(data.locations);
-        lastSavedSnapshotRef.current = JSON.stringify(data.locations);
+        const normalized = normalizeLocations(data.locations);
+        setLocations(normalized);
+        lastSavedSnapshotRef.current = JSON.stringify(normalized);
         setSaveWarning('');
       } catch (error) {
         console.error('Unable to save locations', error);
@@ -521,7 +546,9 @@ function InteractiveMap({ isEditorMode = false }) {
     if (!editorSelection) return;
     setLocations((prev) =>
       prev.map((location) =>
-        location.id === editorSelection.id ? { ...location, ...editorSelection.draft } : location
+        location.id === editorSelection.id
+          ? normalizeLocationEntry({ ...location, ...editorSelection.draft })
+          : location
       )
     );
     setEditorSelection(null);
@@ -532,6 +559,20 @@ function InteractiveMap({ isEditorMode = false }) {
 
   const handleEditorCancel = () => {
     setEditorSelection(null);
+  };
+
+  const handleDeleteLocation = () => {
+    if (!editorSelection) return;
+    if (!canAutoSave) {
+      setSaveWarning('Only approved editors can save changes to the shared map.');
+      return;
+    }
+    const confirmed = typeof window === 'undefined' ? true : window.confirm('Are you sure you want to delete this location?');
+    if (!confirmed) return;
+    const targetId = editorSelection.id;
+    setLocations((prev) => prev.filter((location) => location.id !== targetId));
+    setEditorSelection(null);
+    setSelectedLocationId((prevId) => (prevId === targetId ? null : prevId));
   };
 
   useEffect(() => {
@@ -643,6 +684,9 @@ function InteractiveMap({ isEditorMode = false }) {
           />
         ))}
       </MapContainer>
+      {/* TODO: Hook in a future parallax/3D heightmap layer here (e.g. using WebGL or layered canvases). */}
+      <div className="map-vignette" aria-hidden="true" />
+      <div className="map-clouds" aria-hidden="true" />
       <EditorToolbox
         isEditorMode={isEditorMode}
         selectedTypeId={activePlacementTypeId}
@@ -669,6 +713,8 @@ function InteractiveMap({ isEditorMode = false }) {
           onCancel={handleEditorCancel}
           canAutoSave={canAutoSave}
           saveWarning={saveWarning}
+          canDelete={canAutoSave}
+          onDelete={handleDeleteLocation}
         />
       )}
       {isIntroVisible && (
