@@ -3,6 +3,7 @@ import cors from 'cors';
 import authRoutes from './auth.js';
 import adminRoutes from './admin.js';
 import locationsRoutes from './locations.js';
+import regionsRoutes from './regions.js';
 import { ensureDefaultAdmin } from './utils.js';
 
 const app = express();
@@ -22,6 +23,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/locations', locationsRoutes);
+app.use('/api/regions', regionsRoutes);
 
 await ensureDefaultAdmin();
 

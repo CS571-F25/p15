@@ -69,25 +69,36 @@ html, body, #root {
   filter: saturate(1.05) contrast(1.05) brightness(0.94);
 }
 
+.map-container-wrapper {
+  position: relative;
+  height: calc(100vh - var(--header-height));
+}
+
 .map-wrapper--locked .leaflet-map {
   pointer-events: none;
   filter: grayscale(0.15) brightness(0.8);
 }
 
-.map-vignette,
-.map-clouds {
+.map-layer {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 5;
 }
 
-.map-vignette {
+.map-layer--vignette {
   box-shadow: inset 0 0 180px rgba(5, 5, 15, 0.85);
   mix-blend-mode: multiply;
 }
 
-.map-clouds {
+.map-layer--fog {
+  background-image: url('/fog.png'), radial-gradient(circle, rgba(255, 255, 255, 0.08), transparent 65%);
+  background-size: 800px auto;
+  animation: driftFog 120s linear infinite;
+  opacity: 0.08;
+}
+
+.map-layer--clouds {
   background-image: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 55%),
     radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.05), transparent 60%);
   opacity: 0.25;
@@ -95,12 +106,30 @@ html, body, #root {
   mix-blend-mode: screen;
 }
 
+.map-layer--heatmap,
+.map-layer--regions,
+.map-layer--parallax {
+  z-index: 4;
+}
+
+.map-layer--regions {
+  pointer-events: none;
+}
 @keyframes driftClouds {
   from {
     transform: translateX(0);
   }
   to {
     transform: translateX(-200px);
+  }
+}
+
+@keyframes driftFog {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(150px);
   }
 }
 
@@ -118,6 +147,28 @@ html, body, #root {
   background: var(--glow-color, #FFD700);
   transition: all 0.3s ease;
   cursor: pointer;
+}
+
+.custom-marker__wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-marker__wrapper.is-hovered {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.custom-marker--selected .custom-marker__wrapper {
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+}
+
+.custom-marker__image {
+  display: block;
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.45));
 }
 
 .marker-pin::after {
@@ -441,4 +492,99 @@ html, body, #root {
   margin: 0;
   font-size: 0.8rem;
   color: #f87171;
+}
+
+.marker-palette {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  width: 280px;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(13, 19, 35, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  backdrop-filter: blur(8px);
+}
+
+.marker-palette__header h3 {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.marker-palette__header p {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.marker-palette__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.marker-palette__item {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(17, 24, 39, 0.7);
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.marker-palette__item img {
+  width: 36px;
+  height: 36px;
+}
+
+.marker-palette__item--active {
+  border-color: #ffd700;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.35);
+  transform: translateY(-2px);
+}
+
+.marker-palette__item span {
+  font-size: 0.75rem;
+  text-align: center;
+  line-height: 1;
+}
+
+.region-panel {
+  position: absolute;
+  left: 1.5rem;
+  bottom: 1.5rem;
+  width: 260px;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: rgba(12, 18, 30, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  z-index: 1000;
+}
+.assign-region-button {
+  position: absolute;
+  left: 1.5rem;
+  bottom: 6rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(12, 18, 30, 0.9);
+  color: #f8fafc;
+  cursor: pointer;
+  z-index: 1000;
 }

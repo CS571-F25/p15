@@ -1,9 +1,10 @@
 import React from 'react';
+import { useLocationData } from '../../context/LocationDataContext';
+import { useRegions } from '../../context/RegionDataContext';
 
 function EditorInfoPanel({
   isOpen,
   draft,
-  markerName,
   onFieldChange,
   onSave,
   onCancel,
@@ -12,6 +13,13 @@ function EditorInfoPanel({
   canDelete = false,
   onDelete,
 }) {
+  const { locations, selectedLocationId } = useLocationData();
+  const currentLocation = locations.find((location) => location.id === selectedLocationId);
+  const markerName = currentLocation?.name ?? 'Unknown Location';
+  const { regions } = useRegions();
+  const regionName = currentLocation?.regionId
+    ? regions.find((region) => region.id === currentLocation.regionId)?.name
+    : null;
   if (!isOpen || !draft) return null;
 
   const handleSubmit = (event) => {
@@ -36,9 +44,12 @@ function EditorInfoPanel({
           ×
         </button>
       </div>
-      {markerName && (
+      <p className="editor-info-panel__subtitle">
+        Editing: {markerName}
+      </p>
+      {regionName && (
         <p className="editor-info-panel__subtitle">
-          Editing: {markerName}
+          Region: <strong>{regionName}</strong>
         </p>
       )}
       <form className="editor-info-panel__form" onSubmit={handleSubmit}>
