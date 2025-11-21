@@ -1,5 +1,9 @@
 import React from 'react';
 import { useRegions } from '../../context/RegionDataContext';
+import {
+  DEFAULT_REGION_CATEGORY,
+  REGION_CATEGORIES,
+} from '../../constants/regionConstants';
 
 function RegionInfoPanel({
   isOpen,
@@ -38,6 +42,28 @@ function RegionInfoPanel({
         <label className="editor-info-panel__field">
           <span>Fill Color</span>
           <input type="color" value={region.color || '#f97316'} onChange={handleChange('color')} />
+        </label>
+        <label className="editor-info-panel__field">
+          <span>Category</span>
+          <select
+            value={region.category || DEFAULT_REGION_CATEGORY}
+            onChange={handleChange('category')}
+          >
+            {REGION_CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="editor-info-panel__field editor-info-panel__field--inline">
+          <span>Label</span>
+          <input
+            type="checkbox"
+            checked={region.labelEnabled !== false}
+            onChange={(event) => onFieldChange('labelEnabled', event.target.checked)}
+          />
+          <small>Show region title on map</small>
         </label>
         <label className="editor-info-panel__field">
           <span>Opacity</span>

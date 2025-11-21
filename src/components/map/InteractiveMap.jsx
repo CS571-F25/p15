@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvent } from 'rea
 import SidePanel from '../UI/SidePanel';
 import IntroOverlay from '../IntroOverlay';
 import EditorInfoPanel from './EditorInfoPanel';
+import MapFiltersPanel from './MapFiltersPanel';
 import { useAuth } from '../../context/AuthContext';
 import { useMapEffects } from '../../context/MapEffectsContext';
 import { useLocationData } from '../../context/LocationDataContext';
@@ -15,6 +16,11 @@ import ParallaxLayer from './layers/ParallaxLayer';
 import MarkerPalette from './MarkerPalette';
 import RegionInfoPanel from './RegionInfoPanel';
 import { useRegions } from '../../context/RegionDataContext';
+import {
+  DEFAULT_REGION_CATEGORY,
+  REGION_CATEGORIES,
+  normalizeRegionEntry,
+} from '../../constants/regionConstants';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
@@ -51,6 +57,11 @@ const TYPE_CONFIG = MARKER_TYPES.reduce(
   { [GENERIC_MARKER_TYPE.id]: GENERIC_MARKER_TYPE }
 );
 
+const LOCATION_FILTER_OPTIONS = [
+  ...MARKER_TYPES.map((type) => ({ id: type.id, label: type.label })),
+  { id: GENERIC_MARKER_TYPE.id, label: GENERIC_MARKER_TYPE.label },
+];
+
 const DEFAULT_TYPE_ICON = {
   city: 'city-gold',
   town: 'town-oak',
@@ -81,6 +92,38 @@ const MARKER_ICON_OPTIONS = [
   { iconKey: 'camp-jungle', label: 'Jungle Camp', type: 'landmark' },
   { iconKey: 'academy-star', label: 'Star Academy', type: 'landmark' },
 ];
+
+const REGION_FILTER_OPTIONS = REGION_CATEGORIES.map((category) => ({
+  id: category,
+  label: category.charAt(0).toUpperCase() + category.slice(1),
+}));
+
+const createDefaultLocationFilters = () =>
+  LOCATION_FILTER_OPTIONS.reduce((acc, option) => {
+    acc[option.id] = true;
+    return acc;
+  }, {});
+
+const createDefaultRegionFilters = () =>
+  REGION_FILTER_OPTIONS.reduce((acc, option) => {
+    acc[option.id] = true;
+    return acc;
+  }, {});
+
+const normalizeTypeId = (value) => {
+  if (!value || typeof value !== 'string') return GENERIC_MARKER_TYPE.id;
+  return value.toLowerCase();
+};
+
+const normalizeCategoryId = (value) => {
+  if (!value || typeof value !== 'string') return DEFAULT_REGION_CATEGORY;
+  return value.toLowerCase();
+};
+
+const formatFilterLabel = (value = '') => {
+  if (!value) return 'Other';
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
 
 const getDefaultIconKey = (typeId) => DEFAULT_TYPE_ICON[typeId] || DEFAULT_TYPE_ICON.generic;
 
@@ -400,6 +443,11 @@ function InteractiveMap({ isEditorMode = false }) {
   const [mapZoom, setMapZoom] = useState(2);
   const [isRegionMode, setIsRegionMode] = useState(false);
   const [regionDraftPoints, setRegionDraftPoints] = useState([]);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [showLocationsLayer, setShowLocationsLayer] = useState(true);
+  const [showRegionsLayer, setShowRegionsLayer] = useState(true);
+  const [locationFilters, setLocationFilters] = useState(() => createDefaultLocationFilters());
+  const [regionFilters, setRegionFilters] = useState(() => createDefaultRegionFilters());
   const saveTimeoutRef = useRef(null);
   const lastSavedSnapshotRef = useRef('[]');
   const skipNextAutoSaveRef = useRef(false);
@@ -412,6 +460,43 @@ function InteractiveMap({ isEditorMode = false }) {
   const serializedLocations = useMemo(() => JSON.stringify(locations), [locations]);
   const serializedRegions = useMemo(() => JSON.stringify(regions), [regions]);
   const canAutoSave = role === 'editor' || role === 'admin';
+  const locationFilterOptions = useMemo(() => {
+    const base = [...LOCATION_FILTER_OPTIONS];
+    Object.keys(locationFilters).forEach((key) => {
+      if (!base.some((option) => option.id === key)) {
+        base.push({ id: key, label: formatFilterLabel(key) });
+      }
+    });
+    return base;
+  }, [locationFilters]);
+  const regionFilterOptions = useMemo(() => {
+    const base = [...REGION_FILTER_OPTIONS];
+    Object.keys(regionFilters).forEach((key) => {
+      if (!base.some((option) => option.id === key)) {
+        base.push({ id: key, label: formatFilterLabel(key) });
+      }
+    });
+    return base;
+  }, [regionFilters]);
+  const filteredLocations = useMemo(() => {
+    if (!showLocationsLayer) return [];
+    return locations.filter((location) => {
+      const typeId = normalizeTypeId(location.type);
+      const flag = locationFilters[typeId];
+      return flag !== false;
+    });
+  }, [locations, showLocationsLayer, locationFilters]);
+  const filteredRegions = useMemo(() => {
+    if (!showRegionsLayer && !isRegionMode) return [];
+    return regions.filter((region) => {
+      if (isRegionMode && region.id === activeRegionId) return true;
+      if (!showRegionsLayer) return false;
+      const categoryId = normalizeCategoryId(region.category);
+      const flag = regionFilters[categoryId];
+      return flag !== false;
+    });
+  }, [regions, showRegionsLayer, regionFilters, isRegionMode, activeRegionId]);
+  const regionLabelsEnabled = filteredRegions.some((region) => region.labelEnabled !== false);
 
   useEffect(() => {
     let isMounted = true;
@@ -456,7 +541,7 @@ function InteractiveMap({ isEditorMode = false }) {
           throw new Error(data.error || 'Failed to load regions.');
         }
         if (isMounted) {
-          const normalized = Array.isArray(data.regions) ? data.regions : [];
+          const normalized = Array.isArray(data.regions) ? data.regions.map(normalizeRegionEntry) : [];
           setRegions(normalized);
           lastRegionSnapshotRef.current = JSON.stringify(normalized);
         }
@@ -473,6 +558,52 @@ function InteractiveMap({ isEditorMode = false }) {
       isMounted = false;
     };
   }, [setRegions]);
+
+  useEffect(() => {
+    setLocationFilters((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      locations.forEach((location) => {
+        const typeId = normalizeTypeId(location.type);
+        if (!(typeId in next)) {
+          next[typeId] = true;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [locations]);
+
+  useEffect(() => {
+    setRegionFilters((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      regions.forEach((region) => {
+        const categoryId = normalizeCategoryId(region.category);
+        if (!(categoryId in next)) {
+          next[categoryId] = true;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [regions]);
+
+  const handleToggleFilterPanel = () => setIsFilterPanelOpen((prev) => !prev);
+
+  const handleToggleLocationsLayer = () => setShowLocationsLayer((prev) => !prev);
+
+  const handleToggleRegionsLayer = () => setShowRegionsLayer((prev) => !prev);
+
+  const handleLocationFilterChange = useCallback((typeId, enabled) => {
+    const normalized = normalizeTypeId(typeId);
+    setLocationFilters((prev) => ({ ...prev, [normalized]: enabled }));
+  }, []);
+
+  const handleRegionFilterChange = useCallback((categoryId, enabled) => {
+    const normalized = normalizeCategoryId(categoryId);
+    setRegionFilters((prev) => ({ ...prev, [normalized]: enabled }));
+  }, []);
 
   const handleLocationClick = (location) => {
     selectLocation(location.id);
@@ -503,18 +634,46 @@ function InteractiveMap({ isEditorMode = false }) {
     setRegionDraftPoints((prev) => [...prev, [latlng.lng, latlng.lat]]);
   };
 
+  const focusRegionOnMap = (regionId) => {
+    if (!mapInstance) return;
+    const region = regions.find((entry) => entry.id === regionId);
+    if (!region || !Array.isArray(region.points) || !region.points.length) return;
+    const latLngs = region.points.map(([x, y]) => L.latLng(y, x));
+    mapInstance.fitBounds(L.latLngBounds(latLngs).pad(0.2));
+  };
+
+  const updateRegionField = (regionId, field, value) => {
+    setRegions((prev) =>
+      prev.map((region) =>
+        region.id === regionId
+          ? {
+              ...region,
+              [field]:
+                field === 'opacity'
+                  ? Math.min(Math.max(Number(value) || 0, 0), 1)
+                  : field === 'labelEnabled'
+                  ? Boolean(value)
+                  : value,
+            }
+          : region
+      )
+    );
+  };
+
   const handleRegionFinish = () => {
     setRegionDraftPoints((prevPoints) => {
       if (prevPoints.length < 3) return prevPoints;
       const regionId = crypto.randomUUID ? crypto.randomUUID() : `region-${Date.now()}`;
-      const newRegion = {
-        id: regionId,
-        name: 'New Region',
-        color: '#f97316',
-        borderColor: '#ea580c',
-        opacity: 0.3,
-        points: prevPoints.map(([x, y]) => [x, y]),
-      };
+    const newRegion = {
+      id: regionId,
+      name: 'New Region',
+      color: '#f97316',
+      borderColor: '#ea580c',
+      opacity: 0.3,
+      category: DEFAULT_REGION_CATEGORY,
+      labelEnabled: true,
+      points: prevPoints.map(([x, y]) => [x, y]),
+    };
       setRegions((existing) => [...existing, newRegion]);
       selectRegion(regionId);
       return [];
@@ -550,29 +709,19 @@ function InteractiveMap({ isEditorMode = false }) {
 
   const handleRegionFieldChange = (field, value) => {
     if (!activeRegionId) return;
-    const normalizedValue =
-      field === 'opacity' ? Math.min(Math.max(Number(value) || 0, 0), 1) : value;
-    setRegions((prev) =>
-      prev.map((region) =>
-        region.id === activeRegionId
-          ? {
-              ...region,
-              [field]: normalizedValue,
-            }
-          : region
-      )
-    );
+    updateRegionField(activeRegionId, field, value);
   };
 
-  const handleDeleteRegion = () => {
-    if (!activeRegionId) return;
+  const handleDeleteRegion = (targetId = activeRegionId) => {
+    if (!targetId) return;
     if (!window.confirm('Delete this region?')) return;
-    setRegions((prev) => prev.filter((region) => region.id !== activeRegionId));
-    selectRegion(null);
+    setRegions((prev) => prev.filter((region) => region.id !== targetId));
+    if (activeRegionId === targetId) {
+      selectRegion(null);
+    }
   };
 
   const handleRegionClick = (regionId) => {
-    if (!isRegionMode) return;
     selectRegion(regionId);
     setRegionDraftPoints([]);
   };
@@ -719,7 +868,9 @@ function InteractiveMap({ isEditorMode = false }) {
         if (!response.ok) {
           throw new Error(data.error || 'Failed to save regions.');
         }
-        const normalized = Array.isArray(data.regions) ? data.regions : [];
+        const normalized = Array.isArray(data.regions)
+          ? data.regions.map(normalizeRegionEntry)
+          : [];
         setRegions(normalized);
         lastRegionSnapshotRef.current = JSON.stringify(normalized);
       } catch (error) {
@@ -1013,7 +1164,7 @@ function InteractiveMap({ isEditorMode = false }) {
         />
         <KeyboardControls />
         <ZoomControls />
-        {locations.map((location) => (
+        {filteredLocations.map((location) => (
           <LocationMarker
             key={location.id}
             location={location}
@@ -1024,24 +1175,24 @@ function InteractiveMap({ isEditorMode = false }) {
             zoomLevel={mapZoom}
           />
         ))}
-        </MapContainer>
+        <RegionLayer
+          regions={filteredRegions}
+          draftPoints={regionDraftPoints}
+          selectedRegionId={activeRegionId}
+          onRegionClick={handleRegionClick}
+          interactionEnabled={isRegionMode}
+          showLabels={regionLabelsEnabled}
+          zoomLevel={mapZoom}
+        />
+      </MapContainer>
         <VignetteLayer enabled={vignetteEnabled} />
         <FogLayer enabled={fogEnabled} map={mapInstance} />
         <CloudLayer enabled={cloudsEnabled} map={mapInstance} />
         <HeatmapLayer
           enabled={heatmapMode !== 'none'}
           map={mapInstance}
-          locations={locations}
+          locations={filteredLocations}
           heatmapMode={heatmapMode}
-        />
-        <RegionLayer
-          enabled
-          regions={regions}
-          map={mapInstance}
-          draftPoints={regionDraftPoints}
-          selectedRegionId={activeRegionId}
-          onRegionClick={handleRegionClick}
-          interactionEnabled={isRegionMode}
         />
         <ParallaxLayer enabled />
       </div>
@@ -1051,18 +1202,38 @@ function InteractiveMap({ isEditorMode = false }) {
         selectedOption={selectedPaletteItem}
         onSelect={handleSelectPaletteItem}
       />
-      {isEditorMode && canAutoSave && (
+      <MapFiltersPanel
+        isOpen={isFilterPanelOpen}
+        onToggleOpen={handleToggleFilterPanel}
+        showLocations={showLocationsLayer}
+        onToggleLocations={handleToggleLocationsLayer}
+        locationOptions={locationFilterOptions}
+        locationFilters={locationFilters}
+        onToggleLocationFilter={handleLocationFilterChange}
+        showRegions={showRegionsLayer}
+        onToggleRegions={handleToggleRegionsLayer}
+        regionOptions={regionFilterOptions}
+        regionFilters={regionFilters}
+        onToggleRegionFilter={handleRegionFilterChange}
+      />
+      {isEditorMode && (
         <div className="region-panel">
-          <button
-            type="button"
-            className={`toolbox-button ${isRegionMode ? 'toolbox-button--active' : ''}`}
-            onClick={handleToggleRegionMode}
-          >
-            {isRegionMode ? 'Exit Region Mode' : 'Region Mode'}
-          </button>
+          <div className="region-panel__header">
+            <button
+              type="button"
+              disabled={!canAutoSave}
+              className={`toolbox-button ${isRegionMode ? 'toolbox-button--active' : ''}`}
+              onClick={handleToggleRegionMode}
+            >
+              {isRegionMode ? 'Exit Region Mode' : 'Region Mode'}
+            </button>
+            {!canAutoSave && (
+              <p className="editor-warning">Only editors or admins can edit regions.</p>
+            )}
+          </div>
           {isRegionMode && (
             <>
-              <p className="editor-toolbox__hint">Points: {regionDraftPoints.length}</p>
+              <p className="editor-toolbox__hint">Draft points: {regionDraftPoints.length}</p>
               <div className="editor-toolbox__data-actions">
                 <button
                   type="button"
@@ -1072,12 +1243,89 @@ function InteractiveMap({ isEditorMode = false }) {
                 >
                   Finish Region
                 </button>
-                <button type="button" className="toolbox-button toolbox-button--ghost" onClick={handleRegionDraftReset}>
+                <button
+                  type="button"
+                  className="toolbox-button toolbox-button--ghost"
+                  onClick={handleRegionDraftReset}
+                >
                   Clear Draft
                 </button>
               </div>
             </>
           )}
+          <div className="region-list">
+            {regions.length === 0 && <p className="region-list__empty">No regions yet.</p>}
+            {regions.map((region) => (
+              <div
+                key={region.id}
+                className={`region-item ${activeRegionId === region.id ? 'region-item--active' : ''}`}
+              >
+                <button
+                  type="button"
+                  className="region-item__select"
+                  onClick={() => selectRegion(region.id)}
+                >
+                  <span
+                    className="region-item__color"
+                    style={{ backgroundColor: region.color || '#f97316' }}
+                  />
+                  {region.name}
+                </button>
+                <div className="region-item__controls">
+                  <label>
+                    Color
+                    <input
+                      type="color"
+                      value={region.color || '#f97316'}
+                      onChange={(event) => updateRegionField(region.id, 'color', event.target.value)}
+                    />
+                  </label>
+                  <label className="region-item__toggle">
+                    <input
+                      type="checkbox"
+                      checked={region.labelEnabled !== false}
+                      onChange={(event) =>
+                        updateRegionField(region.id, 'labelEnabled', event.target.checked)
+                      }
+                    />
+                    Show label
+                  </label>
+                  <label>
+                    Category
+                    <select
+                      value={region.category || DEFAULT_REGION_CATEGORY}
+                      onChange={(event) => updateRegionField(region.id, 'category', event.target.value)}
+                    >
+                      {REGION_CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Opacity
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={region.opacity ?? 0.3}
+                      onChange={(event) => updateRegionField(region.id, 'opacity', event.target.value)}
+                    />
+                  </label>
+                  <div className="region-item__actions">
+                    <button type="button" onClick={() => focusRegionOnMap(region.id)}>
+                      Focus
+                    </button>
+                    <button type="button" onClick={() => handleDeleteRegion(region.id)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <EditorToolbox
@@ -1118,7 +1366,7 @@ function InteractiveMap({ isEditorMode = false }) {
           Assign location to {selectedRegion?.name || 'selected region'}
         </button>
       )}
-      {isEditorMode && isRegionMode && (
+      {isEditorMode && activeRegionId && (
         <RegionInfoPanel
           isOpen={Boolean(activeRegionId)}
           onFieldChange={handleRegionFieldChange}

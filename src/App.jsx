@@ -4,7 +4,8 @@ import AlmanacPage from './components/pages/AlmanacPage';
 import CharactersPage from './components/pages/CharactersPage';
 import WorldRaces from './components/pages/WorldRaces';
 import AdminDashboard from './components/pages/AdminDashboard';
-import LocationsPage from './components/pages/LocationsPage';
+import LocationsAtlasPage from './components/pages/LocationsAtlasPage';
+import LocationsEditorPage from './components/pages/LocationsEditorPage';
 import Header from './components/UI/Header';
 import PageLayout from './components/UI/PageLayout';
 import './components/UI/PageUI.css';
@@ -37,8 +38,10 @@ function App() {
         {/* 3. Locations */}
         <Route path="/locations" element={<PageLayout title="Locations" tabs={[
           { to: "", label: "Atlas", end: true },
+          { to: "editor", label: "Editor" },
         ]} />}>
-          <Route index element={<LocationsPage />} />
+          <Route index element={<LocationsAtlasPage />} />
+          <Route path="editor" element={<LocationsEditorPage />} />
         </Route>
 
         {/* 4. People */}

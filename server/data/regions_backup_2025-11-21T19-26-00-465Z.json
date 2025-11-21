@@ -5,7 +5,7 @@
       "name": "DragonBorn",
       "color": "#304ddf",
       "borderColor": "#ea580c",
-      "opacity": 0.35,
+      "opacity": 0.3,
       "points": [
         [
           628.1970034596001,
@@ -191,8 +191,7 @@
           540.5002255789054,
           2476.460211422017
         ]
-      ],
-      "category": "kingdom"
+      ]
     }
   ]
 }
