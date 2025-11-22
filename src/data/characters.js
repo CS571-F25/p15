@@ -1,5 +1,15 @@
 // src/data/characters.js
 // Sample character data for D&D 5e party
+function randomColor() {
+  // Returns [r, g, b, a] 
+  const n = 8;
+  const r = Math.floor(Math.random()*n);
+  const g = Math.floor(Math.random()*n);
+  const b = Math.floor(Math.random()*n);
+  const a = Math.floor(Math.random()*n);
+  return [r, g, b, a];
+}
+
 const characters = [
   {
     id: 1,
@@ -188,4 +198,7 @@ const characters = [
   // Add more characters as desired
 ];
 
-export default characters;
+export default characters.map((char) => ({
+  ...char,
+  color: randomColor(),
+}));
