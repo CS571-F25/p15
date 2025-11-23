@@ -6,6 +6,12 @@ import WorldRaces from './components/pages/WorldRaces';
 import AdminDashboard from './components/pages/AdminDashboard';
 import LocationsAtlasPage from './components/pages/LocationsAtlasPage';
 import LocationsEditorPage from './components/pages/LocationsEditorPage';
+import AccountSettingsPage from './components/pages/AccountSettingsPage';
+import ProgressionPage from './components/pages/ProgressionPage';
+import LorePlaceholderPage from './components/pages/lore/LorePlaceholderPage';
+import PlayersPage from './components/pages/PlayersPage';
+import PlayerPublicPage from './components/pages/PlayerPublicPage';
+import DashboardPage from './components/pages/DashboardPage';
 import Header from './components/UI/Header';
 import PageLayout from './components/UI/PageLayout';
 import './components/UI/PageUI.css';
@@ -78,6 +84,22 @@ function App() {
               <Route path="logbook" element={<Placeholder title="Logbook" />} />
               <Route path="inventory" element={<Placeholder title="Inventory" />} />
             </Route>
+
+            {/* Progression */}
+            <Route path="/progress" element={<ProgressionPage />} />
+
+            {/* Hidden Lore (PLACEHOLDER) */}
+            <Route path="/lore/aurora-ember" element={<LorePlaceholderPage secretId="aurora-ember" />} />
+            <Route path="/lore/silent-archive" element={<LorePlaceholderPage secretId="silent-archive" />} />
+            <Route path="/lore/gilded-horizon" element={<LorePlaceholderPage secretId="gilded-horizon" />} />
+
+            {/* Account */}
+            <Route path="/account" element={<AccountSettingsPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+
+            {/* Players */}
+            <Route path="/players" element={<PlayersPage />} />
+            <Route path="/players/:id" element={<PlayerPublicPage />} />
 
             {/* Admin */}
             <Route path="/admin" element={<AdminDashboard />} />

@@ -3,7 +3,7 @@ import '../UI/PageUI.css';
 
 const formatList = (items) => (items && items.length ? items.join(', ') : '—');
 
-export default function CharacterCard({ character }) {
+function CharacterCard({ character, onToggleFavorite, isFavorite, onFeature, isFeatured }) {
   return (
     <>
       <header className="card-header">
@@ -16,19 +16,43 @@ export default function CharacterCard({ character }) {
             <span className="card-divider">|</span> {character.background}
           </div>
         </div>
-        <div className="card-vitals">
-          <div>
-            <span>HP</span>
-            <strong>{character.hp}</strong>
+        <div className="card-actions">
+          <div className="card-vitals">
+            <div>
+              <span>HP</span>
+              <strong>{character.hp}</strong>
+            </div>
+            <div>
+              <span>AC</span>
+              <strong>{character.ac}</strong>
+            </div>
+            <div>
+              <span>Speed</span>
+              <strong>{character.speed} ft</strong>
+            </div>
           </div>
-          <div>
-            <span>AC</span>
-            <strong>{character.ac}</strong>
-          </div>
-          <div>
-            <span>Speed</span>
-            <strong>{character.speed} ft</strong>
-          </div>
+          {(onToggleFavorite || onFeature) && (
+            <div className="card-fav">
+              {onToggleFavorite && (
+                <button
+                  type="button"
+                  className={`fav-btn ${isFavorite ? 'fav-btn--active' : ''}`}
+                  onClick={onToggleFavorite}
+                >
+                  {isFavorite ? '★ Favorite' : '☆ Favorite'}
+                </button>
+              )}
+              {onFeature && (
+                <button
+                  type="button"
+                  className={`feature-btn ${isFeatured ? 'feature-btn--active' : ''}`}
+                  onClick={onFeature}
+                >
+                  {isFeatured ? 'Featured' : 'Set Featured'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -108,3 +132,5 @@ export default function CharacterCard({ character }) {
     </>
   );
 }
+
+export default CharacterCard;

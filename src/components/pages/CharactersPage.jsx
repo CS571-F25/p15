@@ -1,144 +1,539 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import characters from '../../data/characters';
 import '../UI/PageUI.css';
 import ShaderBackgroundDualCrossfade from '../visuals/ShaderBackgroundDualCrossfade';
 import CharacterCard from '../cards/CharacterCard';
+import { useAuth } from '../../context/AuthContext';
 
-// Clamp utility
-const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const ALL_TABS = ['all', 'yours', 'inventory', 'items', 'notes'];
+const INNER_TABS = ['sheet', 'inventory', 'notes', 'spells'];
 
-// Card class for carousel
-const getCardClass = (index, activeIndex) => {
-  if (index === activeIndex) return 'card card-active';
-  if (index === activeIndex - 1) return 'card card-left';
-  if (index === activeIndex + 1) return 'card card-right';
-  return 'card card-hidden';
-};
+const defaultVisibleIds = characters.map((c) => c.id);
+
+function loadLocal(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveLocal(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* ignore */
+  }
+}
 
 export default function CharactersPage() {
+  const { user, role, token } = useAuth();
+  const [activeTab, setActiveTab] = useState('all');
+  const [visibleIds, setVisibleIds] = useState(defaultVisibleIds);
+  const [favorites, setFavorites] = useState([]);
+  const [featuredCharacter, setFeaturedCharacter] = useState(null);
   const [vanished, setVanished] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [innerTabs, setInnerTabs] = useState({});
 
   const [currentColor, setCurrentColor] = useState(characters[0].color);
   const [targetColor, setTargetColor] = useState(characters[0].color);
   const [fade, setFade] = useState(0);
-  const animationRef = useRef();
+  const animationRef = useRef(null);
 
-  const [activeIndex, setActiveIndex] = useState(0);
+  const storageKey = (suffix) => `${user?.id || 'anon'}-${suffix}`;
+  const [inventory, setInventory] = useState([]);
+  const [items, setItems] = useState([]);
+  const [notes, setNotes] = useState('');
+  const [charNotes, setCharNotes] = useState({});
+  const [charInventory, setCharInventory] = useState({});
 
-  // Utility to start fade to new color, always from visual color AT THAT MOMENT
-  function startColorFade(newColor) {
+  useEffect(() => {
+    setInventory(loadLocal(storageKey('inventory'), []));
+    setItems(loadLocal(storageKey('items'), []));
+    setNotes(loadLocal(storageKey('notes'), ''));
+    setCharNotes(loadLocal(storageKey('char-notes'), {}));
+    setCharInventory(loadLocal(storageKey('char-inventory'), {}));
+    setInnerTabs({});
+  }, [user]);
+
+  useEffect(() => {
+    saveLocal(storageKey('inventory'), inventory);
+  }, [inventory, user]);
+
+  useEffect(() => {
+    saveLocal(storageKey('items'), items);
+  }, [items, user]);
+
+  useEffect(() => {
+    saveLocal(storageKey('notes'), notes);
+  }, [notes, user]);
+
+  useEffect(() => {
+    saveLocal(storageKey('char-notes'), charNotes);
+  }, [charNotes, user]);
+
+  useEffect(() => {
+    saveLocal(storageKey('char-inventory'), charInventory);
+  }, [charInventory, user]);
+
+  useEffect(() => {
+    const fetchVisible = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/characters/visible`);
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.visibleIds)) {
+          setVisibleIds(data.visibleIds);
+        }
+      } catch {
+        setVisibleIds(defaultVisibleIds);
+      }
+    };
+    fetchVisible();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserPrefs = async () => {
+      if (!token) {
+        setFavorites([]);
+        setFeaturedCharacter(null);
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE_URL}/characters/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setFavorites(Array.isArray(data.favorites) ? data.favorites : []);
+          setFeaturedCharacter(data.featuredCharacter ?? null);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    fetchUserPrefs();
+  }, [token]);
+
+  const visibleCharacters = useMemo(
+    () => characters.filter((c) => visibleIds.includes(c.id)),
+    [visibleIds]
+  );
+
+  const favoriteCharacters = useMemo(
+    () => visibleCharacters.filter((c) => favorites.includes(c.id)),
+    [favorites, visibleCharacters]
+  );
+
+  const featured = useMemo(
+    () => visibleCharacters.find((c) => c.id === featuredCharacter) || null,
+    [visibleCharacters, featuredCharacter]
+  );
+
+  const displayCharacters = activeTab === 'yours' ? favoriteCharacters : visibleCharacters;
+
+  useEffect(() => {
+    if (!displayCharacters.length) return;
+    setActiveIndex((prev) => Math.min(prev, displayCharacters.length - 1));
+  }, [displayCharacters.length]);
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === 'v' || event.key === 'V') {
+        setVanished((v) => !v);
+      } else if (event.key === 'ArrowLeft') {
+        setActiveIndex((prev) => Math.max(prev - 1, 0));
+      } else if (event.key === 'ArrowRight') {
+        setActiveIndex((prev) => Math.min(prev + 1, displayCharacters.length - 1));
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [displayCharacters.length]);
+
+  const startColorFade = (newColor) => {
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    // Interpolate from actual visible color if in progress
-    let start;
-    if (fade > 0 && fade < 1) {
-      start = [
-        currentColor[0] + (targetColor[0] - currentColor[0]) * fade,
-        currentColor[1] + (targetColor[1] - currentColor[1]) * fade,
-        currentColor[2] + (targetColor[2] - currentColor[2]) * fade,
-        currentColor[3] + (targetColor[3] - currentColor[3]) * fade,
-      ];
-    } else {
-      start = targetColor;
-    }
+    const start = targetColor;
     setCurrentColor(start);
     setTargetColor(newColor);
     setFade(0);
-
     let t0 = performance.now();
-    function stepFade(now) {
-      let f = Math.min(1, (now - t0) / 800); // 800ms fade
+    const step = (now) => {
+      const f = Math.min(1, (now - t0) / 800);
       setFade(f);
       if (f < 1) {
-        animationRef.current = requestAnimationFrame(stepFade);
+        animationRef.current = requestAnimationFrame(step);
       } else {
         setCurrentColor(newColor);
         setFade(0);
         animationRef.current = null;
       }
+    };
+    animationRef.current = requestAnimationFrame(step);
+  };
+
+  useEffect(() => {
+    if (!displayCharacters.length) return;
+    const color = displayCharacters[activeIndex]?.color || [0, 0, 0, 1];
+    startColorFade(color);
+  }, [activeIndex, displayCharacters]);
+
+  const handleToggleFavorite = async (id) => {
+    if (!token) return;
+    const isFav = favorites.includes(id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/characters/favorite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ characterId: id, favorite: !isFav }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFavorites(data.favorites || []);
+        setFeaturedCharacter(data.featuredCharacter ?? featuredCharacter);
+      }
+    } catch {
+      // ignore
     }
-    animationRef.current = requestAnimationFrame(stepFade);
-  }
+  };
 
-  // Update target color on activeIndex change
-  useEffect(() => {
-    startColorFade(characters[activeIndex].color);
-  }, [activeIndex]);
-
-  // Navigation handlers use callback to ensure correct activeIndex
-  const goPrev = useCallback(() => {
-    setActiveIndex(prev => clamp(prev - 1, 0, characters.length - 1));
-  }, []);
-
-  const goNext = useCallback(() => {
-    setActiveIndex(prev => clamp(prev + 1, 0, characters.length - 1));
-  }, []);
-
-  
-
-  // Arrow keys navigation
-  useEffect(() => {
-    const handleKey = (event) => {
-      if (event.key === 'ArrowLeft') {
-        goPrev();
-      } else if (event.key === 'ArrowRight') {
-        goNext();
+  const handleFeature = async (id) => {
+    if (!token) return;
+    const nextId = featuredCharacter === id ? null : id;
+    try {
+      const res = await fetch(`${API_BASE_URL}/characters/feature`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ characterId: nextId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFavorites(data.favorites || favorites);
+        setFeaturedCharacter(data.featuredCharacter ?? null);
       }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [goNext, goPrev]);
+    } catch {
+      // ignore
+    }
+  };
 
-  // Vanish tool: press 'v' to toggle
-  useEffect(() => {
-    const onKey = (event) => {
-      if (event.key === 'v' || event.key === 'V') {
-        setVanished((v) => !v);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  const handleVisibilityChange = async (id, checked) => {
+    if (role !== 'admin') return;
+    const nextSet = new Set(visibleIds);
+    if (checked) nextSet.add(id);
+    else nextSet.delete(id);
+    const nextList = Array.from(nextSet);
+    setVisibleIds(nextList);
+    try {
+      await fetch(`${API_BASE_URL}/characters/visible`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ visibleIds: nextList }),
+      });
+    } catch {
+      // ignore
+    }
+  };
+
+  const setInnerTab = (charId, tab) => {
+    setInnerTabs((prev) => ({ ...prev, [charId]: tab }));
+  };
+
+  const currentChar = displayCharacters[activeIndex];
+  const currentInnerTab = currentChar ? innerTabs[currentChar.id] || 'sheet' : 'sheet';
+
+  const currentInventory = (charInventory[currentChar?.id] || currentChar?.equipment || []).slice();
+  const currentNotes = charNotes[currentChar?.id] || currentChar?.notes || '';
+
+  const addInventoryItem = (value) => {
+    if (!currentChar || !value.trim()) return;
+    const next = [...currentInventory, value.trim()];
+    setCharInventory((prev) => ({ ...prev, [currentChar.id]: next }));
+  };
+
+  const updateNotes = (value) => {
+    if (!currentChar) return;
+    setCharNotes((prev) => ({ ...prev, [currentChar.id]: value }));
+  };
+
+  const renderInnerContent = () => {
+    if (!currentChar) return null;
+    switch (currentInnerTab) {
+      case 'inventory':
+        return (
+          <div className="list-panel">
+            <div className="list-panel__controls">
+              <input
+                type="text"
+                placeholder="Add item"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.target.value.trim()) {
+                    addInventoryItem(e.target.value);
+                    e.target.value = '';
+                  }
+                }}
+              />
+              <button type="button" onClick={() => setCharInventory((prev) => ({ ...prev, [currentChar.id]: [] }))}>
+                Clear
+              </button>
+            </div>
+            <ul className="simple-list">
+              {currentInventory.map((entry, idx) => (
+                <li key={`${entry}-${idx}`}>{entry}</li>
+              ))}
+            </ul>
+          </div>
+        );
+      case 'notes':
+        return (
+          <div className="list-panel">
+            <textarea
+              value={currentNotes}
+              onChange={(e) => updateNotes(e.target.value)}
+              rows={6}
+              placeholder="Session notes for this character..."
+            />
+          </div>
+        );
+      case 'spells':
+        return (
+          <div className="list-panel">
+            <h3>Spells</h3>
+            {currentChar.spells && currentChar.spells.length ? (
+              <ul className="simple-list">
+                {currentChar.spells.map((spell) => (
+                  <li key={spell}>{spell}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="account-muted">No spells recorded.</p>
+            )}
+          </div>
+        );
+      case 'sheet':
+      default:
+        return (
+          <CharacterCard
+            character={{
+              ...currentChar,
+              equipment: currentInventory.length ? currentInventory : currentChar.equipment,
+              notes: currentNotes || currentChar.notes,
+            }}
+            onToggleFavorite={token ? () => handleToggleFavorite(currentChar.id) : null}
+            isFavorite={favorites.includes(currentChar.id)}
+            onFeature={token ? () => handleFeature(currentChar.id) : null}
+            isFeatured={featuredCharacter === currentChar.id}
+          />
+        );
+    }
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'yours':
+      case 'all':
+        if (!displayCharacters.length) {
+          return <p className="characters-empty">No characters available.</p>;
+        }
+        return (
+          <div className="outer-carousel">
+            <button
+              type="button"
+              className="arrow-btn"
+              onClick={() => setActiveIndex((prev) => Math.max(prev - 1, 0))}
+              disabled={activeIndex === 0}
+            >
+              ‹
+            </button>
+            <div className="outer-frame">
+              <div className="outer-track" style={{ transform: `translateX(-${activeIndex * 100}%)` }}>
+                {displayCharacters.map((char) => (
+                  <div className="outer-slide" key={char.id}>
+                    <header className="slide-header">
+                      <div>
+                        <p className="account-card__eyebrow">Character</p>
+                        <h2>{char.name}</h2>
+                        <p className="account-muted">{char.race} · {char.class}</p>
+                      </div>
+                      <div className="slide-tags">
+                        {featuredCharacter === char.id && <span className="tag">Featured</span>}
+                        {favorites.includes(char.id) && <span className="tag">Favorite</span>}
+                      </div>
+                    </header>
+                    <div className="inner-tabs">
+                      {INNER_TABS.map((tab) => (
+                        <button
+                          key={tab}
+                          type="button"
+                          className={`tab-btn ${currentInnerTab === tab && currentChar?.id === char.id ? 'tab-btn--active' : ''}`}
+                          onClick={() => setInnerTab(char.id, tab)}
+                        >
+                          {tab === 'sheet' && 'Character Sheet'}
+                          {tab === 'inventory' && 'Inventory'}
+                          {tab === 'notes' && 'Notes'}
+                          {tab === 'spells' && 'Spell Sheet'}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="inner-content">{currentChar?.id === char.id ? renderInnerContent() : null}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button
+              type="button"
+              className="arrow-btn"
+              onClick={() => setActiveIndex((prev) => Math.min(prev + 1, displayCharacters.length - 1))}
+              disabled={activeIndex === displayCharacters.length - 1}
+            >
+              ›
+            </button>
+          </div>
+        );
+      case 'inventory':
+        return (
+          <div className="list-panel">
+            <h2>Inventory (personal)</h2>
+            <div className="list-panel__controls">
+              <input
+                type="text"
+                placeholder="Add item"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.target.value.trim()) {
+                    setInventory([...inventory, e.target.value.trim()]);
+                    e.target.value = '';
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setInventory([])}
+              >
+                Clear
+              </button>
+            </div>
+            <ul className="simple-list">
+              {inventory.map((entry, idx) => (
+                <li key={`${entry}-${idx}`}>{entry}</li>
+              ))}
+            </ul>
+          </div>
+        );
+      case 'items':
+        return (
+          <div className="list-panel">
+            <h2>Items</h2>
+            <div className="list-panel__controls">
+              <input
+                type="text"
+                placeholder="Add item"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.target.value.trim()) {
+                    setItems([...items, e.target.value.trim()]);
+                    e.target.value = '';
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setItems([])}
+              >
+                Clear
+              </button>
+            </div>
+            <ul className="simple-list">
+              {items.map((entry, idx) => (
+                <li key={`${entry}-${idx}`}>{entry}</li>
+              ))}
+            </ul>
+          </div>
+        );
+      case 'notes':
+        return (
+          <div className="list-panel">
+            <h2>Notes</h2>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Your notes..."
+              rows={6}
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="characters-page">
-      <ShaderBackgroundDualCrossfade
-        modA={currentColor}
-        modB={targetColor}
-        fade={fade}
-      />
+      <ShaderBackgroundDualCrossfade modA={currentColor} modB={targetColor} fade={fade} />
       {!vanished && (
         <>
-          <h1 className="page-title">Stars of Azterra</h1>
-          <div className="characters-wrapper">
-            <p className="nav-hint">Use the arrow keys or buttons to browse the codex</p>
-            <div className="carousel-controls">
+          <div className="characters-header">
+            <div>
+              <h1 className="page-title">Stars of Azterra</h1>
+              <p className="nav-hint">
+                Browse the roster with layered carousels. Visibility is controlled by admins.
+              </p>
+            </div>
+            {featured && (
+              <div className="featured-pill">
+                <span>Featured</span>
+                <strong>{featured.name}</strong>
+              </div>
+            )}
+          </div>
+
+          <div className="characters-tabs">
+            {ALL_TABS.map((tab) => (
               <button
-                className="arrow-btn arrow-left"
-                onClick={goPrev}
-                aria-label="Previous character"
-                disabled={activeIndex === 0}
+                key={tab}
+                type="button"
+                className={`tab-btn ${activeTab === tab ? 'tab-btn--active' : ''}`}
+                onClick={() => setActiveTab(tab)}
               >
-                ‹
+                {tab === 'all' && 'All Characters'}
+                {tab === 'yours' && 'Your Characters'}
+                {tab === 'inventory' && 'Inventory'}
+                {tab === 'items' && 'Items'}
+                {tab === 'notes' && 'Notes'}
               </button>
-              <div className="carousel-frame" role="region" aria-live="polite">
-                <div className="sun-overlay" aria-hidden="true" />
-                <div className="carousel-track">
-                  {characters.map((char, index) => (
-                    <div key={char.id} className={getCardClass(index, activeIndex)}>
-                      <CharacterCard character={char} />
-                    </div>
+            ))}
+          </div>
+
+          <div className="characters-content">
+            {renderTabContent()}
+            {role === 'admin' && (
+              <aside className="visibility-panel">
+                <h3>Visibility (Admin)</h3>
+                <p className="editor-warning">
+                  Select which characters are visible to players in All Characters.
+                </p>
+                <div className="visibility-list">
+                  {characters.map((char) => (
+                    <label key={char.id} className="visibility-row">
+                      <input
+                        type="checkbox"
+                        checked={visibleIds.includes(char.id)}
+                        onChange={(e) => handleVisibilityChange(char.id, e.target.checked)}
+                      />
+                      <span>{char.name}</span>
+                    </label>
                   ))}
                 </div>
-              </div>
-              <button
-                className="arrow-btn arrow-right"
-                onClick={goNext}
-                aria-label="Next character"
-                disabled={activeIndex === characters.length - 1}
-              >
-                ›
-              </button>
-            </div>
+              </aside>
+            )}
           </div>
         </>
       )}

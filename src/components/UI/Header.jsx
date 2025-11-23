@@ -73,6 +73,28 @@ const NAV_ICONS = {
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
+  ),
+  account: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="7" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+      <path d="M16 5.5a4 4 0 0 1 0 7" />
+    </svg>
+  ),
+  players: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="7" r="3" />
+      <circle cx="17" cy="7" r="3" />
+      <path d="M2 21a6 6 0 0 1 12 0" />
+      <path d="M12 21a6 6 0 0 1 10 0" />
+    </svg>
+  ),
+  progress: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M10 14 14 10" />
+      <path d="m12.5 7.5-1 5-5 1 10-3.5z" />
+    </svg>
   )
 };
 
@@ -83,18 +105,21 @@ const baseNavLinks = [
   { to: "/people", label: "People", icon: NAV_ICONS.people },
   { to: "/magic", label: "Magic & Lore", icon: NAV_ICONS.magic },
   { to: "/campaign", label: "Campaign", icon: NAV_ICONS.campaign },
+  { to: "/players", label: "Players", icon: NAV_ICONS.players },
+  { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
 ];
 
 export default function Header() {
   const location = useLocation();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const { user, role, login, logout } = useAuth();
+  const { user, role, login, googleLogin, logout } = useAuth();
 
   const navLinks = role === 'admin'
     ? [...baseNavLinks, { to: '/admin', label: 'Admin', icon: NAV_ICONS.admin }]
     : baseNavLinks;
 
   const handleLogin = (formData) => login(formData);
+  const handleGoogleLogin = (credential) => googleLogin(credential);
 
   return (
     <>
@@ -148,10 +173,20 @@ export default function Header() {
                   {NAV_ICONS.login}
                 </span>
                 <div className="azterra-sidebar__account-text">
-                  <span className="azterra-sidebar__account-name">{user.name || 'User'}</span>
+                  <span className="azterra-sidebar__account-name">{user.name || user.username || 'User'}</span>
                   <span className="azterra-sidebar__account-role">{role}</span>
                 </div>
               </div>
+              <Link
+                to="/account"
+                className="azterra-nav__link"
+                title="Account settings"
+              >
+                <span className="azterra-nav__icon text-[#ffd700]">
+                  {NAV_ICONS.account}
+                </span>
+                <span className="azterra-nav__label">Account</span>
+              </Link>
               <button
                 type="button"
                 className="azterra-nav__link azterra-nav__link--muted"
@@ -168,7 +203,12 @@ export default function Header() {
         </div>
       </aside>
 
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onSubmit={handleLogin} />
+      <LoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onSubmit={handleLogin}
+        onGoogleLogin={handleGoogleLogin}
+      />
     </>
   );
 }
