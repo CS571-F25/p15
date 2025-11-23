@@ -178,11 +178,12 @@ const INTERACTIVE_MIN_ZOOM_LEVEL = 3;
 const MAP_PIXEL_WIDTH = TILE_SIZE * 20; // max zoom has 20 columns of tiles
 const MAP_PIXEL_HEIGHT = TILE_SIZE * 15; // max zoom has 15 rows of tiles
 const MAP_CENTER = [MAP_PIXEL_HEIGHT / 2, MAP_PIXEL_WIDTH / 2];
-const MAP_BOUNDS_PADDING = TILE_SIZE * .8; // allow slight overscroll to reveal background
-const MAP_BOUNDS = L.latLngBounds(
-  [-MAP_BOUNDS_PADDING, -MAP_BOUNDS_PADDING],
-  [MAP_PIXEL_HEIGHT + MAP_BOUNDS_PADDING, MAP_PIXEL_WIDTH + MAP_BOUNDS_PADDING],
-);
+const MAP_PADDING_DEFAULT = {
+  top: TILE_SIZE * 0.8,
+  right: TILE_SIZE * 0.8,
+  bottom: TILE_SIZE * 0.8,
+  left: TILE_SIZE * 0.8,
+};
 const TILE_URL = `${import.meta.env.BASE_URL}tiles/{z}/{x}/{y}.jpg`;
 const PAN_STEP = 200;
 const ZOOM_SNAP = 0.25;
@@ -500,7 +501,14 @@ function InteractiveMap({ isEditorMode = false }) {
     [regions, regionFilters, isRegionMode, activeRegionId, showRegionsLayer]
   );
   const regionLabelsEnabled = filteredRegions.some((region) => region.labelEnabled !== false);
-
+  const mapBounds = useMemo(() => {
+    const pad = MAP_PADDING_DEFAULT;
+    return L.latLngBounds(
+      [-pad.top, -pad.left],
+      [MAP_PIXEL_HEIGHT + pad.bottom, MAP_PIXEL_WIDTH + pad.right]
+    );
+  }, []);
+  const boundsViscosity = 0.95;
   useEffect(() => {
     let isMounted = true;
     const fetchLocations = async () => {
@@ -865,6 +873,14 @@ function InteractiveMap({ isEditorMode = false }) {
   }, [isEditorMode, selectLocation, selectRegion]);
 
   useEffect(() => {
+    if (!isEditorMode) return;
+    return () => {
+      setIsRegionMode(false);
+      setRegionDraftPoints([]);
+    };
+  }, [isEditorMode]);
+
+  useEffect(() => {
     if (!isEditorMode) {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
@@ -1138,6 +1154,14 @@ function InteractiveMap({ isEditorMode = false }) {
     setIsIntroVisible(false);
   };
 
+  useEffect(() => {
+    if (mapInstance && mapBounds) {
+      mapInstance.setMaxBounds(mapBounds);
+      mapInstance.options.maxBoundsViscosity = boundsViscosity;
+      mapInstance.panInsideBounds(mapBounds, { animate: false });
+    }
+  }, [mapInstance, mapBounds, boundsViscosity]);
+
   return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
       <div className="map-layout">
@@ -1172,8 +1196,7 @@ function InteractiveMap({ isEditorMode = false }) {
               zoom={zoom}
               minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
               maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
-              maxBounds={MAP_BOUNDS}
-              maxBoundsViscosity={0.8}
+              {...(!isEditorMode ? { maxBounds: mapBounds, maxBoundsViscosity: boundsViscosity } : {})}
               crs={TILESET_CRS}
               className="leaflet-map"
               scrollWheelZoom={true}

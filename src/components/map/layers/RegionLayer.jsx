@@ -23,20 +23,27 @@ const calculateBounds = (points = []) => {
 };
 
 const buildCurvedLabel = (region, bounds, zoomLevel) => {
+  const scaleWithZoom = region.labelScaleWithZoom !== false;
   const gap = Math.max(20, Math.min(bounds.width * 0.05, 60));
   const usableWidth = Math.max(bounds.width - gap * 2, 140);
-  const width = Math.max(150, Math.min(usableWidth * 0.9, 420));
+  const widthScale = Number.isFinite(region.labelWidth) ? region.labelWidth : 1;
+  const rawWidth = Math.max(150, Math.min(usableWidth * 0.9 * widthScale, 540));
+  const width = scaleWithZoom
+    ? rawWidth
+    : Math.max(160, Math.min(320 * widthScale, 520));
   const baseHeight = Math.max(bounds.height * 0.28, width * 0.26);
   const height = Math.min(baseHeight, width * 0.42);
   const curvature = Math.min(height * 0.4, 180);
-  const normalizedZoom = Math.max(0.8, Math.min(zoomLevel, 6));
-  const fontSize = Math.min(Math.max(width / (6.3 - normalizedZoom * 0.35), 18), 52);
+  const zoomBasis = scaleWithZoom ? zoomLevel : 4;
+  const normalizedZoom = Math.max(0.8, Math.min(zoomBasis, 6));
+  const baseFontSize = Math.min(Math.max(width / (6.3 - normalizedZoom * 0.35), 18), 52);
+  const fontSize = Math.min(Math.max(baseFontSize * (region.labelSize || 1), 10), 80);
   const letterSpacing = Math.min(fontSize / 2.3, 10);
   const strokeColor = region.borderColor || '#fef3c7';
   const textColor = region.labelColor || '#fef3c7';
   const shadowColor = 'rgba(0,0,0,0.45)';
   const pathId = `region-label-path-${region.id}`;
-  const textLength = Math.min(width * 0.92, Math.max(width * 0.7, 160));
+  const textLength = Math.min(width * 0.95, Math.max(width * 0.7 * widthScale, 160));
   const displayName = (region.name || 'Region').trim() || 'Region';
 
   return {
@@ -165,6 +172,9 @@ function RegionLayer({
             label.bounds,
             zoomLevel
           );
+          const region = regions.find((entry) => entry.id === label.id) || {};
+          const offsetX = region.labelOffsetX || 0;
+          const offsetY = region.labelOffsetY || 0;
           return (
             <Marker
               key={`label-${label.id}`}
@@ -173,7 +183,10 @@ function RegionLayer({
                 className: 'region-label-icon',
                 html: labelMarkup.html,
                 iconSize: [labelMarkup.width, labelMarkup.height],
-                iconAnchor: [labelMarkup.width / 2, labelMarkup.height / 2.1],
+                iconAnchor: [
+                  labelMarkup.width / 2 - offsetX,
+                  labelMarkup.height / 2.1 - offsetY,
+                ],
               })}
               interactive={false}
             />

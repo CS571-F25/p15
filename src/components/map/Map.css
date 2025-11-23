@@ -828,6 +828,9 @@ html, body, #root {
   gap: 0.5rem;
   margin-top: 1rem;
 }
+.editor-side-panel__tabs--sub {
+  margin-bottom: 0.6rem;
+}
 
 .editor-side-panel__tabs button {
   flex: 1;

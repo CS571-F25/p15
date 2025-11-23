@@ -46,6 +46,21 @@
       "glowColor": "#FFDAB9"
     },
     {
+      "id": 7,
+      "name": "New Landmark",
+      "type": "landmark",
+      "iconKey": "landmark-spire",
+      "lat": 1667.9745541865454,
+      "lng": 5591.206033760143,
+      "x": 1667.9745541865454,
+      "y": 5591.206033760143,
+      "description": "",
+      "category": "Landmark",
+      "tags": [],
+      "regionId": null,
+      "glowColor": "#FFDAB9"
+    },
+    {
       "id": 8,
       "name": "New City",
       "type": "city",
