@@ -73,7 +73,16 @@ export default function CharactersPage() {
     setActiveIndex(prev => clamp(prev + 1, 0, characters.length - 1));
   }, []);
 
-  
+  const handleCardClick = useCallback((index) => {
+    setActiveIndex(index);
+  }, []);
+
+  const handleCardKeyDown = useCallback((event, index) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setActiveIndex(index);
+    }
+  }, []);
 
   // Arrow keys navigation
   useEffect(() => {
@@ -123,11 +132,23 @@ export default function CharactersPage() {
               <div className="carousel-frame" role="region" aria-live="polite">
                 <div className="sun-overlay" aria-hidden="true" />
                 <div className="carousel-track">
-                  {characters.map((char, index) => (
-                    <div key={char.id} className={getCardClass(index, activeIndex)}>
-                      <CharacterCard character={char} />
-                    </div>
-                  ))}
+                  {characters.map((char, index) => {
+                    const isActive = index === activeIndex;
+                    return (
+                      <div
+                        key={char.id}
+                        className={getCardClass(index, activeIndex)}
+                        role="button"
+                        tabIndex={isActive ? 0 : -1}
+                        aria-label={`Select ${char.name}`}
+                        aria-pressed={isActive}
+                        onClick={() => handleCardClick(index)}
+                        onKeyDown={(event) => handleCardKeyDown(event, index)}
+                      >
+                        <CharacterCard character={char} />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               <button
