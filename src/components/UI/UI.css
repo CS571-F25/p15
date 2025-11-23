@@ -271,3 +271,192 @@
   color: #1a1a1a;
   border-color: #ffd700;
 }
+
+/* App shell and navigation layout */
+:root {
+  --azterra-sidebar-collapsed: 60px;
+  --azterra-sidebar-expanded: 180px;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #0b0f1b;
+}
+
+.app-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.azterra-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: var(--azterra-sidebar-collapsed);
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #18120cfa, #221a15f2);
+  color: #f7ecda;
+  border-right: 1px solid rgba(255, 214, 175, 0.2);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.55);
+  transition: width 0.28s ease;
+  overflow: hidden;
+  z-index: 20;
+}
+
+.azterra-sidebar:hover {
+  width: var(--azterra-sidebar-expanded);
+}
+
+.azterra-sidebar__brand {
+  display: flex;
+  align-items: center;
+  height: 70px;
+  padding: 0 6px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.azterra-sidebar__brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 220, 150, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 1.35rem;
+  line-height: 1;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 226, 185, 0.3), rgba(27, 20, 15, 0.8));
+  color: #ffd700;
+}
+
+.azterra-sidebar__brand-text {
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease 0.08s, max-width 0.2s ease 0.08s;
+  letter-spacing: 0.2rem;
+  text-transform: uppercase;
+  font-family: 'Cinzel', serif;
+}
+
+.azterra-sidebar:hover .azterra-sidebar__brand-text {
+  opacity: 1;
+  max-width: 200px;
+}
+
+.azterra-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  margin-top: 8px;
+}
+
+.azterra-nav__link {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  border-radius: 10px;
+  padding: 0 10px;
+  color: #faeacd;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.04rem;
+  position: relative;
+  transition: background 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+
+.azterra-nav__link:hover {
+  background: rgba(255, 215, 0, 0.12);
+  color: #ffe5ba;
+}
+
+.azterra-nav__link--active {
+  background: rgba(255, 215, 0, 0.25);
+  color: #ffe5ba;
+  box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.35);
+}
+
+.azterra-nav__link--muted {
+  color: #ffa38c;
+}
+
+.azterra-nav__icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.azterra-nav__label {
+  margin-left: 12px;
+  opacity: 0;
+  transition: opacity 0.2s ease 0.08s;
+}
+
+.azterra-sidebar:hover .azterra-nav__label {
+  opacity: 1;
+}
+
+.azterra-nav__indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background: #ffd700;
+  border-radius: 0 4px 4px 0;
+}
+
+.azterra-sidebar__footer {
+  margin-top: auto;
+  padding: 10px;
+  border-top: 1px solid rgba(255, 215, 170, 0.2);
+}
+
+.azterra-sidebar__account {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.azterra-sidebar__account-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px;
+  height: 44px;
+}
+
+.azterra-sidebar__account-text {
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity 0.2s ease 0.08s;
+}
+
+.azterra-sidebar:hover .azterra-sidebar__account-text {
+  opacity: 1;
+}
+
+.azterra-sidebar__account-name {
+  font-weight: 600;
+  color: #ffe5ba;
+}
+
+.azterra-sidebar__account-role {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: capitalize;
+}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './UI.css';
 import LoginModal from '../auth/LoginModal';
@@ -94,104 +94,74 @@ export default function Header() {
     ? [...baseNavLinks, { to: '/admin', label: 'Admin', icon: NAV_ICONS.admin }]
     : baseNavLinks;
 
-  useEffect(() => {
-    document.body.classList.add('has-azterra-sidebar');
-    return () => document.body.classList.remove('has-azterra-sidebar');
-  }, []);
-
   const handleLogin = (formData) => login(formData);
 
   return (
     <>
-      <aside
-        className="group fixed top-0 left-0 h-screen w-[60px] hover:w-[200px] bg-gradient-to-b from-[#18120cfa] to-[#221a15f2] text-[#f7ecda] flex flex-col shadow-[4px_0_20px_rgba(0,0,0,0.55)] z-[1500] border-r border-[#ffd6af33] transition-all duration-300 overflow-visible"
-        aria-label="Azterra navigation"
-      >
-        {/* Brand / Logo Area */}
-        <div className="flex items-center h-[70px] px-[10px] shrink-0 whitespace-nowrap relative group">
-          <div className="w-[40px] h-[40px] rounded-[10px] border border-[#ffdc9673] flex items-center justify-center font-serif text-[1.2rem] bg-[radial-gradient(circle_at_30%_30%,rgba(255,226,185,0.3),rgba(27,20,15,0.8))] font-[Cinzel] shrink-0 text-[#ffd700] relative z-20">
-            A
-          </div>
-          <div className="flex flex-col ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-            <span className="font-[Cinzel] text-[1.2rem] tracking-[0.2rem] uppercase text-[#ffd700]">Azterra</span>
+      <aside className="azterra-sidebar" aria-label="Azterra navigation">
+        <div className="azterra-sidebar__brand">
+          <div className="azterra-sidebar__brand-mark">A</div>
+          <div className="azterra-sidebar__brand-text">
+            <span>Azterra</span>
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex flex-col gap-2 mt-4 px-2">
+        <nav className="azterra-nav">
           {navLinks.map(({ to, label, icon }) => {
             const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
             return (
               <Link
                 key={to}
                 to={to}
-                className={`group flex items-center h-[44px] rounded-lg px-[10px] text-[#faeacd] no-underline tracking-[0.04rem] font-semibold transition-all duration-200 hover:bg-[#ffd7001f] hover:text-[#ffe5ba] whitespace-nowrap relative ${isActive ? 'bg-[#ffd70040] text-[#ffe5ba] shadow-[inset_0_0_0_1px_rgba(255,215,0,0.4)]' : ''
-                  }`}
+                className={`azterra-nav__link ${isActive ? 'azterra-nav__link--active' : ''}`}
                 aria-current={isActive ? 'page' : undefined}
               >
-                {/* Icon */}
-                <span className="w-6 h-6 shrink-0 flex items-center justify-center relative z-20" aria-hidden="true">
+                <span className="azterra-nav__icon" aria-hidden="true">
                   {icon}
                 </span>
-                {/* Text Label (Opacity transition) */}
-                <span className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-                  {label}
-                </span>
-                {/* Active Indicator (Accent Line) */}
-                {isActive && (
-                  <div className="absolute left-0 w-[3px] h-full bg-[#ffd700] rounded-r-sm" />
-                )}
+                <span className="azterra-nav__label">{label}</span>
+                {isActive && <div className="azterra-nav__indicator" />}
               </Link>
             );
           })}
         </nav>
 
-        {/* Footer / Account Area */}
-        <div className="mt-auto p-2 border-t border-[#ffd7aa33]">
+        <div className="azterra-sidebar__footer">
           {!user && (
             <button
               type="button"
-              className="group flex items-center w-full h-[44px] rounded-lg px-[10px] text-[#fff4dc] bg-transparent hover:bg-[#ffffff15] transition-all duration-200 whitespace-nowrap"
+              className="azterra-nav__link"
               onClick={() => setIsLoginOpen(true)}
               title="Login"
             >
-              {/* Login Icon */}
-              <span className="w-6 h-6 shrink-0 flex items-center justify-center text-[#ffd700]">
+              <span className="azterra-nav__icon text-[#ffd700]">
                 {NAV_ICONS.login}
               </span>
-              {/* Login Label */}
-              <span className="ml-4 font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-                Login
-              </span>
+              <span className="azterra-nav__label">Login</span>
             </button>
           )}
 
           {user && (
-            <div className="flex flex-col gap-1">
-              {/* User Info Display */}
-              <div className="flex items-center h-[44px] px-[10px] whitespace-nowrap group">
-                <span className="w-6 h-6 shrink-0 flex items-center justify-center text-[#ffd700]">
+            <div className="azterra-sidebar__account">
+              <div className="azterra-sidebar__account-row">
+                <span className="azterra-nav__icon text-[#ffd700]">
                   {NAV_ICONS.login}
                 </span>
-                {/* User details (Name and Role) */}
-                <div className="ml-4 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-                  <span className="text-sm font-semibold text-[#ffe5ba]">{user.name || 'User'}</span>
-                  <span className="text-xs text-[#ffffff80] capitalize">{role}</span>
+                <div className="azterra-sidebar__account-text">
+                  <span className="azterra-sidebar__account-name">{user.name || 'User'}</span>
+                  <span className="azterra-sidebar__account-role">{role}</span>
                 </div>
               </div>
-              {/* Logout Button */}
               <button
                 type="button"
-                className="group flex items-center w-full h-[36px] rounded-lg px-[10px] text-[#ffa38c] hover:bg-[#ffa38c1a] transition-all duration-200 whitespace-nowrap"
+                className="azterra-nav__link azterra-nav__link--muted"
                 onClick={logout}
                 title="Logout"
               >
-                <span className="w-6 h-6 shrink-0 flex items-center justify-center">
+                <span className="azterra-nav__icon">
                   {NAV_ICONS.logout}
                 </span>
-                <span className="ml-4 text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-                  Logout
-                </span>
+                <span className="azterra-nav__label">Logout</span>
               </button>
             </div>
           )}

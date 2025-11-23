@@ -90,3 +90,4 @@ function RegionInfoPanel({
 }
 
 export default RegionInfoPanel;
+

@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvent } from 'rea
 import SidePanel from '../UI/SidePanel';
 import IntroOverlay from '../IntroOverlay';
 import EditorInfoPanel from './EditorInfoPanel';
-import MapFiltersPanel from './MapFiltersPanel';
 import { useAuth } from '../../context/AuthContext';
 import { useMapEffects } from '../../context/MapEffectsContext';
 import { useLocationData } from '../../context/LocationDataContext';
@@ -15,6 +14,8 @@ import RegionLayer from './layers/RegionLayer';
 import ParallaxLayer from './layers/ParallaxLayer';
 import MarkerPalette from './MarkerPalette';
 import RegionInfoPanel from './RegionInfoPanel';
+import EditorSidePanel from './EditorSidePanel';
+import FilterHoverPanel from './FilterHoverPanel';
 import { useRegions } from '../../context/RegionDataContext';
 import {
   DEFAULT_REGION_CATEGORY,
@@ -98,31 +99,15 @@ const REGION_FILTER_OPTIONS = REGION_CATEGORIES.map((category) => ({
   label: category.charAt(0).toUpperCase() + category.slice(1),
 }));
 
-const createDefaultLocationFilters = () =>
-  LOCATION_FILTER_OPTIONS.reduce((acc, option) => {
-    acc[option.id] = true;
-    return acc;
-  }, {});
-
 const createDefaultRegionFilters = () =>
   REGION_FILTER_OPTIONS.reduce((acc, option) => {
     acc[option.id] = true;
     return acc;
   }, {});
 
-const normalizeTypeId = (value) => {
-  if (!value || typeof value !== 'string') return GENERIC_MARKER_TYPE.id;
-  return value.toLowerCase();
-};
-
 const normalizeCategoryId = (value) => {
   if (!value || typeof value !== 'string') return DEFAULT_REGION_CATEGORY;
   return value.toLowerCase();
-};
-
-const formatFilterLabel = (value = '') => {
-  if (!value) return 'Other';
-  return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
 const getDefaultIconKey = (typeId) => DEFAULT_TYPE_ICON[typeId] || DEFAULT_TYPE_ICON.generic;
@@ -156,6 +141,15 @@ const normalizeLocationEntry = (location) => {
 };
 
 const normalizeLocations = (locations) => locations.map((location) => normalizeLocationEntry(location));
+
+const getMarkerFilterKey = (typeId) => {
+  const normalized = (typeId || '').toLowerCase();
+  if (['city', 'town', 'dungeon', 'ruins', 'landmark', 'npc'].includes(normalized)) {
+    return normalized;
+  }
+  if (normalized === 'generic') return 'generic';
+  return 'custom';
+};
 
 const getPlacementConfig = ({ paletteItem, activeTypeId }) => {
   if (paletteItem) {
@@ -289,6 +283,7 @@ function EditorToolbox({
   onExportJson,
   onImportJson,
   importError,
+  showTypeButtons = true,
 }) {
   if (!isEditorMode) return null;
 
@@ -298,26 +293,32 @@ function EditorToolbox({
     <div className="editor-toolbox" aria-label="Editor toolbox">
       <div className="editor-toolbox__header">
         <p>Editor Toolbox</p>
-        <span className="editor-toolbox__status">
-          {selectedType ? `Placing: ${selectedType.label}` : 'Select a marker type'}
-        </span>
+        {showTypeButtons && (
+          <span className="editor-toolbox__status">
+            {selectedType ? `Placing: ${selectedType.label}` : 'Select a marker type'}
+          </span>
+        )}
       </div>
-      <div className="editor-toolbox__buttons">
-        {MARKER_TYPES.map((type) => (
-          <button
-            key={type.id}
-            type="button"
-            className={`toolbox-button ${selectedTypeId === type.id ? 'toolbox-button--active' : ''}`}
-            onClick={() => onSelectType(selectedTypeId === type.id ? null : type.id)}
-          >
-            {type.label}
-          </button>
-        ))}
-      </div>
-      {selectedType && (
-        <p className="editor-toolbox__hint">
-          Click anywhere on the map to place a {selectedType.label}.
-        </p>
+      {showTypeButtons && (
+        <>
+          <div className="editor-toolbox__buttons">
+            {MARKER_TYPES.map((type) => (
+              <button
+                key={type.id}
+                type="button"
+                className={`toolbox-button ${selectedTypeId === type.id ? 'toolbox-button--active' : ''}`}
+                onClick={() => onSelectType(selectedTypeId === type.id ? null : type.id)}
+              >
+                {type.label}
+              </button>
+            ))}
+          </div>
+          {selectedType && (
+            <p className="editor-toolbox__hint">
+              Click anywhere on the map to place a {selectedType.label}.
+            </p>
+          )}
+        </>
       )}
       <div className="editor-toolbox__data">
         <div className="editor-toolbox__data-actions">
@@ -443,11 +444,26 @@ function InteractiveMap({ isEditorMode = false }) {
   const [mapZoom, setMapZoom] = useState(2);
   const [isRegionMode, setIsRegionMode] = useState(false);
   const [regionDraftPoints, setRegionDraftPoints] = useState([]);
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
-  const [showLocationsLayer, setShowLocationsLayer] = useState(true);
+  const [showMarkers, setShowMarkers] = useState(true);
+  const [markerFilters, setMarkerFilters] = useState({
+    city: true,
+    town: true,
+    dungeon: true,
+    ruins: true,
+    landmark: true,
+    npc: true,
+    custom: true,
+    generic: true,
+  });
   const [showRegionsLayer, setShowRegionsLayer] = useState(true);
-  const [locationFilters, setLocationFilters] = useState(() => createDefaultLocationFilters());
   const [regionFilters, setRegionFilters] = useState(() => createDefaultRegionFilters());
+  const [particleFilters, setParticleFilters] = useState({
+    snow: true,
+    leaves: true,
+    embers: true,
+    magic: true,
+    weather: true,
+  });
   const saveTimeoutRef = useRef(null);
   const lastSavedSnapshotRef = useRef('[]');
   const skipNextAutoSaveRef = useRef(false);
@@ -460,42 +476,29 @@ function InteractiveMap({ isEditorMode = false }) {
   const serializedLocations = useMemo(() => JSON.stringify(locations), [locations]);
   const serializedRegions = useMemo(() => JSON.stringify(regions), [regions]);
   const canAutoSave = role === 'editor' || role === 'admin';
-  const locationFilterOptions = useMemo(() => {
-    const base = [...LOCATION_FILTER_OPTIONS];
-    Object.keys(locationFilters).forEach((key) => {
-      if (!base.some((option) => option.id === key)) {
-        base.push({ id: key, label: formatFilterLabel(key) });
-      }
-    });
-    return base;
-  }, [locationFilters]);
-  const regionFilterOptions = useMemo(() => {
-    const base = [...REGION_FILTER_OPTIONS];
-    Object.keys(regionFilters).forEach((key) => {
-      if (!base.some((option) => option.id === key)) {
-        base.push({ id: key, label: formatFilterLabel(key) });
-      }
-    });
-    return base;
-  }, [regionFilters]);
-  const filteredLocations = useMemo(() => {
-    if (!showLocationsLayer) return [];
-    return locations.filter((location) => {
-      const typeId = normalizeTypeId(location.type);
-      const flag = locationFilters[typeId];
-      return flag !== false;
-    });
-  }, [locations, showLocationsLayer, locationFilters]);
-  const filteredRegions = useMemo(() => {
-    if (!showRegionsLayer && !isRegionMode) return [];
-    return regions.filter((region) => {
-      if (isRegionMode && region.id === activeRegionId) return true;
-      if (!showRegionsLayer) return false;
-      const categoryId = normalizeCategoryId(region.category);
-      const flag = regionFilters[categoryId];
-      return flag !== false;
-    });
-  }, [regions, showRegionsLayer, regionFilters, isRegionMode, activeRegionId]);
+  const filteredLocations = useMemo(
+    () =>
+      !showMarkers
+        ? []
+        : locations.filter((location) => {
+            const key = getMarkerFilterKey(location.type);
+            const flag = markerFilters[key];
+            return flag !== false;
+          }),
+    [locations, markerFilters, showMarkers]
+  );
+  const filteredRegions = useMemo(
+    () =>
+      !showRegionsLayer && !isRegionMode
+        ? []
+        : regions.filter((region) => {
+            if (isRegionMode && region.id === activeRegionId) return true;
+            const categoryId = normalizeCategoryId(region.category);
+            const flag = regionFilters[categoryId];
+            return flag !== false;
+          }),
+    [regions, regionFilters, isRegionMode, activeRegionId, showRegionsLayer]
+  );
   const regionLabelsEnabled = filteredRegions.some((region) => region.labelEnabled !== false);
 
   useEffect(() => {
@@ -560,21 +563,6 @@ function InteractiveMap({ isEditorMode = false }) {
   }, [setRegions]);
 
   useEffect(() => {
-    setLocationFilters((prev) => {
-      let changed = false;
-      const next = { ...prev };
-      locations.forEach((location) => {
-        const typeId = normalizeTypeId(location.type);
-        if (!(typeId in next)) {
-          next[typeId] = true;
-          changed = true;
-        }
-      });
-      return changed ? next : prev;
-    });
-  }, [locations]);
-
-  useEffect(() => {
     setRegionFilters((prev) => {
       let changed = false;
       const next = { ...prev };
@@ -588,22 +576,6 @@ function InteractiveMap({ isEditorMode = false }) {
       return changed ? next : prev;
     });
   }, [regions]);
-
-  const handleToggleFilterPanel = () => setIsFilterPanelOpen((prev) => !prev);
-
-  const handleToggleLocationsLayer = () => setShowLocationsLayer((prev) => !prev);
-
-  const handleToggleRegionsLayer = () => setShowRegionsLayer((prev) => !prev);
-
-  const handleLocationFilterChange = useCallback((typeId, enabled) => {
-    const normalized = normalizeTypeId(typeId);
-    setLocationFilters((prev) => ({ ...prev, [normalized]: enabled }));
-  }, []);
-
-  const handleRegionFilterChange = useCallback((categoryId, enabled) => {
-    const normalized = normalizeCategoryId(categoryId);
-    setRegionFilters((prev) => ({ ...prev, [normalized]: enabled }));
-  }, []);
 
   const handleLocationClick = (location) => {
     selectLocation(location.id);
@@ -977,7 +949,6 @@ function InteractiveMap({ isEditorMode = false }) {
     locations.find((location) => location.id === selectedLocationId) || null;
   const selectedRegion = regions.find((region) => region.id === activeRegionId) || null;
 
-  const editorDraft = editorSelection?.draft ?? null;
   const handleEditorFieldChange = (field, value) => {
     setEditorSelection((prev) => {
       if (!prev) return prev;
@@ -1026,6 +997,52 @@ function InteractiveMap({ isEditorMode = false }) {
     }
   };
 
+  const editorDraft = editorSelection?.draft ?? null;
+  const markerPaletteNode = (
+    <MarkerPalette
+      isEditorMode={isEditorMode}
+      options={MARKER_ICON_OPTIONS}
+      selectedOption={selectedPaletteItem}
+      onSelect={handleSelectPaletteItem}
+      categoryOptions={MARKER_TYPES}
+      groupByCategory
+    />
+  );
+  const markerToolboxNode = (
+    <EditorToolbox
+      isEditorMode={isEditorMode}
+      selectedTypeId={activePlacementTypeId}
+      onSelectType={handleSelectPlacementType}
+      jsonBuffer={jsonBuffer}
+      onJsonChange={handleJsonBufferChange}
+      onExportJson={handleExportJson}
+      onImportJson={handleImportJson}
+      importError={importError}
+      showTypeButtons={false}
+    />
+  );
+  const locationEditorNode = isEditorMode ? (
+    <EditorInfoPanel
+      isOpen={Boolean(editorSelection)}
+      draft={editorDraft}
+      onFieldChange={handleEditorFieldChange}
+      onSave={handleEditorSave}
+      onCancel={handleEditorCancel}
+      canAutoSave={canAutoSave}
+      saveWarning={saveWarning}
+      canDelete={canAutoSave}
+      onDelete={handleDeleteLocation}
+    />
+  ) : null;
+  const regionInfoPanelNode = isEditorMode ? (
+    <RegionInfoPanel
+      isOpen={Boolean(activeRegionId)}
+      onFieldChange={handleRegionFieldChange}
+      onDelete={handleDeleteRegion}
+      onClose={() => selectRegion(null)}
+    />
+  ) : null;
+
   useEffect(() => {
     if (!mapInstance) return;
     setMapZoom(mapInstance.getZoom());
@@ -1035,6 +1052,11 @@ function InteractiveMap({ isEditorMode = false }) {
     mapInstance.on('zoomend', handleZoomLevel);
     return () => mapInstance.off('zoomend', handleZoomLevel);
   }, [mapInstance]);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    mapInstance.invalidateSize();
+  }, [mapInstance, isEditorMode]);
 
   useEffect(() => {
     if (!mapInstance || !mapInstance.doubleClickZoom) return;
@@ -1118,265 +1140,135 @@ function InteractiveMap({ isEditorMode = false }) {
 
   return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
-      <div className="map-container-wrapper">
-        <MapContainer
-        center={center}
-        zoom={zoom}
-        minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
-        maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
-        maxBounds={MAP_BOUNDS}
-        maxBoundsViscosity={0.8}
-        crs={TILESET_CRS}
-        className="leaflet-map"
-        scrollWheelZoom={true}
-        dragging={true}
-        doubleClickZoom={true}
-        zoomControl={false}
-        zoomSnap={ZOOM_SNAP}
-        zoomDelta={ZOOM_DELTA}
-        wheelPxPerZoomLevel={WHEEL_PX_PER_ZOOM_LEVEL}
-        whenCreated={setMapInstance}
-        style={{ height: '80vh', width: '100%' }}
-      >
-        <TileLayer
-          url={TILE_URL}
-          tileSize={TILE_SIZE}
-          minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
-          maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
-          maxNativeZoom={TILE_MAX_ZOOM_LEVEL}
-          minNativeZoom={TILE_MIN_ZOOM_LEVEL}
-          noWrap={true}
-          keepBuffer={4}
-        />
-        <EditorPlacementHandler
-          isEnabled={
-            isEditorMode &&
-            !editorSelection &&
-            !isRegionMode &&
-            Boolean(selectedPaletteItem || activePlacementTypeId)
-          }
-          onPlaceMarker={handlePlaceMarker}
-        />
-        <RegionDrawingHandler
-          isActive={isEditorMode && isRegionMode}
-          onAddPoint={handleRegionPointAdd}
-          onFinish={handleRegionFinish}
-        />
-        <KeyboardControls />
-        <ZoomControls />
-        {filteredLocations.map((location) => (
-          <LocationMarker
-            key={location.id}
-            location={location}
-            onLocationClick={handleLocationClick}
-            isSelected={selectedLocation && selectedLocation.id === location.id}
+      <div className="map-layout">
+        {isEditorMode && (
+          <EditorSidePanel
             isEditorMode={isEditorMode}
-            onDragEnd={handleMarkerDragEnd}
-            zoomLevel={mapZoom}
+            markerPalette={markerPaletteNode}
+            markerToolbox={markerToolboxNode}
+            locationEditor={locationEditorNode}
+            regionInfoPanel={regionInfoPanelNode}
+            regions={regions}
+            activeRegionId={activeRegionId}
+            onSelectRegion={selectRegion}
+            onFocusRegion={focusRegionOnMap}
+            onDeleteRegion={handleDeleteRegion}
+            canAutoSave={canAutoSave}
+            isRegionMode={isRegionMode}
+            onToggleRegionMode={handleToggleRegionMode}
+            regionDraftPoints={regionDraftPoints}
+            onFinishRegion={handleRegionFinish}
+            onResetRegionDraft={handleRegionDraftReset}
+            canAssignSelection={Boolean(isEditorMode && selectedLocation && activeRegionId)}
+            onAssignSelection={handleAssignLocationToRegion}
+            selectedRegionName={selectedRegion?.name || ''}
+            selectedLocationName={selectedLocation?.name || ''}
           />
-        ))}
-        <RegionLayer
-          regions={filteredRegions}
-          draftPoints={regionDraftPoints}
-          selectedRegionId={activeRegionId}
-          onRegionClick={handleRegionClick}
-          interactionEnabled={isRegionMode}
-          showLabels={regionLabelsEnabled}
-          zoomLevel={mapZoom}
-        />
-      </MapContainer>
-        <VignetteLayer enabled={vignetteEnabled} />
-        <FogLayer enabled={fogEnabled} map={mapInstance} />
-        <CloudLayer enabled={cloudsEnabled} map={mapInstance} />
-        <HeatmapLayer
-          enabled={heatmapMode !== 'none'}
-          map={mapInstance}
-          locations={filteredLocations}
-          heatmapMode={heatmapMode}
-        />
-        <ParallaxLayer enabled />
-      </div>
-      <MarkerPalette
-        isEditorMode={isEditorMode}
-        options={MARKER_ICON_OPTIONS}
-        selectedOption={selectedPaletteItem}
-        onSelect={handleSelectPaletteItem}
-      />
-      <MapFiltersPanel
-        isOpen={isFilterPanelOpen}
-        onToggleOpen={handleToggleFilterPanel}
-        showLocations={showLocationsLayer}
-        onToggleLocations={handleToggleLocationsLayer}
-        locationOptions={locationFilterOptions}
-        locationFilters={locationFilters}
-        onToggleLocationFilter={handleLocationFilterChange}
-        showRegions={showRegionsLayer}
-        onToggleRegions={handleToggleRegionsLayer}
-        regionOptions={regionFilterOptions}
-        regionFilters={regionFilters}
-        onToggleRegionFilter={handleRegionFilterChange}
-      />
-      {isEditorMode && (
-        <div className="region-panel">
-          <div className="region-panel__header">
-            <button
-              type="button"
-              disabled={!canAutoSave}
-              className={`toolbox-button ${isRegionMode ? 'toolbox-button--active' : ''}`}
-              onClick={handleToggleRegionMode}
+        )}
+        <div className="map-layout__canvas">
+          <div className="map-container-wrapper">
+            <MapContainer
+              center={center}
+              zoom={zoom}
+              minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
+              maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
+              maxBounds={MAP_BOUNDS}
+              maxBoundsViscosity={0.8}
+              crs={TILESET_CRS}
+              className="leaflet-map"
+              scrollWheelZoom={true}
+              dragging={true}
+              doubleClickZoom={true}
+              zoomControl={false}
+              zoomSnap={ZOOM_SNAP}
+              zoomDelta={ZOOM_DELTA}
+              wheelPxPerZoomLevel={WHEEL_PX_PER_ZOOM_LEVEL}
+              whenCreated={setMapInstance}
+              style={{ height: '100%', width: '100%' }}
             >
-              {isRegionMode ? 'Exit Region Mode' : 'Region Mode'}
-            </button>
-            {!canAutoSave && (
-              <p className="editor-warning">Only editors or admins can edit regions.</p>
-            )}
-          </div>
-          {isRegionMode && (
-            <>
-              <p className="editor-toolbox__hint">Draft points: {regionDraftPoints.length}</p>
-              <div className="editor-toolbox__data-actions">
-                <button
-                  type="button"
-                  className="toolbox-button"
-                  onClick={handleRegionFinish}
-                  disabled={regionDraftPoints.length < 3}
-                >
-                  Finish Region
-                </button>
-                <button
-                  type="button"
-                  className="toolbox-button toolbox-button--ghost"
-                  onClick={handleRegionDraftReset}
-                >
-                  Clear Draft
-                </button>
-              </div>
-            </>
-          )}
-          <div className="region-list">
-            {regions.length === 0 && <p className="region-list__empty">No regions yet.</p>}
-            {regions.map((region) => (
-              <div
-                key={region.id}
-                className={`region-item ${activeRegionId === region.id ? 'region-item--active' : ''}`}
-              >
-                <button
-                  type="button"
-                  className="region-item__select"
-                  onClick={() => selectRegion(region.id)}
-                >
-                  <span
-                    className="region-item__color"
-                    style={{ backgroundColor: region.color || '#f97316' }}
-                  />
-                  {region.name}
-                </button>
-                <div className="region-item__controls">
-                  <label>
-                    Color
-                    <input
-                      type="color"
-                      value={region.color || '#f97316'}
-                      onChange={(event) => updateRegionField(region.id, 'color', event.target.value)}
-                    />
-                  </label>
-                  <label className="region-item__toggle">
-                    <input
-                      type="checkbox"
-                      checked={region.labelEnabled !== false}
-                      onChange={(event) =>
-                        updateRegionField(region.id, 'labelEnabled', event.target.checked)
-                      }
-                    />
-                    Show label
-                  </label>
-                  <label>
-                    Category
-                    <select
-                      value={region.category || DEFAULT_REGION_CATEGORY}
-                      onChange={(event) => updateRegionField(region.id, 'category', event.target.value)}
-                    >
-                      {REGION_CATEGORIES.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Opacity
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={region.opacity ?? 0.3}
-                      onChange={(event) => updateRegionField(region.id, 'opacity', event.target.value)}
-                    />
-                  </label>
-                  <div className="region-item__actions">
-                    <button type="button" onClick={() => focusRegionOnMap(region.id)}>
-                      Focus
-                    </button>
-                    <button type="button" onClick={() => handleDeleteRegion(region.id)}>
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+              <TileLayer
+                url={TILE_URL}
+                tileSize={TILE_SIZE}
+                minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
+                maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
+                maxNativeZoom={TILE_MAX_ZOOM_LEVEL}
+                minNativeZoom={TILE_MIN_ZOOM_LEVEL}
+                noWrap={true}
+                keepBuffer={4}
+              />
+              <EditorPlacementHandler
+                isEnabled={
+                  isEditorMode &&
+                  !editorSelection &&
+                  !isRegionMode &&
+                  Boolean(selectedPaletteItem || activePlacementTypeId)
+                }
+                onPlaceMarker={handlePlaceMarker}
+              />
+              <RegionDrawingHandler
+                isActive={isEditorMode && isRegionMode}
+                onAddPoint={handleRegionPointAdd}
+                onFinish={handleRegionFinish}
+              />
+              <KeyboardControls />
+              <ZoomControls />
+              {filteredLocations.map((location) => (
+                <LocationMarker
+                  key={location.id}
+                  location={location}
+                  onLocationClick={handleLocationClick}
+                  isSelected={selectedLocation && selectedLocation.id === location.id}
+                  isEditorMode={isEditorMode}
+                  onDragEnd={handleMarkerDragEnd}
+                  zoomLevel={mapZoom}
+                />
+              ))}
+              <RegionLayer
+                regions={filteredRegions}
+                draftPoints={regionDraftPoints}
+                selectedRegionId={activeRegionId}
+                onRegionClick={handleRegionClick}
+                interactionEnabled={isRegionMode}
+                showLabels={regionLabelsEnabled}
+                zoomLevel={mapZoom}
+              />
+            </MapContainer>
+            <VignetteLayer enabled={vignetteEnabled} />
+            <FogLayer enabled={fogEnabled} map={mapInstance} />
+            <CloudLayer enabled={cloudsEnabled} map={mapInstance} />
+            <HeatmapLayer
+              enabled={heatmapMode !== 'none'}
+              map={mapInstance}
+              locations={filteredLocations}
+              heatmapMode={heatmapMode}
+            />
+            <ParallaxLayer enabled />
           </div>
         </div>
-      )}
-      <EditorToolbox
-        isEditorMode={isEditorMode}
-        selectedTypeId={activePlacementTypeId}
-        onSelectType={handleSelectPlacementType}
-        jsonBuffer={jsonBuffer}
-        onJsonChange={handleJsonBufferChange}
-        onExportJson={handleExportJson}
-        onImportJson={handleImportJson}
-        importError={importError}
-      />
+      </div>
       {selectedLocation && (
         <SidePanel
           location={selectedLocation}
           onClose={handleClosePanel}
         />
       )}
-      {isEditorMode && (
-        <EditorInfoPanel
-          isOpen={Boolean(editorSelection)}
-          draft={editorDraft}
-          onFieldChange={handleEditorFieldChange}
-          onSave={handleEditorSave}
-          onCancel={handleEditorCancel}
-          canAutoSave={canAutoSave}
-          saveWarning={saveWarning}
-          canDelete={canAutoSave}
-          onDelete={handleDeleteLocation}
-        />
-      )}
-      {isEditorMode && selectedLocation && activeRegionId && (
-        <button
-          type="button"
-          className="assign-region-button"
-          onClick={handleAssignLocationToRegion}
-        >
-          Assign location to {selectedRegion?.name || 'selected region'}
-        </button>
-      )}
-      {isEditorMode && activeRegionId && (
-        <RegionInfoPanel
-          isOpen={Boolean(activeRegionId)}
-          onFieldChange={handleRegionFieldChange}
-          onDelete={handleDeleteRegion}
-          onClose={() => selectRegion(null)}
-        />
-      )}
       {isIntroVisible && (
         <IntroOverlay onFinish={handleIntroFinish} />
       )}
+      <FilterHoverPanel
+        showMarkers={showMarkers}
+        markerFilters={markerFilters}
+        onToggleMarkers={() => setShowMarkers((prev) => !prev)}
+        onToggleMarkerCategory={(key, value) =>
+          setMarkerFilters((prev) => ({ ...prev, [key]: value }))
+        }
+        showRegions={showRegionsLayer}
+        onToggleRegions={() => setShowRegionsLayer((prev) => !prev)}
+        particleFilters={particleFilters}
+        onToggleParticle={(key, value) =>
+          setParticleFilters((prev) => ({ ...prev, [key]: value }))
+        }
+      />
     </div>
   );
 }
