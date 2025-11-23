@@ -397,8 +397,8 @@
           3133.700084824759
         ]
       ],
-      "labelWidth": 0.45,
-      "labelSize": 0.7,
+      "labelWidth": 0.8,
+      "labelSize": 0.75,
       "labelScaleWithZoom": true
     }
   ]

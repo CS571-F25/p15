@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './UI.css';
 import LoginModal from '../auth/LoginModal';
@@ -73,6 +73,28 @@ const NAV_ICONS = {
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
+  ),
+  account: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="7" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+      <path d="M16 5.5a4 4 0 0 1 0 7" />
+    </svg>
+  ),
+  players: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="7" r="3" />
+      <circle cx="17" cy="7" r="3" />
+      <path d="M2 21a6 6 0 0 1 12 0" />
+      <path d="M12 21a6 6 0 0 1 10 0" />
+    </svg>
+  ),
+  progress: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M10 14 14 10" />
+      <path d="m12.5 7.5-1 5-5 1 10-3.5z" />
+    </svg>
   )
 };
 
@@ -83,22 +105,19 @@ const baseNavLinks = [
   { to: "/people", label: "People", icon: NAV_ICONS.people },
   { to: "/magic", label: "Magic & Lore", icon: NAV_ICONS.magic },
   { to: "/campaign", label: "Campaign", icon: NAV_ICONS.campaign },
+  { to: "/players", label: "Players", icon: NAV_ICONS.players },
+  { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
 ];
 
 export default function Header() {
   const location = useLocation();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignupOpen, setIsSignupOpen] = useState(false);
-  const { user, role, login, signup, logout } = useAuth();
+  const { user, role, login, signup, googleLogin, logout } = useAuth();
 
   const navLinks = role === 'admin'
     ? [...baseNavLinks, { to: '/admin', label: 'Admin', icon: NAV_ICONS.admin }]
     : baseNavLinks;
-
-  useEffect(() => {
-    document.body.classList.add('has-azterra-sidebar');
-    return () => document.body.classList.remove('has-azterra-sidebar');
-  }, []);
 
   const handleLogin = (formData) => login(formData);
   const handleSignupOpen = () => {
@@ -111,6 +130,8 @@ export default function Header() {
     setIsSignupOpen(false);
     setIsLoginOpen(true);
   };
+
+  const handleGoogleLogin = (credential) => googleLogin(credential);
 
   return (
     <>
@@ -128,16 +149,14 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex flex-col gap-2 mt-4 px-2">
+        <nav className="azterra-nav">
           {navLinks.map(({ to, label, icon }) => {
             const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
             return (
               <Link
                 key={to}
                 to={to}
-                className={`group flex items-center h-[44px] rounded-lg px-[10px] text-[#faeacd] no-underline tracking-[0.04rem] font-semibold transition-all duration-200 hover:bg-[#ffd7001f] hover:text-[#ffe5ba] whitespace-nowrap relative ${isActive ? 'bg-[#ffd70040] text-[#ffe5ba] shadow-[inset_0_0_0_1px_rgba(255,215,0,0.4)]' : ''
-                  }`}
+                className={`azterra-nav__link ${isActive ? 'azterra-nav__link--active' : ''}`}
                 aria-current={isActive ? 'page' : undefined}
               >
                 {/* Icon */}
@@ -157,12 +176,11 @@ export default function Header() {
           })}
         </nav>
 
-        {/* Footer / Account Area */}
-        <div className="mt-auto p-2 border-t border-[#ffd7aa33]">
+        <div className="azterra-sidebar__footer">
           {!user && (
             <button
               type="button"
-              className="group flex items-center w-full h-[44px] rounded-lg px-[10px] text-[#fff4dc] bg-transparent hover:bg-[#ffffff15] transition-all duration-200 whitespace-nowrap"
+              className="azterra-nav__link"
               onClick={() => setIsLoginOpen(true)}
               title="Login"
             >
@@ -170,39 +188,41 @@ export default function Header() {
               <span className="w-6 h-6 shrink-0 flex items-center justify-center relative z-20 text-[#ffd700]">
                 {NAV_ICONS.login}
               </span>
-              {/* Login Label */}
-              <span className="ml-4 font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-                Login
-              </span>
+              <span className="azterra-nav__label">Login</span>
             </button>
           )}
 
           {user && (
-            <div className="flex flex-col gap-1">
-              {/* User Info Display */}
-              <div className="flex items-center h-[44px] px-[10px] whitespace-nowrap group">
-                <span className="w-6 h-6 shrink-0 flex items-center justify-center text-[#ffd700]">
+            <div className="azterra-sidebar__account">
+              <div className="azterra-sidebar__account-row">
+                <span className="azterra-nav__icon text-[#ffd700]">
                   {NAV_ICONS.login}
                 </span>
-                {/* User details (Name and Role) */}
-                <div className="ml-4 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-                  <span className="text-sm font-semibold text-[#ffe5ba]">{user.name || 'User'}</span>
-                  <span className="text-xs text-[#ffffff80] capitalize">{role}</span>
+                <div className="azterra-sidebar__account-text">
+                  <span className="azterra-sidebar__account-name">{user.name || user.username || 'User'}</span>
+                  <span className="azterra-sidebar__account-role">{role}</span>
                 </div>
               </div>
-              {/* Logout Button */}
+              <Link
+                to="/account"
+                className="azterra-nav__link"
+                title="Account settings"
+              >
+                <span className="azterra-nav__icon text-[#ffd700]">
+                  {NAV_ICONS.account}
+                </span>
+                <span className="azterra-nav__label">Account</span>
+              </Link>
               <button
                 type="button"
-                className="group flex items-center w-full h-[36px] rounded-lg px-[10px] text-[#ffa38c] hover:bg-[#ffa38c1a] transition-all duration-200 whitespace-nowrap"
+                className="azterra-nav__link azterra-nav__link--muted"
                 onClick={logout}
                 title="Logout"
               >
-                <span className="w-6 h-6 shrink-0 flex items-center justify-center">
+                <span className="azterra-nav__icon">
                   {NAV_ICONS.logout}
                 </span>
-                <span className="ml-4 text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-                  Logout
-                </span>
+                <span className="azterra-nav__label">Logout</span>
               </button>
             </div>
           )}
@@ -213,13 +233,15 @@ export default function Header() {
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
         onSubmit={handleLogin}
-        onOpenSignup={handleSignupOpen}
+        onOpenSignup={handleSignupOpen} 
+        onGoogleLogin={handleGoogleLogin}
       />
       <SignupModal
         isOpen={isSignupOpen}
         onClose={handleSignupClose}
         onSubmit={handleSignup}
         onOpenLogin={handleLoginOpen}
+        onGoogleLogin={handleGoogleLogin}
       />
     </>
   );

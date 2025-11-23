@@ -10,8 +10,8 @@ export default function MapPage() {
   };
 
   return (
-    <div className="map-page">
-      <div className="map-page__controls">
+    <div className="map-page map-page--full">
+      <div className="map-page__overlay-controls">
         <button
           type="button"
           className={`editor-toggle ${isEditorMode ? 'editor-toggle--active' : ''}`}
@@ -20,11 +20,6 @@ export default function MapPage() {
         >
           {isEditorMode ? 'Disable Editor Mode' : 'Enable Editor Mode'}
         </button>
-        {isEditorMode && (
-          <span className="editor-banner" role="status" aria-live="polite">
-            Editor Mode Active
-          </span>
-        )}
       </div>
       <InteractiveMap isEditorMode={isEditorMode} />
     </div>

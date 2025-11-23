@@ -6,9 +6,12 @@ const AuthContext = createContext({
   token: null,
   loading: false,
   login: async () => {},
+  updateAccount: async () => {},
+  googleLogin: async () => {},
   signup: async () => {},
   logout: () => {},
   refreshUser: async () => {},
+  isSecretUnlocked: () => false,
 });
 
 const TOKEN_KEY = 'p15_auth_token';
@@ -28,6 +31,20 @@ const persistToken = (token) => {
   } else {
     window.localStorage.setItem(TOKEN_KEY, token);
   }
+};
+
+const normalizeUser = (incoming) => {
+  if (!incoming) return null;
+  const unlocked = Array.isArray(incoming.unlockedSecrets) ? incoming.unlockedSecrets : [];
+  const favorites = Array.isArray(incoming.favorites) ? incoming.favorites : [];
+  const featuredCharacter = incoming.featuredCharacter ?? null;
+  const profile = {
+    bio: incoming.profile?.bio || '',
+    labelOne: incoming.profile?.labelOne || '',
+    labelTwo: incoming.profile?.labelTwo || '',
+    documents: Array.isArray(incoming.profile?.documents) ? incoming.profile.documents : [],
+  };
+  return { ...incoming, unlockedSecrets: unlocked, favorites, featuredCharacter, profile };
 };
 
 async function request({ path, method = 'GET', body, headers = {}, token }) {
@@ -58,7 +75,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(Boolean(getStoredToken()));
   const [error, setError] = useState(null);
 
-  const role = user?.role || 'guest';
+  const normalizedUser = normalizeUser(user);
+  const role = normalizedUser?.role || 'guest';
 
   useEffect(() => {
     persistToken(token);
@@ -75,7 +93,7 @@ export function AuthProvider({ children }) {
     request({ path: '/auth/me', token })
       .then((data) => {
         if (isMounted) {
-          setUser(data.user);
+          setUser(normalizeUser(data.user));
         }
       })
       .catch(() => {
@@ -102,8 +120,45 @@ export function AuthProvider({ children }) {
         method: 'POST',
         body: { email, password },
       });
-      setUser(data.user);
+      setUser(normalizeUser(data.user));
       setToken(data.token);
+      return data.user;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const googleLogin = async (credential) => {
+    setError(null);
+    try {
+      const data = await request({
+        path: '/auth/google',
+        method: 'POST',
+        body: { credential },
+      });
+      setUser(normalizeUser(data.user));
+      setToken(data.token);
+      return data.user;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const updateAccount = async ({ username, profilePicture, profile }) => {
+    if (!token) {
+      throw new Error('You must be logged in to update your account.');
+    }
+    setError(null);
+    try {
+      const data = await request({
+        path: '/auth/me',
+        method: 'PUT',
+        body: { username, profilePicture, profile },
+        token,
+      });
+      setUser(normalizeUser(data.user));
       return data.user;
     } catch (err) {
       setError(err.message);
@@ -134,23 +189,27 @@ export function AuthProvider({ children }) {
   const refreshUser = async () => {
     if (!token) return null;
     const data = await request({ path: '/auth/me', token });
-    setUser(data.user);
+    setUser(normalizeUser(data.user));
     return data.user;
   };
 
   const value = useMemo(
     () => ({
-      user,
+      user: normalizedUser,
       role,
       token,
       loading,
       error,
       login,
+      updateAccount,
+      googleLogin,
       signup,
       logout,
       refreshUser,
+      isSecretUnlocked: (secretId) =>
+        Array.isArray(normalizedUser?.unlockedSecrets) && normalizedUser.unlockedSecrets.includes(secretId),
     }),
-    [user, role, token, loading, error]
+    [normalizedUser, role, token, loading, error]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,7 +1,9 @@
 import React from 'react';
 import '../UI/PageUI.css';
 
-export default function CharacterCard({ character }) {
+const formatList = (items) => (items && items.length ? items.join(', ') : '—');
+
+function CharacterCard({ character, onToggleFavorite, isFavorite, onFeature, isFeatured }) {
   const initial = character.name ? character.name.charAt(0).toUpperCase() : '?';
   const accentHue = (character.id * 47) % 360;
   const accentColor = `hsl(${accentHue}, 70%, 60%)`;
@@ -22,15 +24,47 @@ export default function CharacterCard({ character }) {
           <h2 className="card-name">{character.name}</h2>
           <span className="chip chip-level">Level {character.level}</span>
         </div>
-        <p className="card-meta">
-          {character.race} / {character.class}
-        </p>
-        <div className="card-tags">
-          <span className="chip">HP {character.hp}</span>
-          <span className="chip">AC {character.ac}</span>
-          <span className="chip subtle">Speed {character.speed} ft</span>
+        <div className="card-actions">
+          <div className="card-vitals">
+            <div>
+              <span>HP</span>
+              <strong>{character.hp}</strong>
+            </div>
+            <div>
+              <span>AC</span>
+              <strong>{character.ac}</strong>
+            </div>
+            <div>
+              <span>Speed</span>
+              <strong>{character.speed} ft</strong>
+            </div>
+          </div>
+          {(onToggleFavorite || onFeature) && (
+            <div className="card-fav">
+              {onToggleFavorite && (
+                <button
+                  type="button"
+                  className={`fav-btn ${isFavorite ? 'fav-btn--active' : ''}`}
+                  onClick={onToggleFavorite}
+                >
+                  {isFavorite ? '★ Favorite' : '☆ Favorite'}
+                </button>
+              )}
+              {onFeature && (
+                <button
+                  type="button"
+                  className={`feature-btn ${isFeatured ? 'feature-btn--active' : ''}`}
+                  onClick={onFeature}
+                >
+                  {isFeatured ? 'Featured' : 'Set Featured'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </article>
   );
 }
+
+export default CharacterCard;

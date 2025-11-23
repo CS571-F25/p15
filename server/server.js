@@ -4,6 +4,9 @@ import authRoutes from './auth.js';
 import adminRoutes from './admin.js';
 import locationsRoutes from './locations.js';
 import regionsRoutes from './regions.js';
+import secretsRoutes from './secrets.js';
+import charactersRoutes from './characters.js';
+import filesRoutes from './files.js';
 import { ensureDefaultAdmin } from './utils.js';
 
 const app = express();
@@ -24,6 +27,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/locations', locationsRoutes);
 app.use('/api/regions', regionsRoutes);
+app.use('/api/secrets', secretsRoutes);
+app.use('/api/characters', charactersRoutes);
+app.use('/api/files', filesRoutes);
 
 await ensureDefaultAdmin();
 

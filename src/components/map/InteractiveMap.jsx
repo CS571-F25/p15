@@ -14,7 +14,14 @@ import RegionLayer from './layers/RegionLayer';
 import ParallaxLayer from './layers/ParallaxLayer';
 import MarkerPalette from './MarkerPalette';
 import RegionInfoPanel from './RegionInfoPanel';
+import EditorSidePanel from './EditorSidePanel';
+import FilterHoverPanel from './FilterHoverPanel';
 import { useRegions } from '../../context/RegionDataContext';
+import {
+  DEFAULT_REGION_CATEGORY,
+  REGION_CATEGORIES,
+  normalizeRegionEntry,
+} from '../../constants/regionConstants';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
@@ -51,6 +58,11 @@ const TYPE_CONFIG = MARKER_TYPES.reduce(
   { [GENERIC_MARKER_TYPE.id]: GENERIC_MARKER_TYPE }
 );
 
+const LOCATION_FILTER_OPTIONS = [
+  ...MARKER_TYPES.map((type) => ({ id: type.id, label: type.label })),
+  { id: GENERIC_MARKER_TYPE.id, label: GENERIC_MARKER_TYPE.label },
+];
+
 const DEFAULT_TYPE_ICON = {
   city: 'city-gold',
   town: 'town-oak',
@@ -81,6 +93,22 @@ const MARKER_ICON_OPTIONS = [
   { iconKey: 'camp-jungle', label: 'Jungle Camp', type: 'landmark' },
   { iconKey: 'academy-star', label: 'Star Academy', type: 'landmark' },
 ];
+
+const REGION_FILTER_OPTIONS = REGION_CATEGORIES.map((category) => ({
+  id: category,
+  label: category.charAt(0).toUpperCase() + category.slice(1),
+}));
+
+const createDefaultRegionFilters = () =>
+  REGION_FILTER_OPTIONS.reduce((acc, option) => {
+    acc[option.id] = true;
+    return acc;
+  }, {});
+
+const normalizeCategoryId = (value) => {
+  if (!value || typeof value !== 'string') return DEFAULT_REGION_CATEGORY;
+  return value.toLowerCase();
+};
 
 const getDefaultIconKey = (typeId) => DEFAULT_TYPE_ICON[typeId] || DEFAULT_TYPE_ICON.generic;
 
@@ -114,6 +142,15 @@ const normalizeLocationEntry = (location) => {
 
 const normalizeLocations = (locations) => locations.map((location) => normalizeLocationEntry(location));
 
+const getMarkerFilterKey = (typeId) => {
+  const normalized = (typeId || '').toLowerCase();
+  if (['city', 'town', 'dungeon', 'ruins', 'landmark', 'npc'].includes(normalized)) {
+    return normalized;
+  }
+  if (normalized === 'generic') return 'generic';
+  return 'custom';
+};
+
 const getPlacementConfig = ({ paletteItem, activeTypeId }) => {
   if (paletteItem) {
     return {
@@ -141,11 +178,12 @@ const INTERACTIVE_MIN_ZOOM_LEVEL = 3;
 const MAP_PIXEL_WIDTH = TILE_SIZE * 20; // max zoom has 20 columns of tiles
 const MAP_PIXEL_HEIGHT = TILE_SIZE * 15; // max zoom has 15 rows of tiles
 const MAP_CENTER = [MAP_PIXEL_HEIGHT / 2, MAP_PIXEL_WIDTH / 2];
-const MAP_BOUNDS_PADDING = TILE_SIZE * .8; // allow slight overscroll to reveal background
-const MAP_BOUNDS = L.latLngBounds(
-  [-MAP_BOUNDS_PADDING, -MAP_BOUNDS_PADDING],
-  [MAP_PIXEL_HEIGHT + MAP_BOUNDS_PADDING, MAP_PIXEL_WIDTH + MAP_BOUNDS_PADDING],
-);
+const MAP_PADDING_DEFAULT = {
+  top: TILE_SIZE * 0.8,
+  right: TILE_SIZE * 0.8,
+  bottom: TILE_SIZE * 0.8,
+  left: TILE_SIZE * 0.8,
+};
 const TILE_URL = `${import.meta.env.BASE_URL}tiles/{z}/{x}/{y}.jpg`;
 const PAN_STEP = 200;
 const ZOOM_SNAP = 0.25;
@@ -246,6 +284,7 @@ function EditorToolbox({
   onExportJson,
   onImportJson,
   importError,
+  showTypeButtons = true,
 }) {
   if (!isEditorMode) return null;
 
@@ -255,26 +294,32 @@ function EditorToolbox({
     <div className="editor-toolbox" aria-label="Editor toolbox">
       <div className="editor-toolbox__header">
         <p>Editor Toolbox</p>
-        <span className="editor-toolbox__status">
-          {selectedType ? `Placing: ${selectedType.label}` : 'Select a marker type'}
-        </span>
+        {showTypeButtons && (
+          <span className="editor-toolbox__status">
+            {selectedType ? `Placing: ${selectedType.label}` : 'Select a marker type'}
+          </span>
+        )}
       </div>
-      <div className="editor-toolbox__buttons">
-        {MARKER_TYPES.map((type) => (
-          <button
-            key={type.id}
-            type="button"
-            className={`toolbox-button ${selectedTypeId === type.id ? 'toolbox-button--active' : ''}`}
-            onClick={() => onSelectType(selectedTypeId === type.id ? null : type.id)}
-          >
-            {type.label}
-          </button>
-        ))}
-      </div>
-      {selectedType && (
-        <p className="editor-toolbox__hint">
-          Click anywhere on the map to place a {selectedType.label}.
-        </p>
+      {showTypeButtons && (
+        <>
+          <div className="editor-toolbox__buttons">
+            {MARKER_TYPES.map((type) => (
+              <button
+                key={type.id}
+                type="button"
+                className={`toolbox-button ${selectedTypeId === type.id ? 'toolbox-button--active' : ''}`}
+                onClick={() => onSelectType(selectedTypeId === type.id ? null : type.id)}
+              >
+                {type.label}
+              </button>
+            ))}
+          </div>
+          {selectedType && (
+            <p className="editor-toolbox__hint">
+              Click anywhere on the map to place a {selectedType.label}.
+            </p>
+          )}
+        </>
       )}
       <div className="editor-toolbox__data">
         <div className="editor-toolbox__data-actions">
@@ -400,6 +445,26 @@ function InteractiveMap({ isEditorMode = false }) {
   const [mapZoom, setMapZoom] = useState(2);
   const [isRegionMode, setIsRegionMode] = useState(false);
   const [regionDraftPoints, setRegionDraftPoints] = useState([]);
+  const [showMarkers, setShowMarkers] = useState(true);
+  const [markerFilters, setMarkerFilters] = useState({
+    city: true,
+    town: true,
+    dungeon: true,
+    ruins: true,
+    landmark: true,
+    npc: true,
+    custom: true,
+    generic: true,
+  });
+  const [showRegionsLayer, setShowRegionsLayer] = useState(true);
+  const [regionFilters, setRegionFilters] = useState(() => createDefaultRegionFilters());
+  const [particleFilters, setParticleFilters] = useState({
+    snow: true,
+    leaves: true,
+    embers: true,
+    magic: true,
+    weather: true,
+  });
   const saveTimeoutRef = useRef(null);
   const lastSavedSnapshotRef = useRef('[]');
   const skipNextAutoSaveRef = useRef(false);
@@ -412,7 +477,38 @@ function InteractiveMap({ isEditorMode = false }) {
   const serializedLocations = useMemo(() => JSON.stringify(locations), [locations]);
   const serializedRegions = useMemo(() => JSON.stringify(regions), [regions]);
   const canAutoSave = role === 'editor' || role === 'admin';
-
+  const filteredLocations = useMemo(
+    () =>
+      !showMarkers
+        ? []
+        : locations.filter((location) => {
+            const key = getMarkerFilterKey(location.type);
+            const flag = markerFilters[key];
+            return flag !== false;
+          }),
+    [locations, markerFilters, showMarkers]
+  );
+  const filteredRegions = useMemo(
+    () =>
+      !showRegionsLayer && !isRegionMode
+        ? []
+        : regions.filter((region) => {
+            if (isRegionMode && region.id === activeRegionId) return true;
+            const categoryId = normalizeCategoryId(region.category);
+            const flag = regionFilters[categoryId];
+            return flag !== false;
+          }),
+    [regions, regionFilters, isRegionMode, activeRegionId, showRegionsLayer]
+  );
+  const regionLabelsEnabled = filteredRegions.some((region) => region.labelEnabled !== false);
+  const mapBounds = useMemo(() => {
+    const pad = MAP_PADDING_DEFAULT;
+    return L.latLngBounds(
+      [-pad.top, -pad.left],
+      [MAP_PIXEL_HEIGHT + pad.bottom, MAP_PIXEL_WIDTH + pad.right]
+    );
+  }, []);
+  const boundsViscosity = 0.95;
   useEffect(() => {
     let isMounted = true;
     const fetchLocations = async () => {
@@ -456,7 +552,7 @@ function InteractiveMap({ isEditorMode = false }) {
           throw new Error(data.error || 'Failed to load regions.');
         }
         if (isMounted) {
-          const normalized = Array.isArray(data.regions) ? data.regions : [];
+          const normalized = Array.isArray(data.regions) ? data.regions.map(normalizeRegionEntry) : [];
           setRegions(normalized);
           lastRegionSnapshotRef.current = JSON.stringify(normalized);
         }
@@ -473,6 +569,21 @@ function InteractiveMap({ isEditorMode = false }) {
       isMounted = false;
     };
   }, [setRegions]);
+
+  useEffect(() => {
+    setRegionFilters((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      regions.forEach((region) => {
+        const categoryId = normalizeCategoryId(region.category);
+        if (!(categoryId in next)) {
+          next[categoryId] = true;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [regions]);
 
   const handleLocationClick = (location) => {
     selectLocation(location.id);
@@ -503,18 +614,46 @@ function InteractiveMap({ isEditorMode = false }) {
     setRegionDraftPoints((prev) => [...prev, [latlng.lng, latlng.lat]]);
   };
 
+  const focusRegionOnMap = (regionId) => {
+    if (!mapInstance) return;
+    const region = regions.find((entry) => entry.id === regionId);
+    if (!region || !Array.isArray(region.points) || !region.points.length) return;
+    const latLngs = region.points.map(([x, y]) => L.latLng(y, x));
+    mapInstance.fitBounds(L.latLngBounds(latLngs).pad(0.2));
+  };
+
+  const updateRegionField = (regionId, field, value) => {
+    setRegions((prev) =>
+      prev.map((region) =>
+        region.id === regionId
+          ? {
+              ...region,
+              [field]:
+                field === 'opacity'
+                  ? Math.min(Math.max(Number(value) || 0, 0), 1)
+                  : field === 'labelEnabled'
+                  ? Boolean(value)
+                  : value,
+            }
+          : region
+      )
+    );
+  };
+
   const handleRegionFinish = () => {
     setRegionDraftPoints((prevPoints) => {
       if (prevPoints.length < 3) return prevPoints;
       const regionId = crypto.randomUUID ? crypto.randomUUID() : `region-${Date.now()}`;
-      const newRegion = {
-        id: regionId,
-        name: 'New Region',
-        color: '#f97316',
-        borderColor: '#ea580c',
-        opacity: 0.3,
-        points: prevPoints.map(([x, y]) => [x, y]),
-      };
+    const newRegion = {
+      id: regionId,
+      name: 'New Region',
+      color: '#f97316',
+      borderColor: '#ea580c',
+      opacity: 0.3,
+      category: DEFAULT_REGION_CATEGORY,
+      labelEnabled: true,
+      points: prevPoints.map(([x, y]) => [x, y]),
+    };
       setRegions((existing) => [...existing, newRegion]);
       selectRegion(regionId);
       return [];
@@ -550,29 +689,19 @@ function InteractiveMap({ isEditorMode = false }) {
 
   const handleRegionFieldChange = (field, value) => {
     if (!activeRegionId) return;
-    const normalizedValue =
-      field === 'opacity' ? Math.min(Math.max(Number(value) || 0, 0), 1) : value;
-    setRegions((prev) =>
-      prev.map((region) =>
-        region.id === activeRegionId
-          ? {
-              ...region,
-              [field]: normalizedValue,
-            }
-          : region
-      )
-    );
+    updateRegionField(activeRegionId, field, value);
   };
 
-  const handleDeleteRegion = () => {
-    if (!activeRegionId) return;
+  const handleDeleteRegion = (targetId = activeRegionId) => {
+    if (!targetId) return;
     if (!window.confirm('Delete this region?')) return;
-    setRegions((prev) => prev.filter((region) => region.id !== activeRegionId));
-    selectRegion(null);
+    setRegions((prev) => prev.filter((region) => region.id !== targetId));
+    if (activeRegionId === targetId) {
+      selectRegion(null);
+    }
   };
 
   const handleRegionClick = (regionId) => {
-    if (!isRegionMode) return;
     selectRegion(regionId);
     setRegionDraftPoints([]);
   };
@@ -719,7 +848,9 @@ function InteractiveMap({ isEditorMode = false }) {
         if (!response.ok) {
           throw new Error(data.error || 'Failed to save regions.');
         }
-        const normalized = Array.isArray(data.regions) ? data.regions : [];
+        const normalized = Array.isArray(data.regions)
+          ? data.regions.map(normalizeRegionEntry)
+          : [];
         setRegions(normalized);
         lastRegionSnapshotRef.current = JSON.stringify(normalized);
       } catch (error) {
@@ -740,6 +871,14 @@ function InteractiveMap({ isEditorMode = false }) {
       selectRegion(null);
     }
   }, [isEditorMode, selectLocation, selectRegion]);
+
+  useEffect(() => {
+    if (!isEditorMode) return;
+    return () => {
+      setIsRegionMode(false);
+      setRegionDraftPoints([]);
+    };
+  }, [isEditorMode]);
 
   useEffect(() => {
     if (!isEditorMode) {
@@ -826,7 +965,6 @@ function InteractiveMap({ isEditorMode = false }) {
     locations.find((location) => location.id === selectedLocationId) || null;
   const selectedRegion = regions.find((region) => region.id === activeRegionId) || null;
 
-  const editorDraft = editorSelection?.draft ?? null;
   const handleEditorFieldChange = (field, value) => {
     setEditorSelection((prev) => {
       if (!prev) return prev;
@@ -875,6 +1013,52 @@ function InteractiveMap({ isEditorMode = false }) {
     }
   };
 
+  const editorDraft = editorSelection?.draft ?? null;
+  const markerPaletteNode = (
+    <MarkerPalette
+      isEditorMode={isEditorMode}
+      options={MARKER_ICON_OPTIONS}
+      selectedOption={selectedPaletteItem}
+      onSelect={handleSelectPaletteItem}
+      categoryOptions={MARKER_TYPES}
+      groupByCategory
+    />
+  );
+  const markerToolboxNode = (
+    <EditorToolbox
+      isEditorMode={isEditorMode}
+      selectedTypeId={activePlacementTypeId}
+      onSelectType={handleSelectPlacementType}
+      jsonBuffer={jsonBuffer}
+      onJsonChange={handleJsonBufferChange}
+      onExportJson={handleExportJson}
+      onImportJson={handleImportJson}
+      importError={importError}
+      showTypeButtons={false}
+    />
+  );
+  const locationEditorNode = isEditorMode ? (
+    <EditorInfoPanel
+      isOpen={Boolean(editorSelection)}
+      draft={editorDraft}
+      onFieldChange={handleEditorFieldChange}
+      onSave={handleEditorSave}
+      onCancel={handleEditorCancel}
+      canAutoSave={canAutoSave}
+      saveWarning={saveWarning}
+      canDelete={canAutoSave}
+      onDelete={handleDeleteLocation}
+    />
+  ) : null;
+  const regionInfoPanelNode = isEditorMode ? (
+    <RegionInfoPanel
+      isOpen={Boolean(activeRegionId)}
+      onFieldChange={handleRegionFieldChange}
+      onDelete={handleDeleteRegion}
+      onClose={() => selectRegion(null)}
+    />
+  ) : null;
+
   useEffect(() => {
     if (!mapInstance) return;
     setMapZoom(mapInstance.getZoom());
@@ -884,6 +1068,11 @@ function InteractiveMap({ isEditorMode = false }) {
     mapInstance.on('zoomend', handleZoomLevel);
     return () => mapInstance.off('zoomend', handleZoomLevel);
   }, [mapInstance]);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    mapInstance.invalidateSize();
+  }, [mapInstance, isEditorMode]);
 
   useEffect(() => {
     if (!mapInstance || !mapInstance.doubleClickZoom) return;
@@ -965,170 +1154,144 @@ function InteractiveMap({ isEditorMode = false }) {
     setIsIntroVisible(false);
   };
 
+  useEffect(() => {
+    if (mapInstance && mapBounds) {
+      mapInstance.setMaxBounds(mapBounds);
+      mapInstance.options.maxBoundsViscosity = boundsViscosity;
+      mapInstance.panInsideBounds(mapBounds, { animate: false });
+    }
+  }, [mapInstance, mapBounds, boundsViscosity]);
+
   return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
-      <div className="map-container-wrapper">
-        <MapContainer
-        center={center}
-        zoom={zoom}
-        minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
-        maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
-        maxBounds={MAP_BOUNDS}
-        maxBoundsViscosity={0.8}
-        crs={TILESET_CRS}
-        className="leaflet-map"
-        scrollWheelZoom={true}
-        dragging={true}
-        doubleClickZoom={true}
-        zoomControl={false}
-        zoomSnap={ZOOM_SNAP}
-        zoomDelta={ZOOM_DELTA}
-        wheelPxPerZoomLevel={WHEEL_PX_PER_ZOOM_LEVEL}
-        whenCreated={setMapInstance}
-        style={{ height: '80vh', width: '100%' }}
-      >
-        <TileLayer
-          url={TILE_URL}
-          tileSize={TILE_SIZE}
-          minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
-          maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
-          maxNativeZoom={TILE_MAX_ZOOM_LEVEL}
-          minNativeZoom={TILE_MIN_ZOOM_LEVEL}
-          noWrap={true}
-          keepBuffer={4}
-        />
-        <EditorPlacementHandler
-          isEnabled={
-            isEditorMode &&
-            !editorSelection &&
-            !isRegionMode &&
-            Boolean(selectedPaletteItem || activePlacementTypeId)
-          }
-          onPlaceMarker={handlePlaceMarker}
-        />
-        <RegionDrawingHandler
-          isActive={isEditorMode && isRegionMode}
-          onAddPoint={handleRegionPointAdd}
-          onFinish={handleRegionFinish}
-        />
-        <KeyboardControls />
-        <ZoomControls />
-        {locations.map((location) => (
-          <LocationMarker
-            key={location.id}
-            location={location}
-            onLocationClick={handleLocationClick}
-            isSelected={selectedLocation && selectedLocation.id === location.id}
+      <div className="map-layout">
+        {isEditorMode && (
+          <EditorSidePanel
             isEditorMode={isEditorMode}
-            onDragEnd={handleMarkerDragEnd}
-            zoomLevel={mapZoom}
+            markerPalette={markerPaletteNode}
+            markerToolbox={markerToolboxNode}
+            locationEditor={locationEditorNode}
+            regionInfoPanel={regionInfoPanelNode}
+            regions={regions}
+            activeRegionId={activeRegionId}
+            onSelectRegion={selectRegion}
+            onFocusRegion={focusRegionOnMap}
+            onDeleteRegion={handleDeleteRegion}
+            canAutoSave={canAutoSave}
+            isRegionMode={isRegionMode}
+            onToggleRegionMode={handleToggleRegionMode}
+            regionDraftPoints={regionDraftPoints}
+            onFinishRegion={handleRegionFinish}
+            onResetRegionDraft={handleRegionDraftReset}
+            canAssignSelection={Boolean(isEditorMode && selectedLocation && activeRegionId)}
+            onAssignSelection={handleAssignLocationToRegion}
+            selectedRegionName={selectedRegion?.name || ''}
+            selectedLocationName={selectedLocation?.name || ''}
           />
-        ))}
-        </MapContainer>
-        <VignetteLayer enabled={vignetteEnabled} />
-        <FogLayer enabled={fogEnabled} map={mapInstance} />
-        <CloudLayer enabled={cloudsEnabled} map={mapInstance} />
-        <HeatmapLayer
-          enabled={heatmapMode !== 'none'}
-          map={mapInstance}
-          locations={locations}
-          heatmapMode={heatmapMode}
-        />
-        <RegionLayer
-          enabled
-          regions={regions}
-          map={mapInstance}
-          draftPoints={regionDraftPoints}
-          selectedRegionId={activeRegionId}
-          onRegionClick={handleRegionClick}
-          interactionEnabled={isRegionMode}
-        />
-        <ParallaxLayer enabled />
-      </div>
-      <MarkerPalette
-        isEditorMode={isEditorMode}
-        options={MARKER_ICON_OPTIONS}
-        selectedOption={selectedPaletteItem}
-        onSelect={handleSelectPaletteItem}
-      />
-      {isEditorMode && canAutoSave && (
-        <div className="region-panel">
-          <button
-            type="button"
-            className={`toolbox-button ${isRegionMode ? 'toolbox-button--active' : ''}`}
-            onClick={handleToggleRegionMode}
-          >
-            {isRegionMode ? 'Exit Region Mode' : 'Region Mode'}
-          </button>
-          {isRegionMode && (
-            <>
-              <p className="editor-toolbox__hint">Points: {regionDraftPoints.length}</p>
-              <div className="editor-toolbox__data-actions">
-                <button
-                  type="button"
-                  className="toolbox-button"
-                  onClick={handleRegionFinish}
-                  disabled={regionDraftPoints.length < 3}
-                >
-                  Finish Region
-                </button>
-                <button type="button" className="toolbox-button toolbox-button--ghost" onClick={handleRegionDraftReset}>
-                  Clear Draft
-                </button>
-              </div>
-            </>
-          )}
+        )}
+        <div className="map-layout__canvas">
+          <div className="map-container-wrapper">
+            <MapContainer
+              center={center}
+              zoom={zoom}
+              minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
+              maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
+              {...(!isEditorMode ? { maxBounds: mapBounds, maxBoundsViscosity: boundsViscosity } : {})}
+              crs={TILESET_CRS}
+              className="leaflet-map"
+              scrollWheelZoom={true}
+              dragging={true}
+              doubleClickZoom={true}
+              zoomControl={false}
+              zoomSnap={ZOOM_SNAP}
+              zoomDelta={ZOOM_DELTA}
+              wheelPxPerZoomLevel={WHEEL_PX_PER_ZOOM_LEVEL}
+              whenCreated={setMapInstance}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                url={TILE_URL}
+                tileSize={TILE_SIZE}
+                minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
+                maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
+                maxNativeZoom={TILE_MAX_ZOOM_LEVEL}
+                minNativeZoom={TILE_MIN_ZOOM_LEVEL}
+                noWrap={true}
+                keepBuffer={4}
+              />
+              <EditorPlacementHandler
+                isEnabled={
+                  isEditorMode &&
+                  !editorSelection &&
+                  !isRegionMode &&
+                  Boolean(selectedPaletteItem || activePlacementTypeId)
+                }
+                onPlaceMarker={handlePlaceMarker}
+              />
+              <RegionDrawingHandler
+                isActive={isEditorMode && isRegionMode}
+                onAddPoint={handleRegionPointAdd}
+                onFinish={handleRegionFinish}
+              />
+              <KeyboardControls />
+              <ZoomControls />
+              {filteredLocations.map((location) => (
+                <LocationMarker
+                  key={location.id}
+                  location={location}
+                  onLocationClick={handleLocationClick}
+                  isSelected={selectedLocation && selectedLocation.id === location.id}
+                  isEditorMode={isEditorMode}
+                  onDragEnd={handleMarkerDragEnd}
+                  zoomLevel={mapZoom}
+                />
+              ))}
+              <RegionLayer
+                regions={filteredRegions}
+                draftPoints={regionDraftPoints}
+                selectedRegionId={activeRegionId}
+                onRegionClick={handleRegionClick}
+                interactionEnabled={isRegionMode}
+                showLabels={regionLabelsEnabled}
+                zoomLevel={mapZoom}
+              />
+            </MapContainer>
+            <VignetteLayer enabled={vignetteEnabled} />
+            <FogLayer enabled={fogEnabled} map={mapInstance} />
+            <CloudLayer enabled={cloudsEnabled} map={mapInstance} />
+            <HeatmapLayer
+              enabled={heatmapMode !== 'none'}
+              map={mapInstance}
+              locations={filteredLocations}
+              heatmapMode={heatmapMode}
+            />
+            <ParallaxLayer enabled />
+          </div>
         </div>
-      )}
-      <EditorToolbox
-        isEditorMode={isEditorMode}
-        selectedTypeId={activePlacementTypeId}
-        onSelectType={handleSelectPlacementType}
-        jsonBuffer={jsonBuffer}
-        onJsonChange={handleJsonBufferChange}
-        onExportJson={handleExportJson}
-        onImportJson={handleImportJson}
-        importError={importError}
-      />
+      </div>
       {selectedLocation && (
         <SidePanel
           location={selectedLocation}
           onClose={handleClosePanel}
         />
       )}
-      {isEditorMode && (
-        <EditorInfoPanel
-          isOpen={Boolean(editorSelection)}
-          draft={editorDraft}
-          onFieldChange={handleEditorFieldChange}
-          onSave={handleEditorSave}
-          onCancel={handleEditorCancel}
-          canAutoSave={canAutoSave}
-          saveWarning={saveWarning}
-          canDelete={canAutoSave}
-          onDelete={handleDeleteLocation}
-        />
-      )}
-      {isEditorMode && selectedLocation && activeRegionId && (
-        <button
-          type="button"
-          className="assign-region-button"
-          onClick={handleAssignLocationToRegion}
-        >
-          Assign location to {selectedRegion?.name || 'selected region'}
-        </button>
-      )}
-      {isEditorMode && isRegionMode && (
-        <RegionInfoPanel
-          isOpen={Boolean(activeRegionId)}
-          onFieldChange={handleRegionFieldChange}
-          onDelete={handleDeleteRegion}
-          onClose={() => selectRegion(null)}
-        />
-      )}
       {isIntroVisible && (
         <IntroOverlay onFinish={handleIntroFinish} />
       )}
+      <FilterHoverPanel
+        showMarkers={showMarkers}
+        markerFilters={markerFilters}
+        onToggleMarkers={() => setShowMarkers((prev) => !prev)}
+        onToggleMarkerCategory={(key, value) =>
+          setMarkerFilters((prev) => ({ ...prev, [key]: value }))
+        }
+        showRegions={showRegionsLayer}
+        onToggleRegions={() => setShowRegionsLayer((prev) => !prev)}
+        particleFilters={particleFilters}
+        onToggleParticle={(key, value) =>
+          setParticleFilters((prev) => ({ ...prev, [key]: value }))
+        }
+      />
     </div>
   );
 }

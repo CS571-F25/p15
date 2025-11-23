@@ -10,6 +10,8 @@ const __dirname = path.dirname(__filename);
 
 const USERS_FILE_PATH = path.join(__dirname, 'users.json');
 const BACKUP_DIR = path.join(__dirname, 'backups');
+const CHARACTER_VISIBILITY_PATH = path.join(__dirname, 'characters-visibility.json');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const JWT_SECRET = process.env.JWT_SECRET || 'azterra_dev_secret_change_me';
 const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@azterra.com';
 const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || 'admin12345';
@@ -19,6 +21,20 @@ const ALLOWED_ROLES = ['pending', 'editor', 'admin'];
 async function ensureUsersFile() {
   if (!existsSync(USERS_FILE_PATH)) {
     await fs.writeFile(USERS_FILE_PATH, JSON.stringify([], null, 2));
+  }
+}
+
+async function ensureVisibilityFile() {
+  if (!existsSync(CHARACTER_VISIBILITY_PATH)) {
+    // Default: allow all sample character IDs 1-12 (adjust as the roster grows)
+    const defaultVisible = Array.from({ length: 12 }, (_, i) => i + 1);
+    await fs.writeFile(CHARACTER_VISIBILITY_PATH, JSON.stringify(defaultVisible, null, 2));
+  }
+}
+
+async function ensureUploadsDir() {
+  if (!existsSync(UPLOADS_DIR)) {
+    await fs.mkdir(UPLOADS_DIR, { recursive: true });
   }
 }
 
@@ -62,6 +78,27 @@ export async function writeUsers(users) {
   await fs.writeFile(USERS_FILE_PATH, JSON.stringify(users, null, 2));
 }
 
+export async function readCharacterVisibility() {
+  await ensureVisibilityFile();
+  const raw = await fs.readFile(CHARACTER_VISIBILITY_PATH, 'utf-8');
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export async function writeCharacterVisibility(list) {
+  await ensureVisibilityFile();
+  await fs.writeFile(CHARACTER_VISIBILITY_PATH, JSON.stringify(list, null, 2));
+}
+
+export async function getUploadsDir() {
+  await ensureUploadsDir();
+  return UPLOADS_DIR;
+}
+
 export async function ensureDefaultAdmin() {
   const users = await readUsers();
   const hasAdmin = users.some((user) => user.role === 'admin');
@@ -73,6 +110,12 @@ export async function ensureDefaultAdmin() {
     email: DEFAULT_ADMIN_EMAIL.toLowerCase(),
     passwordHash,
     name: DEFAULT_ADMIN_NAME,
+    username: 'admin',
+    favorites: [],
+    featuredCharacter: null,
+    profilePicture: '',
+    profile: { bio: '', labelOne: '', labelTwo: '', documents: [] },
+    unlockedSecrets: [],
     role: 'admin',
     createdAt: new Date().toISOString(),
   };
@@ -126,7 +169,18 @@ export const authRequired = async (req, res, next) => {
     if (!currentUser) {
       return res.status(401).json({ error: 'Invalid user.' });
     }
-    req.user = currentUser;
+    req.user = {
+      ...currentUser,
+      favorites: Array.isArray(currentUser.favorites) ? currentUser.favorites : [],
+      featuredCharacter: currentUser.featuredCharacter ?? null,
+      profile: {
+        bio: currentUser.profile?.bio || '',
+        labelOne: currentUser.profile?.labelOne || '',
+        labelTwo: currentUser.profile?.labelTwo || '',
+        documents: Array.isArray(currentUser.profile?.documents) ? currentUser.profile.documents : [],
+      },
+      unlockedSecrets: Array.isArray(currentUser.unlockedSecrets) ? currentUser.unlockedSecrets : [],
+    };
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Invalid or expired token.' });
