@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-function LoginModal({ isOpen, onClose, onSubmit }) {
+function LoginModal({ isOpen, onClose, onSubmit, onOpenSignup }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -28,6 +28,13 @@ function LoginModal({ isOpen, onClose, onSubmit }) {
       setError(err.message || 'Unable to login.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleOpenSignup = () => {
+    if (onOpenSignup) {
+      onClose?.();
+      onOpenSignup();
     }
   };
 
@@ -59,7 +66,13 @@ function LoginModal({ isOpen, onClose, onSubmit }) {
           </button>
           {error && <p className="auth-modal__error">{error}</p>}
         </form>
-        <p className="auth-modal__note">Editors must be approved by an admin before autosave is enabled.</p>
+        <p className="auth-modal__note">Note: Editors must be approved by an admin before autosave is enabled.</p>
+        <div className="auth-modal__switch">
+          <span>New here?</span>
+          <button type="button" className="auth-modal__link" onClick={handleOpenSignup}>
+            Sign Up
+          </button>
+        </div>
       </div>
     </div>
   );

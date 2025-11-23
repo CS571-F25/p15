@@ -88,7 +88,8 @@ const baseNavLinks = [
 export default function Header() {
   const location = useLocation();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const { user, role, login, logout } = useAuth();
+  const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const { user, role, login, signup, logout } = useAuth();
 
   const navLinks = role === 'admin'
     ? [...baseNavLinks, { to: '/admin', label: 'Admin', icon: NAV_ICONS.admin }]
@@ -100,6 +101,16 @@ export default function Header() {
   }, []);
 
   const handleLogin = (formData) => login(formData);
+  const handleSignupOpen = () => {
+    setIsLoginOpen(false);
+    setIsSignupOpen(true);
+  };
+  const handleSignupClose = () => setIsSignupOpen(false);
+  const handleSignup = (formData) => signup(formData);
+  const handleLoginOpen = () => {
+    setIsSignupOpen(false);
+    setIsLoginOpen(true);
+  };
 
   return (
     <>
@@ -108,7 +119,7 @@ export default function Header() {
         aria-label="Azterra navigation"
       >
         {/* Brand / Logo Area */}
-        <div className="flex items-center h-[70px] px-[10px] shrink-0 whitespace-nowrap relative group">
+        <div className="group flex items-center h-[70px] px-[10px] shrink-0 whitespace-nowrap relative">
           <div className="w-[40px] h-[40px] rounded-[10px] border border-[#ffdc9673] flex items-center justify-center font-serif text-[1.2rem] bg-[radial-gradient(circle_at_30%_30%,rgba(255,226,185,0.3),rgba(27,20,15,0.8))] font-[Cinzel] shrink-0 text-[#ffd700] relative z-20">
             A
           </div>
@@ -130,16 +141,16 @@ export default function Header() {
                 aria-current={isActive ? 'page' : undefined}
               >
                 {/* Icon */}
-                <span className="w-6 h-6 shrink-0 flex items-center justify-center relative z-20" aria-hidden="true">
+                <span className="w-6 h-6 shrink-0 flex items-center justify-center relative z-20 text-[#ffd700]" aria-hidden="true">
                   {icon}
                 </span>
                 {/* Text Label (Opacity transition) */}
-                <span className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
+                <span className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[#ffd700] delay-75 relative z-50">
                   {label}
                 </span>
                 {/* Active Indicator (Accent Line) */}
                 {isActive && (
-                  <div className="absolute left-0 w-[3px] h-full bg-[#ffd700] rounded-r-sm" />
+                  <div className="absolute left-0 w-[5px] h-full bg-[#ffd700] rounded-r-sm" />
                 )}
               </Link>
             );
@@ -156,7 +167,7 @@ export default function Header() {
               title="Login"
             >
               {/* Login Icon */}
-              <span className="w-6 h-6 shrink-0 flex items-center justify-center text-[#ffd700]">
+              <span className="w-6 h-6 shrink-0 flex items-center justify-center relative z-20 text-[#ffd700]">
                 {NAV_ICONS.login}
               </span>
               {/* Login Label */}
@@ -198,7 +209,18 @@ export default function Header() {
         </div>
       </aside>
 
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onSubmit={handleLogin} />
+      <LoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onSubmit={handleLogin}
+        onOpenSignup={handleSignupOpen}
+      />
+      <SignupModal
+        isOpen={isSignupOpen}
+        onClose={handleSignupClose}
+        onSubmit={handleSignup}
+        onOpenLogin={handleLoginOpen}
+      />
     </>
   );
 }

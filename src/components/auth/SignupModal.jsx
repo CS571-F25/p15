@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-function SignupModal({ isOpen, onClose, onSubmit }) {
+function SignupModal({ isOpen, onClose, onSubmit, onOpenLogin }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,6 +30,13 @@ function SignupModal({ isOpen, onClose, onSubmit }) {
       setError(err.message || 'Unable to create account.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    if (onOpenLogin) {
+      onClose?.();
+      onOpenLogin();
     }
   };
 
@@ -67,6 +74,12 @@ function SignupModal({ isOpen, onClose, onSubmit }) {
           {error && <p className="auth-modal__error">{error}</p>}
         </form>
         <p className="auth-modal__note">New accounts start as pending until an admin approves them.</p>
+        <div className="auth-modal__switch">
+          <span>Already have an account?</span>
+          <button type="button" className="auth-modal__link" onClick={handleBackToLogin}>
+            Login
+          </button>
+        </div>
       </div>
     </div>
   );
