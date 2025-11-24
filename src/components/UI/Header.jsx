@@ -157,6 +157,7 @@ export default function Header() {
                 key={to}
                 to={to}
                 className={`azterra-nav__link ${isActive ? 'azterra-nav__link--active' : ''}`}
+                data-label={label}
                 aria-current={isActive ? 'page' : undefined}
               >
                 {/* Icon */}
@@ -182,6 +183,7 @@ export default function Header() {
               type="button"
               className="azterra-nav__link"
               onClick={() => setIsLoginOpen(true)}
+              data-label="Login"
               title="Login"
             >
               {/* Login Icon */}
@@ -207,6 +209,7 @@ export default function Header() {
                 to="/account"
                 className="azterra-nav__link"
                 title="Account settings"
+                data-label="Account"
               >
                 <span className="azterra-nav__icon text-[#ffd700]">
                   {NAV_ICONS.account}
@@ -217,6 +220,7 @@ export default function Header() {
                 type="button"
                 className="azterra-nav__link azterra-nav__link--muted"
                 onClick={logout}
+                data-label="Logout"
                 title="Logout"
               >
                 <span className="azterra-nav__icon">
@@ -233,7 +237,7 @@ export default function Header() {
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
         onSubmit={handleLogin}
-        onOpenSignup={handleSignupOpen} 
+        onOpenSignup={handleSignupOpen}
         onGoogleLogin={handleGoogleLogin}
       />
       <SignupModal

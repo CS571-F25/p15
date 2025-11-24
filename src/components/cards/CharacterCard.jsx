@@ -22,23 +22,25 @@ function CharacterCard({ character, onToggleFavorite, isFavorite, onFeature, isF
       <div className="card-summary">
         <div className="card-title-row">
           <h2 className="card-name">{character.name}</h2>
-          <span className="chip chip-level">Level {character.level}</span>
+          {character.title && <div className="card-subtitle">{character.title}</div>}
         </div>
-        <div className="card-actions">
-          <div className="card-vitals">
-            <div>
-              <span>HP</span>
-              <strong>{character.hp}</strong>
-            </div>
-            <div>
-              <span>AC</span>
-              <strong>{character.ac}</strong>
-            </div>
-            <div>
-              <span>Speed</span>
-              <strong>{character.speed} ft</strong>
-            </div>
+        
+        <div className="card-stats-grid">
+          <div className="stat-box">
+            <span className="stat-label">Level</span>
+            <span className="stat-value">{character.level}</span>
           </div>
+          <div className="stat-box">
+            <span className="stat-label">Race</span>
+            <span className="stat-value">{character.race}</span>
+          </div>
+          <div className="stat-box">
+            <span className="stat-label">Class</span>
+            <span className="stat-value">{character.class}</span>
+          </div>
+        </div>
+
+        <div className="card-actions">
           {(onToggleFavorite || onFeature) && (
             <div className="card-fav">
               {onToggleFavorite && (

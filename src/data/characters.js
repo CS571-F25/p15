@@ -14,6 +14,7 @@ const characters = [
   {
     id: 1,
     name: "Aelar",
+    title: "The Arcane Sage",
     race: "Elf",
     class: "Wizard",
     level: 5,
@@ -37,6 +38,7 @@ const characters = [
   {
     id: 2,
     name: "Brog",
+    title: "The Ironbreaker",
     race: "Half-Orc",
     class: "Barbarian",
     level: 4,
@@ -60,6 +62,7 @@ const characters = [
   {
     id: 3,
     name: "Celeste",
+    title: "Lightbringer",
     race: "Human",
     class: "Cleric",
     level: 5,
@@ -83,6 +86,7 @@ const characters = [
   {
     id: 4,
     name: "Drusk",
+    title: "Dragon's Shield",
     race: "Dragonborn",
     class: "Paladin",
     level: 6,
@@ -106,6 +110,7 @@ const characters = [
   {
     id: 5,
     name: "Elyra",
+    title: "Songweaver",
     race: "Half-Elf",
     class: "Bard",
     level: 5,
@@ -129,6 +134,7 @@ const characters = [
   {
     id: 6,
     name: "Flint",
+    title: "The Tinkerer",
     race: "Dwarf",
     class: "Artificer",
     level: 4,
@@ -152,6 +158,7 @@ const characters = [
   {
     id: 7,
     name: "Ghita",
+    title: "Shadowbound",
     race: "Tiefling",
     class: "Warlock",
     level: 5,
@@ -175,6 +182,7 @@ const characters = [
   {
     id: 8,
     name: "Harran",
+    title: "Stonefist",
     race: "Goliath",
     class: "Fighter",
     level: 5,

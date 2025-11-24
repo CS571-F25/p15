@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MapPage from './components/pages/MapPage';
 import AlmanacPage from './components/pages/AlmanacPage';
 import CharactersPage from './components/pages/CharactersPage';
@@ -25,7 +25,7 @@ const Placeholder = ({ title }) => (
 
 function App() {
   return (
-    <Router basename='/p15/'>
+    <HashRouter>
       <div className="app-shell">
         <Header />
         <main className="app-content">
@@ -106,7 +106,7 @@ function App() {
           </Routes>
         </main>
       </div>
-    </Router>
+    </HashRouter>
   );
 }
 export default App;
