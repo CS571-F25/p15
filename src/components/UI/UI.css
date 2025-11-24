@@ -395,8 +395,7 @@
   display: flex;
   align-items: center;
   height: 70px;
-  padding: 0 6px;
-  gap: 12px;
+  padding: 0 8px;
   flex-shrink: 0;
 }
 
@@ -413,23 +412,23 @@
   line-height: 1;
   background: radial-gradient(circle at 30% 30%, rgba(255, 226, 185, 0.3), rgba(27, 20, 15, 0.8));
   color: #ffd700;
+  flex-shrink: 0;
 }
 
 .azterra-sidebar__brand-text {
   display: flex;
   flex-direction: column;
   opacity: 0;
-  max-width: 0;
-  overflow: hidden;
-  transition: opacity 0.2s ease 0.08s, max-width 0.2s ease 0.08s;
+  transition: opacity 0.2s ease 0.08s;
   letter-spacing: 0.2rem;
   text-transform: uppercase;
   font-family: 'Cinzel', serif;
+  margin-left: 12px;
+  white-space: nowrap;
 }
 
 .azterra-sidebar:hover .azterra-sidebar__brand-text {
   opacity: 1;
-  max-width: 200px;
 }
 
 .azterra-nav {
