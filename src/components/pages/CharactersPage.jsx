@@ -4,21 +4,19 @@ import '../UI/PageUI.css';
 import ShaderBackgroundDualCrossfade from '../visuals/ShaderBackgroundDualCrossfade';
 import CardShader from '../visuals/CardShader';
 import CharacterCard from '../cards/CharacterCard';
-
-// Clamp utility
-const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+import CharacterDetailView from './CharacterDetailView';
 
 // Card class for carousel
 const getCardClass = (index, activeIndex, total) => {
   if (index === activeIndex) return 'card card-active';
-  
+
   // Calculate circular indices
   const prevIndex = (activeIndex - 1 + total) % total;
   const nextIndex = (activeIndex + 1) % total;
 
   if (index === prevIndex) return 'card card-left';
   if (index === nextIndex) return 'card card-right';
-  
+
   return 'card card-hidden';
 };
 
@@ -30,7 +28,10 @@ export default function CharactersPage() {
   const [fade, setFade] = useState(0);
   const animationRef = useRef();
 
+  const [expandedIndex, setExpandedIndex] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const isExpanded = expandedIndex !== null;
+  const expandedCharacter = isExpanded ? characters[expandedIndex] : null;
 
   // Utility to start fade to new color, always from visual color AT THAT MOMENT
   function startColorFade(newColor) {
@@ -82,13 +83,25 @@ export default function CharactersPage() {
 
   const handleCardClick = useCallback((index) => {
     setActiveIndex(index);
-  }, []);
+    if (index === activeIndex) {
+      setExpandedIndex(index);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [activeIndex]);
 
   const handleCardKeyDown = useCallback((event, index) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       setActiveIndex(index);
+      if (index === activeIndex) {
+        setExpandedIndex(index);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
+  }, [activeIndex]);
+
+  const handleBackToCarousel = useCallback(() => {
+    setExpandedIndex(null);
   }, []);
 
   // Arrow keys navigation
@@ -96,13 +109,19 @@ export default function CharactersPage() {
     const handleKey = (event) => {
       if (event.key === 'ArrowLeft') {
         goPrev();
+        if (isExpanded) {
+           setExpandedIndex(prev => (prev - 1 + characters.length) % characters.length);
+        }
       } else if (event.key === 'ArrowRight') {
         goNext();
+        if (isExpanded) {
+           setExpandedIndex(prev => (prev + 1) % characters.length);
+        }
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [goNext, goPrev]);
+  }, [goNext, goPrev, isExpanded]);
 
   // Vanish tool: press 'v' to toggle
   useEffect(() => {
@@ -116,59 +135,85 @@ export default function CharactersPage() {
   }, []);
 
   return (
-    <div className="characters-page">
+    <div className={`characters-page ${isExpanded ? 'is-expanded' : ''}`}>
+      <ShaderBackgroundDualCrossfade
+        modA={currentColor}
+        modB={targetColor}
+        fade={fade}
+      />
 
       {!vanished && (
         <>
-          <h1 className="page-title">Stars of Azterra</h1>
-          <div className="characters-wrapper">
-            <p className="nav-hint">Use the arrow keys or buttons to browse the codex</p>
-            <div className="carousel-controls">
-              <button
-                className="arrow-btn arrow-left"
-                onClick={goPrev}
-                aria-label="Previous character"
-              >
-                ‹
-              </button>
-              <div className="carousel-frame" role="region" aria-live="polite">
-                <div className="sun-overlay" aria-hidden="true" />
-                <div className="carousel-track">
-                  {characters.map((char, index) => {
-                    const isActive = index === activeIndex;
-                    return (
-                      <div
-                        key={char.id}
-                        className={getCardClass(index, activeIndex, characters.length)}
-                        role="button"
-                        tabIndex={isActive ? 0 : -1}
-                        aria-label={`Select ${char.name}`}
-                        aria-pressed={isActive}
-                        onClick={() => handleCardClick(index)}
-                        onKeyDown={(event) => handleCardKeyDown(event, index)}
-                      >
-                        {isActive && (
-                          <CardShader
-                            modA={currentColor}
-                            modB={targetColor}
-                            fade={fade}
-                          />
-                        )}
-                        <CharacterCard character={char} />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <button
-                className="arrow-btn arrow-right"
-                onClick={goNext}
-                aria-label="Next character"
-              >
-                ›
-              </button>
-            </div>
+          <div className={`carousel-section ${isExpanded ? 'fade-out' : ''}`}>
+             <h1 className="page-title">Stars of Azterra</h1>
+             <div className="characters-wrapper">
+               <p className="nav-hint">Use the arrow keys or buttons to browse the codex</p>
+               <div className="carousel-controls">
+                 <button
+                   className="arrow-btn arrow-left"
+                   onClick={goPrev}
+                   aria-label="Previous character"
+                   disabled={isExpanded}
+                 >
+                   ‹
+                 </button>
+                 <div className="carousel-frame" role="region" aria-live="polite">
+                   <div className="sun-overlay" aria-hidden="true" />
+                   <div className="carousel-track">
+                     {characters.map((char, index) => {
+                       const isActive = index === activeIndex;
+                       return (
+                         <div
+                           key={char.id}
+                           className={getCardClass(index, activeIndex, characters.length)}
+                           role="button"
+                           tabIndex={isActive ? 0 : -1}
+                           aria-label={`Select ${char.name}`}
+                           aria-pressed={isActive}
+                           onClick={() => handleCardClick(index)}
+                           onKeyDown={(event) => handleCardKeyDown(event, index)}
+                         >
+                           {isActive && (
+                             <CardShader
+                               modA={currentColor}
+                               modB={targetColor}
+                               fade={fade}
+                             />
+                           )}
+                           <CharacterCard character={char} />
+                         </div>
+                       );
+                     })}
+                   </div>
+                 </div>
+                 <button
+                   className="arrow-btn arrow-right"
+                   onClick={goNext}
+                   aria-label="Next character"
+                   disabled={isExpanded}
+                 >
+                   ›
+                 </button>
+               </div>
+             </div>
           </div>
+
+          {isExpanded && (
+            <CharacterDetailView 
+              character={expandedCharacter} 
+              onClose={handleBackToCarousel}
+              onNext={() => {
+                goNext();
+                setExpandedIndex((prev) => (prev + 1) % characters.length);
+              }}
+              onPrev={() => {
+                goPrev();
+                setExpandedIndex((prev) => (prev - 1 + characters.length) % characters.length);
+              }}
+              nextName={characters[(expandedIndex + 1) % characters.length].name}
+              prevName={characters[(expandedIndex - 1 + characters.length) % characters.length].name}
+            />
+          )}
         </>
       )}
     </div>

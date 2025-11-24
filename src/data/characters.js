@@ -33,7 +33,8 @@ const characters = [
     abilities: ["Arcane Recovery", "Spellcasting"],
     spells: ["Magic Missile", "Shield", "Fireball"],
     equipment: ["Staff", "Spellbook", "Rope"],
-    notes: "Wears a blue cloak."
+    notes: "Wears a blue cloak.",
+    lore: "Aelar spent decades within the Spire of Echoes, studying ancient scrolls that predate the Sundering. His fascination with the arcane is not merely academic; he seeks to understand the very fabric of reality to prevent a catastrophe he saw in a vision. Though often lost in thought, his mastery of the weave is undeniable, capable of bending the elements to his will with a mere whisper."
   },
   {
     id: 2,
@@ -57,7 +58,8 @@ const characters = [
     abilities: ["Rage", "Unarmored Defense"],
     spells: [],
     equipment: ["Greataxe", "Javelin (4)", "Explorer's Pack"],
-    notes: "Has a scar over left eye."
+    notes: "Has a scar over left eye.",
+    lore: "Born in the harsh badlands of Karkoth, Brog learned early that strength was the only law that mattered. He earned the name 'Ironbreaker' after shattering a warlord's shield with a single blow. Despite his fearsome reputation, Brog possesses a quiet wisdom about the natural world, respecting the spirits of the land as much as the steel in his hand."
   },
   {
     id: 3,
@@ -81,7 +83,8 @@ const characters = [
     abilities: ["Channel Divinity", "Divine Domain"],
     spells: ["Guiding Bolt", "Spiritual Weapon", "Mass Healing Word"],
     equipment: ["Mace", "Shield", "Holy Symbol", "Chain Mail"],
-    notes: "Carries a small silver bell blessed by her temple."
+    notes: "Carries a small silver bell blessed by her temple.",
+    lore: "Celeste was found on the steps of the Temple of Solara as an infant, bathed in the morning light. Raised by the priesthood, she has dedicated her life to bringing hope to the darkest corners of Azterra. Her faith is unwavering, a beacon that rallies her allies even in the direst of circumstances. It is said that her prayers can turn the tide of battle, calling down the very wrath of the sun."
   },
   {
     id: 4,
@@ -105,7 +108,8 @@ const characters = [
     abilities: ["Lay on Hands", "Divine Smite"],
     spells: ["Bless", "Shield of Faith"],
     equipment: ["Greatsword", "Plate Armor", "Insignia of rank"],
-    notes: "Armor is etched with bronze dragon motifs."
+    notes: "Armor is etched with bronze dragon motifs.",
+    lore: "A veteran of the Scale Wars, Drusk swore an oath of vengeance against those who would threaten the innocent. His bronze scales are scarred from countless battles, each a testament to his resilience. He views himself as a living shield, placing himself between danger and his companions without hesitation. His code is strict, but his heart burns with the fire of his ancestors."
   },
   {
     id: 5,
@@ -129,7 +133,8 @@ const characters = [
     abilities: ["Bardic Inspiration", "Jack of All Trades"],
     spells: ["Dissonant Whispers", "Hypnotic Pattern", "Cure Wounds"],
     equipment: ["Rapier", "Lute", "Pan flute", "Leather Armor"],
-    notes: "Collects stories from every tavern she visits."
+    notes: "Collects stories from every tavern she visits.",
+    lore: "Elyra believes that the world is made of stories, and she intends to learn them all. A wanderer by nature, she weaves magic into her music, charming kings and calming beasts alike. Her laughter is infectious, but beneath her playful exterior lies a sharp wit and a keen observer. She chronicles the party's deeds, ensuring their legend will be sung for generations to come."
   },
   {
     id: 6,
@@ -153,7 +158,8 @@ const characters = [
     abilities: ["Infuse Item", "Magical Tinkering"],
     spells: ["Faerie Fire", "Cure Wounds"],
     equipment: ["Handaxe", "Light Crossbow", "Tinker satchel"],
-    notes: "Has a mechanical raven familiar named Cog."
+    notes: "Has a mechanical raven familiar named Cog.",
+    lore: "Flint sees magic not as a mystical force, but as a puzzle to be solved. Exiled from his clan for his unorthodox experiments, he travels the world seeking rare materials for his inventions. His mechanical companion, Cog, is his masterpiece, a testament to his genius. Flint is always tinkering, improving, and optimizing, believing that with enough gears and mana, anything is possible."
   },
   {
     id: 7,
@@ -177,7 +183,8 @@ const characters = [
     abilities: ["Eldritch Invocations", "Pact of the Tome"],
     spells: ["Eldritch Blast", "Hex", "Shadow of Moil"],
     equipment: ["Dagger", "Component pouch", "Silken robes"],
-    notes: "Eyes glow faint purple when channeling her patron."
+    notes: "Eyes glow faint purple when channeling her patron.",
+    lore: "Ghita struck a bargain with a shadowy entity to save her own life, a debt she is now forever paying. She walks the line between light and dark, using her deceptive charm to manipulate those around her. While her methods are questionable, her power is undeniable. She seeks a way to break her pact, but the whispers in the dark are growing louder every day."
   },
   {
     id: 8,
@@ -201,9 +208,9 @@ const characters = [
     abilities: ["Second Wind", "Action Surge", "Battlemaster Maneuvers"],
     spells: [],
     equipment: ["Maul", "Heavy Crossbow", "Chain Mail"],
-    notes: "Keeps tally marks engraved on his maul's haft."
+    notes: "Keeps tally marks engraved on his maul's haft.",
+    lore: "Harran descends from a tribe of mountain dwellers who value strength above all else. He left his home to test his might against the strongest champions of the lowlands. His maul, 'Earthshaker', has felled giants and beasts alike. Though he speaks little, his actions speak volumes. He fights not for gold or glory, but for the thrill of the challenge and the honor of his ancestors."
   }
-  // Add more characters as desired
 ];
 
 export default characters.map((char) => ({
