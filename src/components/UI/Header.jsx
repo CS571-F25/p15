@@ -135,17 +135,11 @@ export default function Header() {
 
   return (
     <>
-      <aside
-        className="group fixed top-0 left-0 h-screen w-[60px] hover:w-[200px] bg-gradient-to-b from-[#18120cfa] to-[#221a15f2] text-[#f7ecda] flex flex-col shadow-[4px_0_20px_rgba(0,0,0,0.55)] z-[1500] border-r border-[#ffd6af33] transition-all duration-300 overflow-visible"
-        aria-label="Azterra navigation"
-      >
-        {/* Brand / Logo Area */}
-        <div className="group flex items-center h-[70px] px-[10px] shrink-0 whitespace-nowrap relative">
-          <div className="w-[40px] h-[40px] rounded-[10px] border border-[#ffdc9673] flex items-center justify-center font-serif text-[1.2rem] bg-[radial-gradient(circle_at_30%_30%,rgba(255,226,185,0.3),rgba(27,20,15,0.8))] font-[Cinzel] shrink-0 text-[#ffd700] relative z-20">
-            A
-          </div>
-          <div className="flex flex-col ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-            <span className="font-[Cinzel] text-[1.2rem] tracking-[0.2rem] uppercase text-[#ffd700]">Azterra</span>
+      <aside className="azterra-sidebar" aria-label="Azterra navigation">
+        <div className="azterra-sidebar__brand">
+          <div className="azterra-sidebar__brand-mark">A</div>
+          <div className="azterra-sidebar__brand-text">
+            <span>Azterra</span>
           </div>
         </div>
 
@@ -157,21 +151,13 @@ export default function Header() {
                 key={to}
                 to={to}
                 className={`azterra-nav__link ${isActive ? 'azterra-nav__link--active' : ''}`}
-                data-label={label}
                 aria-current={isActive ? 'page' : undefined}
               >
-                {/* Icon */}
-                <span className="w-6 h-6 shrink-0 flex items-center justify-center relative z-20 text-[#ffd700]" aria-hidden="true">
+                <span className="azterra-nav__icon" aria-hidden="true">
                   {icon}
                 </span>
-                {/* Text Label (Opacity transition) */}
-                <span className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[#ffd700] delay-75 relative z-50">
-                  {label}
-                </span>
-                {/* Active Indicator (Accent Line) */}
-                {isActive && (
-                  <div className="absolute left-0 w-[5px] h-full bg-[#ffd700] rounded-r-sm" />
-                )}
+                <span className="azterra-nav__label">{label}</span>
+                {isActive && <div className="azterra-nav__indicator" />}
               </Link>
             );
           })}
@@ -183,11 +169,9 @@ export default function Header() {
               type="button"
               className="azterra-nav__link"
               onClick={() => setIsLoginOpen(true)}
-              data-label="Login"
               title="Login"
             >
-              {/* Login Icon */}
-              <span className="w-6 h-6 shrink-0 flex items-center justify-center relative z-20 text-[#ffd700]">
+              <span className="azterra-nav__icon text-[#ffd700]">
                 {NAV_ICONS.login}
               </span>
               <span className="azterra-nav__label">Login</span>
@@ -201,7 +185,7 @@ export default function Header() {
                   {NAV_ICONS.login}
                 </span>
                 <div className="azterra-sidebar__account-text">
-                  <span className="azterra-sidebar__account-name">{user.name || user.username || 'User'}</span>
+                  <span className="azterra-sidebar__account-name">{user.name || 'User'}</span>
                   <span className="azterra-sidebar__account-role">{role}</span>
                 </div>
               </div>
