@@ -43,7 +43,7 @@ router.post('/signup', async (req, res) => {
     favorites: [],
     featuredCharacter: null,
     profilePicture: '',
-    profile: { bio: '', labelOne: '', labelTwo: '', documents: [] },
+    profile: { bio: '', labelOne: '', labelTwo: '', documents: [], viewFavorites: [] },
     unlockedSecrets: [],
     role: 'pending',
     createdAt: new Date().toISOString(),
@@ -112,7 +112,7 @@ router.post('/google', async (req, res) => {
         favorites: [],
         featuredCharacter: null,
         characters: [],
-        profile: { bio: '', labelOne: '', labelTwo: '', documents: [] },
+        profile: { bio: '', labelOne: '', labelTwo: '', documents: [], viewFavorites: [] },
         role: 'pending',
         provider: 'google',
         googleId,
@@ -162,6 +162,7 @@ router.put('/me', async (req, res) => {
           labelOne: typeof profile.labelOne === 'string' ? profile.labelOne.slice(0, 120) : current.profile?.labelOne || '',
           labelTwo: typeof profile.labelTwo === 'string' ? profile.labelTwo.slice(0, 120) : current.profile?.labelTwo || '',
           documents: Array.isArray(current.profile?.documents) ? current.profile.documents : [],
+          viewFavorites: Array.isArray(current.profile?.viewFavorites) ? current.profile.viewFavorites : [],
         };
       } else {
         nextUser.profile = {
@@ -169,6 +170,7 @@ router.put('/me', async (req, res) => {
           labelOne: current.profile?.labelOne || '',
           labelTwo: current.profile?.labelTwo || '',
           documents: Array.isArray(current.profile?.documents) ? current.profile.documents : [],
+          viewFavorites: Array.isArray(current.profile?.viewFavorites) ? current.profile.viewFavorites : [],
         };
       }
       if (!Array.isArray(nextUser.unlockedSecrets)) {

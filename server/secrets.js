@@ -20,6 +20,16 @@ const SECRET_DEFINITIONS = [
     title: 'Gilded Horizon',
     description: 'A map pin now glows faint gold at the edge of the world.',
   },
+  {
+    id: 'amber-archive',
+    title: 'Amber Archive',
+    description: 'An amber seal cracks to reveal forgotten correspondence.',
+  },
+  {
+    id: 'shadow-court',
+    title: 'Shadow Court',
+    description: 'Whispers from the Shadow Court mark a new allegiance.',
+  },
 ];
 
 // Map normalized phrases to secret IDs. Values stay backend-only.
@@ -27,6 +37,8 @@ const SECRET_PHRASES = {
   'light the northern flame': 'aurora-ember',
   'quiet books speak': 'silent-archive',
   'beyond the western gold': 'gilded-horizon',
+  'amber light endures': 'amber-archive',
+  'the court waits in dusk': 'shadow-court',
 };
 
 function normalizePhrase(phrase = '') {

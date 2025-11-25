@@ -52,6 +52,12 @@ const NAV_ICONS = {
       <line x1="10" y1="9" x2="8" y2="9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  viewing: (
+    <svg viewBox="0 0 24 24" role="presentation">
+      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  ),
   // Admin (Shield/Security)
   admin: (
     <svg viewBox="0 0 24 24" role="presentation">
@@ -105,6 +111,7 @@ const baseNavLinks = [
   { to: "/people", label: "People", icon: NAV_ICONS.people },
   { to: "/magic", label: "Magic & Lore", icon: NAV_ICONS.magic },
   { to: "/campaign", label: "Campaign", icon: NAV_ICONS.campaign },
+  { to: "/viewing", label: "Viewing", icon: NAV_ICONS.viewing },
   { to: "/players", label: "Players", icon: NAV_ICONS.players },
   { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
 ];

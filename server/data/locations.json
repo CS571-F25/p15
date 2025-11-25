@@ -104,6 +104,54 @@
       "tags": [],
       "regionId": null,
       "glowColor": "#F7B267"
+    },
+    {
+      "id": 12,
+      "name": "Ember Vault",
+      "type": "dungeon",
+      "iconKey": "dungeon-ember",
+      "lat": 1400,
+      "lng": 1800,
+      "x": 1400,
+      "y": 1800,
+      "description": "A vault suffused with auroral embers.",
+      "category": "Dungeon",
+      "tags": [],
+      "regionId": null,
+      "glowColor": "#f59e0b",
+      "secretId": "aurora-ember"
+    },
+    {
+      "id": 13,
+      "name": "Silent Stacks",
+      "type": "city",
+      "iconKey": "city-gold",
+      "lat": 1600,
+      "lng": 1900,
+      "x": 1600,
+      "y": 1900,
+      "description": "A hidden annex of the archivists.",
+      "category": "City",
+      "tags": [],
+      "regionId": null,
+      "glowColor": "#fcd34d",
+      "secretId": "silent-archive"
+    },
+    {
+      "id": 14,
+      "name": "Gilded Horizon Outpost",
+      "type": "landmark",
+      "iconKey": "landmark-obelisk",
+      "lat": 1800,
+      "lng": 2100,
+      "x": 1800,
+      "y": 2100,
+      "description": "An outpost that glows when the horizon turns gold.",
+      "category": "Landmark",
+      "tags": [],
+      "regionId": null,
+      "glowColor": "#fbbf24",
+      "secretId": "gilded-horizon"
     }
   ]
 }

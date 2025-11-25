@@ -12,6 +12,10 @@ import LorePlaceholderPage from './components/pages/lore/LorePlaceholderPage';
 import PlayersPage from './components/pages/PlayersPage';
 import PlayerPublicPage from './components/pages/PlayerPublicPage';
 import DashboardPage from './components/pages/DashboardPage';
+import ViewingPage from './components/pages/ViewingPage';
+import AdminEntitiesPage from './components/pages/AdminEntitiesPage';
+import RegionDetailPage from './components/pages/RegionDetailPage';
+import LocationDetailPage from './components/pages/LocationDetailPage';
 import Header from './components/UI/Header';
 import PageLayout from './components/UI/PageLayout';
 import './components/UI/PageUI.css';
@@ -100,6 +104,16 @@ function App() {
             {/* Players */}
             <Route path="/players" element={<PlayersPage />} />
             <Route path="/players/:id" element={<PlayerPublicPage />} />
+
+            {/* Viewing */}
+            <Route path="/viewing" element={<ViewingPage />} />
+
+            {/* Admin Entities */}
+            <Route path="/admin/entities" element={<AdminEntitiesPage />} />
+
+            {/* Detail pages */}
+            <Route path="/region/:id" element={<RegionDetailPage />} />
+            <Route path="/location/:id" element={<LocationDetailPage />} />
 
             {/* Admin */}
             <Route path="/admin" element={<AdminDashboard />} />

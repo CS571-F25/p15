@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { canView as baseCanView } from '../utils/permissions';
 
 const AuthContext = createContext({
   user: null,
@@ -12,6 +13,7 @@ const AuthContext = createContext({
   logout: () => {},
   refreshUser: async () => {},
   isSecretUnlocked: () => false,
+  canView: () => false,
 });
 
 const TOKEN_KEY = 'p15_auth_token';
@@ -43,6 +45,7 @@ const normalizeUser = (incoming) => {
     labelOne: incoming.profile?.labelOne || '',
     labelTwo: incoming.profile?.labelTwo || '',
     documents: Array.isArray(incoming.profile?.documents) ? incoming.profile.documents : [],
+    viewFavorites: Array.isArray(incoming.profile?.viewFavorites) ? incoming.profile.viewFavorites : [],
   };
   return { ...incoming, unlockedSecrets: unlocked, favorites, featuredCharacter, profile };
 };
@@ -208,6 +211,7 @@ export function AuthProvider({ children }) {
       refreshUser,
       isSecretUnlocked: (secretId) =>
         Array.isArray(normalizedUser?.unlockedSecrets) && normalizedUser.unlockedSecrets.includes(secretId),
+      canView: (config) => baseCanView(normalizedUser, config),
     }),
     [normalizedUser, role, token, loading, error]
   );

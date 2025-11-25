@@ -18,7 +18,8 @@
       "labelTwo": "",
       "documents": [],
       "viewFavorites": [
-        "location:9"
+        "character:1",
+        "character:2"
       ]
     }
   },
@@ -36,9 +37,6 @@
     "name": "Horse",
     "role": "editor",
     "createdAt": "2025-11-19T10:03:17.415Z",
-    "id": 3,
-    "unlockedSecrets": [
-      "aurora-ember"
-    ]
+    "id": 3
   }
 ]

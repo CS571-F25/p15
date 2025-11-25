@@ -7,6 +7,8 @@ import regionsRoutes from './regions.js';
 import secretsRoutes from './secrets.js';
 import charactersRoutes from './characters.js';
 import filesRoutes from './files.js';
+import viewRoutes from './view.js';
+import entitiesRoutes from './entities.js';
 import { ensureDefaultAdmin } from './utils.js';
 
 const app = express();
@@ -30,6 +32,8 @@ app.use('/api/regions', regionsRoutes);
 app.use('/api/secrets', secretsRoutes);
 app.use('/api/characters', charactersRoutes);
 app.use('/api/files', filesRoutes);
+app.use('/api/view', viewRoutes);
+app.use('/api/entities', entitiesRoutes);
 
 await ensureDefaultAdmin();
 

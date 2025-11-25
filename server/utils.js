@@ -11,6 +11,8 @@ const __dirname = path.dirname(__filename);
 const USERS_FILE_PATH = path.join(__dirname, 'users.json');
 const BACKUP_DIR = path.join(__dirname, 'backups');
 const CHARACTER_VISIBILITY_PATH = path.join(__dirname, 'characters-visibility.json');
+const LOCATION_VISIBILITY_PATH = path.join(__dirname, 'locations-visibility.json');
+const NPC_VISIBILITY_PATH = path.join(__dirname, 'npcs-visibility.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const JWT_SECRET = process.env.JWT_SECRET || 'azterra_dev_secret_change_me';
 const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@azterra.com';
@@ -29,6 +31,27 @@ async function ensureVisibilityFile() {
     // Default: allow all sample character IDs 1-12 (adjust as the roster grows)
     const defaultVisible = Array.from({ length: 12 }, (_, i) => i + 1);
     await fs.writeFile(CHARACTER_VISIBILITY_PATH, JSON.stringify(defaultVisible, null, 2));
+  }
+}
+
+async function ensureLocationVisibilityFile() {
+  if (!existsSync(LOCATION_VISIBILITY_PATH)) {
+    try {
+      const raw = await fs.readFile(path.join(__dirname, 'data', 'locations.json'), 'utf-8');
+      const parsed = JSON.parse(raw);
+      const ids = Array.isArray(parsed.locations) ? parsed.locations.map((loc) => loc.id).filter(Boolean) : [];
+      await fs.writeFile(LOCATION_VISIBILITY_PATH, JSON.stringify(ids, null, 2));
+    } catch {
+      await fs.writeFile(LOCATION_VISIBILITY_PATH, JSON.stringify([], null, 2));
+    }
+  }
+}
+
+async function ensureNpcVisibilityFile() {
+  if (!existsSync(NPC_VISIBILITY_PATH)) {
+    // placeholder default NPC IDs 1-10
+    const defaultVisible = Array.from({ length: 10 }, (_, i) => i + 1);
+    await fs.writeFile(NPC_VISIBILITY_PATH, JSON.stringify(defaultVisible, null, 2));
   }
 }
 
@@ -99,6 +122,38 @@ export async function getUploadsDir() {
   return UPLOADS_DIR;
 }
 
+export async function readLocationVisibility() {
+  await ensureLocationVisibilityFile();
+  const raw = await fs.readFile(LOCATION_VISIBILITY_PATH, 'utf-8');
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export async function writeLocationVisibility(list) {
+  await ensureLocationVisibilityFile();
+  await fs.writeFile(LOCATION_VISIBILITY_PATH, JSON.stringify(list, null, 2));
+}
+
+export async function readNpcVisibility() {
+  await ensureNpcVisibilityFile();
+  const raw = await fs.readFile(NPC_VISIBILITY_PATH, 'utf-8');
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export async function writeNpcVisibility(list) {
+  await ensureNpcVisibilityFile();
+  await fs.writeFile(NPC_VISIBILITY_PATH, JSON.stringify(list, null, 2));
+}
+
 export async function ensureDefaultAdmin() {
   const users = await readUsers();
   const hasAdmin = users.some((user) => user.role === 'admin');
@@ -114,7 +169,7 @@ export async function ensureDefaultAdmin() {
     favorites: [],
     featuredCharacter: null,
     profilePicture: '',
-    profile: { bio: '', labelOne: '', labelTwo: '', documents: [] },
+    profile: { bio: '', labelOne: '', labelTwo: '', documents: [], viewFavorites: [] },
     unlockedSecrets: [],
     role: 'admin',
     createdAt: new Date().toISOString(),
@@ -178,6 +233,9 @@ export const authRequired = async (req, res, next) => {
         labelOne: currentUser.profile?.labelOne || '',
         labelTwo: currentUser.profile?.labelTwo || '',
         documents: Array.isArray(currentUser.profile?.documents) ? currentUser.profile.documents : [],
+        viewFavorites: Array.isArray(currentUser.profile?.viewFavorites)
+          ? currentUser.profile.viewFavorites
+          : [],
       },
       unlockedSecrets: Array.isArray(currentUser.unlockedSecrets) ? currentUser.unlockedSecrets : [],
     };
