@@ -46,6 +46,29 @@ body,
   z-index: 0;
 }
 
+.characters-page::after {
+  content: "";
+  position: absolute;
+  inset: 1rem; /* Added to prevent touching borders */
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(255, 215, 120, 0.25) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 65% 35%, rgba(255, 255, 255, 0.28) 1.2px, transparent 1.2px),
+    radial-gradient(circle at 35% 75%, rgba(255, 223, 160, 0.22) 1.6px, transparent 1.6px),
+    radial-gradient(circle at 85% 55%, rgba(255, 255, 255, 0.18) 1.4px, transparent 1.4px);
+  background-size: 220px 220px, 260px 260px, 240px 240px, 280px 280px;
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+  filter: drop-shadow(0 0 6px rgba(255, 215, 120, 0.35));
+  animation: twinkle 8s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.32; transform: translateY(0px); }
+  50% { opacity: 0.52; transform: translateY(-4px); }
+  100% { opacity: 0.36; transform: translateY(2px); }
+}
+
 .characters-page > * {
   position: relative;
   z-index: 1;
@@ -141,7 +164,8 @@ body,
   inset: 0;
   background: rgba(0, 0, 0, 0.8);
   color: #f1e7d6;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 140px 1.5rem 80px;
   z-index: 30;
   backdrop-filter: blur(4px);
@@ -149,6 +173,11 @@ body,
   flex-direction: column;
   min-height: 0;
   animation: fadeInOverlay 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.character-detail-overlay.is-showcase {
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: none;
 }
 
 /* Navigation Arrows - Sigil Inspired */
@@ -479,7 +508,7 @@ body,
   font-family: 'Cinzel', 'Georgia', serif;
   text-transform: uppercase;
   letter-spacing: 0.22rem;
-  font-size: 0.9rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: color 0.2s ease, transform 0.2s ease;
 }
@@ -499,22 +528,122 @@ body,
 
 .detail-track {
   display: flex;
-  width: 300%; /* 3 slides */
+  width: calc(100% * var(--detail-slide-count, 3));
   height: 100%;
+  --detail-shift: 0px;
   transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
   will-change: transform;
+  opacity: 1;
+}
+
+.detail-track[data-state="fading"] {
+  opacity: 0;
+  --detail-shift: -12px;
+  transition: opacity 0.18s ease, transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.detail-track[data-state="visible"] {
+  opacity: 1;
+  --detail-shift: 0px;
+  transition: opacity 0.25s ease, transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.detail-content:focus-visible {
+  outline: 2px solid rgba(255, 215, 0, 0.6);
+  outline-offset: 4px;
+}
+
+.backdrop-content {
+  display: grid;
+  place-items: end center;
+  min-height: 60vh;
+  padding-bottom: 4.5rem; /* keep above tab bar */
+}
+
+.backdrop-card {
+  text-align: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  max-width: 540px;
+  margin: 0 auto 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  backdrop-filter: blur(4px);
+  overflow: hidden;
+}
+
+.backdrop-info {
+  border: none;
+  background: transparent;
+  transform: translateX(-60%);
+  color: rgba(200, 200, 210, 0.7);
+  font-weight: 500;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  margin-bottom: 0.25rem;
+}
+
+.backdrop-info--fade-in {
+  animation: infoFade 0.25s ease;
+}
+
+.backdrop-info:hover {
+  color: rgba(226, 232, 240, 0.9);
+  transform: translateX(-60%);
+}
+
+.backdrop-info-wrapper {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.backdrop-tooltip {
+  position: absolute;
+  bottom: 110%;
+  transform: translateX(-60%);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--card-parchment, #f5e5c9);
+  padding: 0.8rem 0.95rem;
+  min-height: 84px;
+  border-radius: 14px;
+  border: 1px solid var(--metallic-gold-dim);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  z-index: 12;
+  font-size: 0.85rem;
+}
+
+@keyframes infoFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.backdrop-slide {
+  width: calc(100% / var(--detail-slide-count, 3));
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 1rem;
+  --detail-shift: 0px;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform;
+  opacity: 1;
+  position: relative;
 }
 
 .detail-slide {
-  width: 33.333%;
+  width: calc(100% / var(--detail-slide-count, 3));
   height: 100%;
-  overflow: hidden; /* Remove internal scroll */
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 0 1rem;
-  scrollbar-width: none; /* Firefox */
-}
-
-.detail-slide::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
 }
 
 .detail-header {
@@ -535,13 +664,23 @@ body,
   width: 100%;
   margin: 0 auto 1.5rem;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(var(--detail-slide-count, 3), 1fr);
   gap: 0.5rem;
   padding: 0.4rem;
   border-radius: 999px;
   background: linear-gradient(90deg, rgba(255, 215, 0, 0.05), rgba(255, 215, 0, 0.16), rgba(255, 215, 0, 0.05));
   box-shadow: 0 0 18px rgba(255, 215, 0, 0.18);
   overflow: hidden;
+}
+
+.character-detail-overlay.is-showcase .detail-tab-bar {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  width: min(1100px, 96%);
+  z-index: 8;
 }
 
 .detail-tab-bar__segment {
@@ -553,6 +692,9 @@ body,
   text-transform: uppercase;
   color: rgba(255, 231, 178, 0.7);
   padding: 0.3rem 0.2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 
 .detail-tab-bar__segment.is-active {
@@ -564,7 +706,7 @@ body,
   position: absolute;
   top: 0;
   left: 0;
-  width: 33.3333%;
+  width: calc(100% / var(--detail-slide-count, 3));
   height: 100%;
   border-radius: 999px;
   background: radial-gradient(circle at 50% 50%, rgba(255, 215, 120, 0.55), rgba(255, 215, 0, 0.2));
@@ -814,7 +956,8 @@ body,
 }
 
 .detail-nav-divider {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--metallic-gold-dim);
+  opacity: 0.7;
   font-size: 0.8rem;
 }
 

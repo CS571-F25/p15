@@ -1,57 +1,124 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import '../UI/PageUI.css';
 
-const tabs = ['details', 'logbook', 'inventory'];
+const tabs = ['details', 'logbook', 'inventory', 'showcase'];
 const tabLabels = {
   details: 'Details',
   logbook: 'Logbook',
   inventory: 'Inventory',
+  showcase: 'Mana',
 };
 
 export default function CharacterDetailView({ character, onClose, onNext, onPrev, nextName, prevName }) {
   const [activeTab, setActiveTab] = useState('details');
+  const [isContentVisible, setIsContentVisible] = useState(true);
+  const [isSwapLocked, setIsSwapLocked] = useState(false);
+  const [showBackdropHint, setShowBackdropHint] = useState(false);
+  const [hasAnimatedInfo, setHasAnimatedInfo] = useState(false);
+  const [shouldAnimateInfo, setShouldAnimateInfo] = useState(false);
+  const swapDelay = 240;
+  const contentRef = useRef(null);
 
   if (!character) return null;
 
+  useEffect(() => {
+    setIsContentVisible(false);
+    const timer = setTimeout(() => setIsContentVisible(true), 160);
+    return () => clearTimeout(timer);
+  }, [character?.id]);
+
+  useEffect(() => {
+    if (contentRef.current && isContentVisible) {
+      contentRef.current.focus({ preventScroll: true });
+    }
+  }, [isContentVisible]);
+
+  useEffect(() => {
+    if (!isSwapLocked) return;
+    const timer = setTimeout(() => setIsSwapLocked(false), swapDelay);
+    return () => clearTimeout(timer);
+  }, [isSwapLocked]);
+
   const handlePrevTab = () => {
+    if (isSwapLocked) return;
+    setIsSwapLocked(true);
     const currentIndex = tabs.indexOf(activeTab);
     const nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
     setActiveTab(tabs[nextIndex]);
   };
 
   const handleNextTab = () => {
+    if (isSwapLocked) return;
+    setIsSwapLocked(true);
     const currentIndex = tabs.indexOf(activeTab);
     const nextIndex = (currentIndex + 1) % tabs.length;
     setActiveTab(tabs[nextIndex]);
   };
 
+  const handlePrevCharacter = () => {
+    if (isSwapLocked) return;
+    setIsSwapLocked(true);
+    onPrev();
+  };
+
+  const handleNextCharacter = () => {
+    if (isSwapLocked) return;
+    setIsSwapLocked(true);
+    onNext();
+  };
+
   const currentTabIndex = tabs.indexOf(activeTab);
   const prevTabName = tabLabels[tabs[(currentTabIndex - 1 + tabs.length) % tabs.length]];
   const nextTabName = tabLabels[tabs[(currentTabIndex + 1) % tabs.length]];
+  const slideOffset = -(100 / tabs.length) * currentTabIndex;
+
+  useEffect(() => {
+    if (activeTab === 'showcase' && !hasAnimatedInfo) {
+      setShouldAnimateInfo(true);
+      setHasAnimatedInfo(true);
+      const t = setTimeout(() => setShouldAnimateInfo(false), 300);
+      return () => clearTimeout(t);
+    }
+  }, [activeTab, hasAnimatedInfo]);
 
   return (
-    <div className="character-detail-overlay">
+    <div className={`character-detail-overlay ${activeTab === 'showcase' ? 'is-showcase' : ''}`}>
       <div className="detail-header">
         <div className="detail-hero">
           <h1 className="detail-name">{character.name}</h1>
           <p className="detail-title">{character.title}</p>
-          <p className="detail-meta">{character.race} {character.class} • Level {character.level}</p>
+          <p className="detail-meta">{character.race} {character.class} — Level {character.level}</p>
         </div>
         
         <div className="expanded-toolbar">
            <button type="button" className="back-btn" onClick={onClose}>
              ← Back to Codex
            </button>
-           
-           <div className="detail-nav">
-             <button className="detail-nav-btn" onClick={onPrev} title={`Previous: ${prevName}`}>
-               ‹ <span className="detail-nav-label">{prevName}</span>
-             </button>
-             <span className="detail-nav-divider">♦</span>
-             <button className="detail-nav-btn" onClick={onNext} title={`Next: ${nextName}`}>
-               <span className="detail-nav-label">{nextName}</span> ›
-             </button>
-           </div>
+          <div className="backdrop-info-wrapper">
+            <button
+              type="button"
+              className={`backdrop-info ${shouldAnimateInfo ? 'backdrop-info--fade-in' : ''}`}
+              aria-label="What is this glowing circle?"
+              onClick={() => setShowBackdropHint((v) => !v)}
+            >
+              What is this glowing circle?
+            </button>
+            {showBackdropHint && (
+              <div className="backdrop-tooltip" role="status">
+                This is the color of your mana, visit the almanac to learn more!
+              </div>
+            )}
+          </div>
+          
+          <div className="detail-nav">
+            <button className="detail-nav-btn" onClick={handlePrevCharacter} title={`Previous: ${prevName}`}>
+              ‹ <span className="detail-nav-label">{prevName}</span>
+            </button>
+            <span className="detail-nav-divider">◆</span>
+            <button className="detail-nav-btn" onClick={handleNextCharacter} title={`Next: ${nextName}`}>
+              <span className="detail-nav-label">{nextName}</span> ›
+            </button>
+          </div>
 
         </div>
       </div>
@@ -59,15 +126,20 @@ export default function CharacterDetailView({ character, onClose, onNext, onPrev
       <div
         className="detail-tab-bar"
         role="presentation"
-        style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}
+        style={{
+          gridTemplateColumns: `repeat(${tabs.length}, 1fr)`,
+          '--detail-slide-count': tabs.length
+        }}
       >
         {tabs.map((tab) => (
-          <div
+          <button
             key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
             className={`detail-tab-bar__segment ${activeTab === tab ? 'is-active' : ''}`}
           >
             <span>{tabLabels[tab]}</span>
-          </div>
+          </button>
         ))}
         <div
           className="detail-tab-bar__indicator"
@@ -82,13 +154,15 @@ export default function CharacterDetailView({ character, onClose, onNext, onPrev
       <div className="detail-viewport">
         <div 
           className="detail-track"
+          data-state={isContentVisible ? 'visible' : 'fading'}
           style={{ 
-            transform: `translateX(${activeTab === 'details' ? '0%' : activeTab === 'logbook' ? '-33.333%' : '-66.666%'})` 
+            '--detail-slide-count': tabs.length,
+            transform: `translateX(${slideOffset}%) translateY(var(--detail-shift, 0px))` 
           }}
         >
           {/* Slide 1: Details */}
-          <div className="detail-slide">
-            <div className="detail-content">
+          <div className="detail-slide" role="region" aria-label="Character details">
+            <div className="detail-content" tabIndex={0} ref={contentRef}>
               <div className="detail-columns">
                 <div className="detail-card">
                   <h3>Attributes</h3>
@@ -136,7 +210,7 @@ export default function CharacterDetailView({ character, onClose, onNext, onPrev
               </div>
 
               <div className="detail-columns">
-                 <div className="detail-card">
+                <div className="detail-card">
                   <h3>Abilities</h3>
                   <div className="detail-block">
                     {character.abilities.map(ability => (
@@ -156,17 +230,17 @@ export default function CharacterDetailView({ character, onClose, onNext, onPrev
               </div>
               
               {character.notes && (
-                 <div className="detail-card">
+                <div className="detail-card">
                   <h3>Notes</h3>
                   <p className="detail-line">{character.notes}</p>
-                 </div>
+                </div>
               )}
             </div>
           </div>
 
           {/* Slide 2: Logbook */}
-          <div className="detail-slide">
-            <div className="detail-content">
+          <div className="detail-slide" role="region" aria-label="Character logbook">
+            <div className="detail-content" tabIndex={0}>
               <div className="detail-card">
                 <h3>Character Logbook</h3>
                 <p className="detail-line italic text-white/50">No entries recorded for {character.name} yet.</p>
@@ -175,23 +249,29 @@ export default function CharacterDetailView({ character, onClose, onNext, onPrev
           </div>
 
           {/* Slide 3: Inventory */}
-          <div className="detail-slide">
-            <div className="detail-content">
+          <div className="detail-slide" role="region" aria-label="Character inventory">
+            <div className="detail-content" tabIndex={0}>
               <div className="detail-card">
                 <h3>Character Inventory</h3>
                 <div className="detail-block">
-                   {character.equipment.length > 0 ? (
-                     character.equipment.map(item => (
-                       <div key={item} className="p-2 border-b border-white/10 flex justify-between">
-                         <span>{item}</span>
-                         <span className="text-white/50 text-sm">1</span>
-                       </div>
-                     ))
-                   ) : (
-                     <p className="detail-line italic text-white/50">Inventory is empty.</p>
-                   )}
+                  {character.equipment.length > 0 ? (
+                    character.equipment.map(item => (
+                      <div key={item} className="p-2 border-b border-white/10 flex justify-between">
+                        <span>{item}</span>
+                        <span className="text-white/50 text-sm">1</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="detail-line italic text-white/50">Inventory is empty.</p>
+                  )}
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Slide 4: Mana */}
+          <div className="detail-slide backdrop-slide" role="region" aria-label="Mana view">
+            <div className="detail-content backdrop-content" tabIndex={0}>
             </div>
           </div>
         </div>
