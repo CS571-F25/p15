@@ -19,8 +19,6 @@ vec4 core(vec4 params) {
         vec3 a = normalize(cos(vec3(1,2,0)+t-d*1.0));
         p.z+=4.0;
         a = a*dot(a,p)-cross(a,p);
-        for(d=1.0; d++<1.0;)
-            a+=sin(a*d+t).yzx/d;
         z+=d=.1*abs(length(p)-3.0)+.04*abs(s=a.y);
     }
     return tanh(O/3e4);

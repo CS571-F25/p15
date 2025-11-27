@@ -2,7 +2,7 @@
 // Sample character data for D&D 5e party
 function randomColor() {
   // Returns [r, g, b, a] 
-  const n = 8;
+  const n = 10;
   const r = Math.floor(Math.random()*n);
   const g = Math.floor(Math.random()*n);
   const b = Math.floor(Math.random()*n);
