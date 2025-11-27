@@ -19,7 +19,7 @@ const characters = [
     class: "Wizard",
     level: 5,
     alignment: "Chaotic Good",
-    background: "Sage",
+    background: "Sage of the Spire of Echoes, former Arcanum archivist who charts celestial anomalies",
     hp: 31,
     ac: 13,
     speed: 30,
@@ -32,9 +32,15 @@ const characters = [
     skills: ["Arcana", "History", "Investigation"],
     abilities: ["Arcane Recovery", "Spellcasting"],
     spells: ["Magic Missile", "Shield", "Fireball"],
-    equipment: ["Staff", "Spellbook", "Rope"],
-    notes: "Wears a blue cloak.",
-    lore: "Aelar spent decades within the Spire of Echoes, studying ancient scrolls that predate the Sundering. His fascination with the arcane is not merely academic; he seeks to understand the very fabric of reality to prevent a catastrophe he saw in a vision. Though often lost in thought, his mastery of the weave is undeniable, capable of bending the elements to his will with a mere whisper."
+    equipment: [
+      "Amber-tipped staff etched with constellations",
+      "Spellbook bound in dragonhide, pages rimed with stasis-ink",
+      "Rope",
+      "Crystal lens for reading the weave",
+      "Starlit chalk for tracing warding circles"
+    ],
+    notes: "Wears a blue cloak. Keeps a notebook of dream-fragments and sketched glyphs; refuses to travel without it.",
+    lore: "Aelar spent decades within the Spire of Echoes, studying ancient scrolls that predate the Sundering. His fascination with the arcane is not merely academic; he seeks to understand the very fabric of reality to prevent a catastrophe he saw in a vision. Though often lost in thought, his mastery of the weave is undeniable, capable of bending the elements to his will with a mere whisper. He once froze an avalanche in place to evacuate a mountain pass caravan, then rewove the falling snow into shimmering sigils that guided the travelers to safety. Aelar now wanders Azterra to confirm whether the symbols from his vision match those appearing in ruins across the continent."
   },
   {
     id: 2,

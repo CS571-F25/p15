@@ -11,7 +11,7 @@ out vec4 out_color;
 
 vec4 core(vec4 params) {
     vec2 I = gl_FragCoord.xy;
-    float t = u_time, z = 0.0, d = 0.0, s = 0.0;
+    float t = u_time*0.5, z = 0.0, d = 0.0, s = 0.0;
     float i = 0.0;
     vec4 O = vec4(0.0);
     for(O*=i; i++<8e1; O+=(cos(s+params)+1.0)/d*z) {
