@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ShaderBackgroundDualCrossfade from '../visuals/ShaderBackgroundDualCrossfade';
 import characters from '../../data/characters';
 import npcsData from '../../data/npcs';
@@ -20,6 +21,7 @@ const SECRET_OPTIONS = [
 const ALL_SECRET_IDS = SECRET_OPTIONS.map((s) => s.id);
 
 function ViewingPage() {
+  const navigate = useNavigate();
   const { role, token, user } = useAuth();
   const isAdmin = role === 'admin';
   const [tab, setTab] = useState('locations');
@@ -720,6 +722,16 @@ function ViewingPage() {
               >
                 {savingLocId === item.id ? 'Saving...' : 'Save Location'}
               </button>
+              <button
+                type="button"
+                className="tab-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/location/${item.id}`);
+                }}
+              >
+                View Details
+              </button>
             </div>
           ) : (
             isExpanded && (
@@ -730,13 +742,23 @@ function ViewingPage() {
                 </div>
                 <p className="account-muted">Characters here</p>
                 <div className="mini-list">
-                  {relatedChars.length ? relatedChars.map((c) => <span key={c.id}>{c.name}</span>) : <span>No characters linked.</span>}
+                {relatedChars.length ? relatedChars.map((c) => <span key={c.id}>{c.name}</span>) : <span>No characters linked.</span>}
                 </div>
                 {isAdmin && adminView && item.secretId && (
                   <div className="secret-meta">
                     <p className="account-muted">Requires secret: {item.secretId}</p>
                   </div>
                 )}
+                <button
+                  type="button"
+                  className="tab-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/location/${item.id}`);
+                  }}
+                >
+                  View Details
+                </button>
               </div>
             )
           )}

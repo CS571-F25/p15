@@ -598,7 +598,8 @@ function InteractiveMap({ isEditorMode = false }) {
       });
       return;
     }
-    window.location.href = `/location/${location.id}`;
+    const base = import.meta.env.BASE_URL || '/';
+    window.location.href = `${base}location/${location.id}`;
   };
 
   const handleClosePanel = () => selectLocation(null);
@@ -707,7 +708,8 @@ function InteractiveMap({ isEditorMode = false }) {
       selectRegion(regionId);
       setRegionDraftPoints([]);
     } else {
-      window.location.href = `/region/${regionId}`;
+      const base = import.meta.env.BASE_URL || '/';
+      window.location.href = `${base}region/${regionId}`;
     }
   };
 
