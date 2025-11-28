@@ -4,16 +4,21 @@ import { useAuth } from '../../context/AuthContext';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 function ProgressionPage() {
-  const { token, refreshUser } = useAuth();
+  const { token, refreshUser, role } = useAuth();
+  const isAdmin = role === 'admin';
   const [phrase, setPhrase] = useState('');
   const [unlocking, setUnlocking] = useState(false);
   const [progressLoading, setProgressLoading] = useState(false);
   const [progressError, setProgressError] = useState('');
   const [unlockedDetails, setUnlockedDetails] = useState([]);
+  const [secretDrafts, setSecretDrafts] = useState({});
+  const [savingSecretId, setSavingSecretId] = useState(null);
+  const [adminEditMode, setAdminEditMode] = useState(false);
 
   const fetchProgress = async () => {
     if (!token) {
       setUnlockedDetails([]);
+      setSecretDrafts({});
       return;
     }
     setProgressLoading(true);
@@ -26,7 +31,18 @@ function ProgressionPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Unable to load progress.');
       }
-      setUnlockedDetails(data.details || []);
+      const details = data.details || [];
+      setUnlockedDetails(details);
+      setSecretDrafts(
+        details.reduce((acc, secret) => {
+          acc[secret.id] = {
+            title: secret.title || '',
+            description: secret.description || '',
+            keyword: secret.keyword || '',
+          };
+          return acc;
+        }, {})
+      );
     } catch (err) {
       setProgressError(err.message || 'Unable to load progress.');
     } finally {
@@ -37,6 +53,12 @@ function ProgressionPage() {
   useEffect(() => {
     fetchProgress();
   }, [token]);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      setAdminEditMode(false);
+    }
+  }, [isAdmin]);
 
   const handleUnlock = async (event) => {
     event.preventDefault();
@@ -56,13 +78,82 @@ function ProgressionPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Unable to check secret.');
       }
-      setUnlockedDetails(data.details || []);
+      const details = data.details || [];
+      setUnlockedDetails(details);
+      setSecretDrafts(
+        details.reduce((acc, secret) => {
+          acc[secret.id] = {
+            title: secret.title || '',
+            description: secret.description || '',
+            keyword: secret.keyword || '',
+          };
+          return acc;
+        }, {})
+      );
       setPhrase('');
       await refreshUser();
     } catch (err) {
       setProgressError(err.message || 'Unable to check secret.');
     } finally {
       setUnlocking(false);
+    }
+  };
+
+  const handleDraftChange = (secretId, field, value) => {
+    setSecretDrafts((prev) => ({
+      ...prev,
+      [secretId]: {
+        ...(prev[secretId] || {}),
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSecretReset = (secretId) => {
+    const original = unlockedDetails.find((secret) => secret.id === secretId);
+    if (!original) return;
+    setSecretDrafts((prev) => ({
+      ...prev,
+      [secretId]: {
+        title: original.title || '',
+        description: original.description || '',
+        keyword: original.keyword || '',
+      },
+    }));
+  };
+
+  const handleSecretSave = async (secretId) => {
+    if (!token || !secretDrafts[secretId]) return;
+    setSavingSecretId(secretId);
+    setProgressError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/secrets/${secretId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(secretDrafts[secretId]),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Unable to save secret.');
+      }
+      setUnlockedDetails((prev) =>
+        prev.map((secret) => (secret.id === secretId ? data.secret : secret))
+      );
+      setSecretDrafts((prev) => ({
+        ...prev,
+        [secretId]: {
+          title: data.secret.title || '',
+          description: data.secret.description || '',
+          keyword: data.secret.keyword || '',
+        },
+      }));
+    } catch (err) {
+      setProgressError(err.message || 'Unable to save secret.');
+    } finally {
+      setSavingSecretId(null);
     }
   };
 
@@ -77,6 +168,17 @@ function ProgressionPage() {
           </p>
         </div>
       </header>
+
+      {isAdmin && (
+        <div className="progression__admin-controls">
+          <button type="button" onClick={() => setAdminEditMode((prev) => !prev)}>
+            {adminEditMode ? 'Exit Edit Mode' : 'Admin Edit Mode'}
+          </button>
+          <p className="progression__muted">
+            Admin mode reveals every secret and enables inline edits.
+          </p>
+        </div>
+      )}
 
       <form className="progression__form" onSubmit={handleUnlock}>
         <input
@@ -106,9 +208,64 @@ function ProgressionPage() {
           <section className="progression__grid">
             {unlockedDetails.map((secret) => (
               <article key={secret.id} className="progression__card">
-                <p className="progression__badge">Unlocked</p>
-                <h2>{secret.title}</h2>
-                <p>{secret.description}</p>
+                <p className="progression__badge">{isAdmin ? 'Admin' : 'Unlocked'}</p>
+                {adminEditMode && isAdmin ? (
+                  <div className="progression__card-edit">
+                    <label>
+                      <span>Title</span>
+                      <input
+                        type="text"
+                        value={secretDrafts[secret.id]?.title || ''}
+                        onChange={(e) => handleDraftChange(secret.id, 'title', e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      <span>Keyword</span>
+                      <input
+                        type="text"
+                        value={secretDrafts[secret.id]?.keyword || ''}
+                        onChange={(e) => handleDraftChange(secret.id, 'keyword', e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      <span>Description</span>
+                      <textarea
+                        rows={3}
+                        value={secretDrafts[secret.id]?.description || ''}
+                        onChange={(e) =>
+                          handleDraftChange(secret.id, 'description', e.target.value)
+                        }
+                      />
+                    </label>
+                    <div className="progression__card-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleSecretSave(secret.id)}
+                        disabled={savingSecretId === secret.id}
+                      >
+                        {savingSecretId === secret.id ? 'Saving...' : 'Save'}
+                      </button>
+                      <button
+                        type="button"
+                        className="progression__ghost-button"
+                        onClick={() => handleSecretReset(secret.id)}
+                        disabled={savingSecretId === secret.id}
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <h2>{secret.title}</h2>
+                    {secret.keyword && (
+                      <p className="progression__keyword">
+                        Keyword: <code>{secret.keyword}</code>
+                      </p>
+                    )}
+                    <p>{secret.description}</p>
+                  </>
+                )}
               </article>
             ))}
           </section>

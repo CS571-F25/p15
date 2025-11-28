@@ -1,72 +1,49 @@
 import { Router } from 'express';
-import { authRequired, sanitizeUser, updateUsers } from './utils.js';
+import { authRequired, sanitizeUser, updateUsers, readSecrets, writeSecrets } from './utils.js';
 
 const router = Router();
-
-// Secret definitions are kept server-side only. Phrases are never exposed to clients.
-const SECRET_DEFINITIONS = [
-  {
-    id: 'aurora-ember',
-    title: 'Aurora Ember',
-    description: 'A faint ember reveals a hidden stanza in the night sky.',
-  },
-  {
-    id: 'silent-archive',
-    title: 'Silent Archive',
-    description: 'You have located a sealed folio in the Archivists’ stacks.',
-  },
-  {
-    id: 'gilded-horizon',
-    title: 'Gilded Horizon',
-    description: 'A map pin now glows faint gold at the edge of the world.',
-  },
-  {
-    id: 'amber-archive',
-    title: 'Amber Archive',
-    description: 'An amber seal cracks to reveal forgotten correspondence.',
-  },
-  {
-    id: 'shadow-court',
-    title: 'Shadow Court',
-    description: 'Whispers from the Shadow Court mark a new allegiance.',
-  },
-];
-
-// Map normalized phrases to secret IDs. Values stay backend-only.
-const SECRET_PHRASES = {
-  'light the northern flame': 'aurora-ember',
-  'quiet books speak': 'silent-archive',
-  'beyond the western gold': 'gilded-horizon',
-  'amber light endures': 'amber-archive',
-  'the court waits in dusk': 'shadow-court',
-};
 
 function normalizePhrase(phrase = '') {
   return phrase.trim().toLowerCase();
 }
 
-function getUnlockedDetails(unlockedIds = []) {
+function buildPhraseMap(secrets = []) {
+  return secrets.reduce((acc, secret) => {
+    if (secret.keyword) {
+      acc[normalizePhrase(secret.keyword)] = secret.id;
+    }
+    return acc;
+  }, {});
+}
+
+function getUnlockedDetails(unlockedIds = [], secrets = []) {
   const allowed = new Set(unlockedIds);
-  return SECRET_DEFINITIONS.filter((secret) => allowed.has(secret.id));
+  return secrets.filter((secret) => allowed.has(secret.id));
 }
 
 router.get('/progress', authRequired, async (req, res) => {
+  const secrets = await readSecrets();
+  const isAdmin = req.user?.role === 'admin';
   const unlocked = Array.isArray(req.user?.unlockedSecrets) ? req.user.unlockedSecrets : [];
+  const details = isAdmin ? secrets : getUnlockedDetails(unlocked, secrets);
+  const unlockedList = isAdmin ? secrets.map((secret) => secret.id) : unlocked;
   return res.json({
-    unlocked,
-    details: getUnlockedDetails(unlocked),
+    unlocked: unlockedList,
+    details,
     user: sanitizeUser(req.user),
   });
 });
 
 router.post('/unlock', authRequired, async (req, res) => {
+  const secrets = await readSecrets();
+  const phraseMap = buildPhraseMap(secrets);
   const { phrase = '' } = req.body || {};
   const normalized = normalizePhrase(phrase);
   if (!normalized) {
     return res.status(400).json({ error: 'A secret phrase is required.' });
   }
 
-  const secretId = SECRET_PHRASES[normalized];
+  const secretId = phraseMap[normalized];
   if (!secretId) {
     return res.status(404).json({ error: 'No secret matched that phrase.' });
   }
@@ -92,9 +69,35 @@ router.post('/unlock', authRequired, async (req, res) => {
     success: true,
     newlyUnlocked: updatedUser.newlyUnlocked,
     unlocked: unlockedList,
-    details: getUnlockedDetails(unlockedList),
+    details: getUnlockedDetails(unlockedList, secrets),
     user: sanitizeUser(updatedUser.user),
   });
+});
+
+router.put('/:id', authRequired, async (req, res) => {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required.' });
+  }
+  const { id } = req.params;
+  const { title = '', description = '', keyword = '' } = req.body || {};
+  const secrets = await readSecrets();
+  const index = secrets.findIndex((secret) => secret.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Secret not found.' });
+  }
+  const trimmedTitle = title.trim();
+  const trimmedDescription = description.trim();
+  const trimmedKeyword = keyword.trim();
+  const nextSecret = {
+    ...secrets[index],
+    title: trimmedTitle || secrets[index].title,
+    description: trimmedDescription || secrets[index].description,
+    keyword: trimmedKeyword,
+    updatedAt: new Date().toISOString(),
+  };
+  secrets[index] = nextSecret;
+  await writeSecrets(secrets);
+  return res.json({ secret: nextSecret });
 });
 
 export default router;

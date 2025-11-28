@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import ShaderBackgroundDualCrossfade from '../visuals/ShaderBackgroundDualCrossfade';
 import characters from '../../data/characters';
 import npcsData from '../../data/npcs';
@@ -21,7 +20,6 @@ const SECRET_OPTIONS = [
 const ALL_SECRET_IDS = SECRET_OPTIONS.map((s) => s.id);
 
 function ViewingPage() {
-  const navigate = useNavigate();
   const { role, token, user } = useAuth();
   const isAdmin = role === 'admin';
   const [tab, setTab] = useState('locations');
@@ -262,6 +260,32 @@ function ViewingPage() {
       ...prev,
       [id]: { ...(prev[id] || {}), [field]: value },
     }));
+  };
+
+  const handleLocationImageFile = (locationId, file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file (png, jpg, webp).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setLocDraft(locationId, 'heroImage', reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleLocationImageDrop = (event, locationId) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = event.dataTransfer?.files?.[0];
+    handleLocationImageFile(locationId, file);
+  };
+
+  const handleLocationImageBrowse = (event, locationId) => {
+    const file = event.target.files?.[0];
+    handleLocationImageFile(locationId, file);
+    event.target.value = '';
   };
 
   const mergedNpc = (item) => ({
@@ -600,167 +624,184 @@ function ViewingPage() {
         (n) => n.locationId && String(n.locationId) === String(locDraft.id)
       );
       const relatedChars = players.filter((p) => p.locationId && String(p.locationId) === String(locDraft.id));
+      const heroImage = locDraft.heroImage || locDraft.image || locDraft.imageUrl || '';
+      const titleContent = adminView && isAdmin ? (
+        <>
+          <input
+            className="admin-inline-input"
+            value={locDraft.category || locDraft.type || ''}
+            onChange={(e) => setLocDraft(item.id, 'category', e.target.value)}
+            placeholder="Category"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <input
+            className="admin-inline-input"
+            value={locDraft.name || ''}
+            onChange={(e) => setLocDraft(item.id, 'name', e.target.value)}
+            placeholder="Location name"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </>
+      ) : (
+        <>
+          <p className="account-card__eyebrow">{item.category || item.type}</p>
+          <h3>{item.name}</h3>
+        </>
+      );
       return (
-        <div className={`view-card ${isExpanded ? 'view-card--expanded' : ''}`} onClick={toggleExpanded} role="button" tabIndex={0}>
-          <div className="view-card__header">
-            <div>
-              {adminView && isAdmin ? (
-                <>
-                  <input
-                    className="admin-inline-input"
-                    value={locDraft.category || locDraft.type || ''}
-                    onChange={(e) => setLocDraft(item.id, 'category', e.target.value)}
-                    placeholder="Category"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <input
-                    className="admin-inline-input"
-                    value={locDraft.name || ''}
-                    onChange={(e) => setLocDraft(item.id, 'name', e.target.value)}
-                    placeholder="Location name"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </>
-              ) : (
-                <>
-                  <p className="account-card__eyebrow">{item.category || item.type}</p>
-                  <h3>{item.name}</h3>
-                </>
-              )}
-            </div>
-            <div className="view-card__actions">
-              {isAdmin && adminView && (
-                <label className="visibility-toggle" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={locDraft.visible}
-                    onChange={() => toggleVisible(item.id, 'loc')}
-                  />
-                  <span>{locDraft.visible ? 'Visible' : 'Hidden'}</span>
-                </label>
-              )}
-              {isAdmin && adminView && (
-                <label className="visibility-toggle" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={locDraft.truesight}
-                    onChange={() => toggleTruesight(item.id, 'loc')}
-                  />
-                  <span>{locDraft.truesight ? 'Truesight' : 'No Truesight'}</span>
-                </label>
-              )}
-              {token && (
-                <button
-                  type="button"
-                  className={`fav-btn ${viewFavorites.includes(`location:${item.id}`) ? 'fav-btn--active' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(item.id);
-                  }}
-                  disabled={favPending}
-                >
-                  {viewFavorites.includes(`location:${item.id}`) ? '★' : '☆'}
-                </button>
-              )}
+        <div className={`view-card view-card--media ${isExpanded ? 'view-card--expanded' : ''}`} onClick={toggleExpanded} role="button" tabIndex={0}>
+          <div className="view-card__media">
+            {heroImage ? (
+              <img src={heroImage} alt={`${locDraft.name} illustration`} />
+            ) : (
+              <div className="view-card__media-placeholder">No image yet. Drop one in editor mode.</div>
+            )}
+            <div className="view-card__title-overlay">
+              <div>{titleContent}</div>
+              <div className="view-card__media-actions">
+                {(isExpanded || (adminView && isAdmin)) && token && (
+                  <button
+                    type="button"
+                    className={`fav-btn ${viewFavorites.includes(`location:${item.id}`) ? 'fav-btn--active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(item.id);
+                    }}
+                    disabled={favPending}
+                  >
+                    {viewFavorites.includes(`location:${item.id}`) ? '★' : '☆'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-          {!adminView && <p className="account-muted">{locDraft.description || 'No description provided.'}</p>}
-          {adminView && isAdmin ? (
-            <div className="view-card__body view-card__body--form" onClick={(e) => e.stopPropagation()}>
-              <label className="admin-field">
-                <span>Description</span>
-                <textarea
-                  value={locDraft.description || ''}
-                  onChange={(e) => setLocDraft(item.id, 'description', e.target.value)}
-                  rows={3}
-                />
-              </label>
-              <label className="admin-field">
-                <span>Campaign</span>
-                <input value={locDraft.campaign || ''} onChange={(e) => setLocDraft(item.id, 'campaign', e.target.value)} />
-              </label>
-              <label className="admin-field">
-                <span>Region Id</span>
-                <input
-                  value={locDraft.regionId ?? ''}
-                  onChange={(e) => setLocDraft(item.id, 'regionId', e.target.value ? Number(e.target.value) : null)}
-                />
-              </label>
-              <label className="admin-field">
-                <span>Marker Id</span>
-                <input
-                  value={locDraft.markerId ?? ''}
-                  onChange={(e) => setLocDraft(item.id, 'markerId', e.target.value ? Number(e.target.value) : null)}
-                />
-              </label>
-              <label className="admin-field">
-                <span>Secret</span>
-                <select
-                  value={locDraft.secretId || ''}
-                  onChange={(e) => setLocDraft(item.id, 'secretId', e.target.value || undefined)}
-                >
-                  <option value="">None (public when visible)</option>
-                  {SECRET_OPTIONS.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="mini-list">
-                <p className="account-muted">Linked NPCs</p>
-                {relatedNpcs.length ? relatedNpcs.map((n) => <span key={n.id}>{n.name}</span>) : <span>No NPCs linked.</span>}
-              </div>
-              <button
-                type="button"
-                className={`admin-toggle-btn ${savingLocId === item.id ? 'admin-toggle-btn--active' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  saveLocation(item.id);
-                }}
-                disabled={savingLocId === item.id}
-              >
-                {savingLocId === item.id ? 'Saving...' : 'Save Location'}
-              </button>
-              <button
-                type="button"
-                className="tab-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/location/${item.id}`);
-                }}
-              >
-                View Details
-              </button>
-            </div>
-          ) : (
-            isExpanded && (
-              <div className="view-card__body">
-                <p className="account-muted">NPCs here</p>
-                <div className="mini-list">
-                  {relatedNpcs.length ? relatedNpcs.map((n) => <span key={n.id}>{n.name}</span>) : <span>No NPCs linked.</span>}
-                </div>
-                <p className="account-muted">Characters here</p>
-                <div className="mini-list">
-                {relatedChars.length ? relatedChars.map((c) => <span key={c.id}>{c.name}</span>) : <span>No characters linked.</span>}
-                </div>
-                {isAdmin && adminView && item.secretId && (
-                  <div className="secret-meta">
-                    <p className="account-muted">Requires secret: {item.secretId}</p>
+          {isExpanded && (
+            <div
+              className={`view-card__expanded ${adminView && isAdmin ? 'view-card__expanded--admin' : ''}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {adminView && isAdmin ? (
+                <div className="view-card__body view-card__body--form">
+                  <div
+                    className="view-card__image-drop"
+                    onDrop={(e) => handleLocationImageDrop(e, item.id)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  >
+                    <p>Drag & drop an image to update this location.</p>
+                    <label className="view-card__image-upload">
+                      Browse
+                      <input type="file" accept="image/*" onChange={(e) => handleLocationImageBrowse(e, item.id)} />
+                    </label>
+                    {heroImage && <img src={heroImage} alt={`${locDraft.name} preview`} />}
                   </div>
-                )}
-                <button
-                  type="button"
-                  className="tab-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/location/${item.id}`);
-                  }}
-                >
-                  View Details
-                </button>
-              </div>
-            )
+                  <div className="view-card__admin-toggles">
+                    <label className="visibility-toggle">
+                      <input
+                        type="checkbox"
+                        checked={locDraft.visible}
+                        onChange={() => toggleVisible(item.id, 'loc')}
+                      />
+                      <span>{locDraft.visible ? 'Visible' : 'Hidden'}</span>
+                    </label>
+                    <label className="visibility-toggle">
+                      <input
+                        type="checkbox"
+                        checked={locDraft.truesight}
+                        onChange={() => toggleTruesight(item.id, 'loc')}
+                      />
+                      <span>{locDraft.truesight ? 'Truesight' : 'No Truesight'}</span>
+                    </label>
+                  </div>
+                  <label className="admin-field">
+                    <span>Description</span>
+                    <textarea
+                      value={locDraft.description || ''}
+                      onChange={(e) => setLocDraft(item.id, 'description', e.target.value)}
+                      rows={3}
+                    />
+                  </label>
+                  <label className="admin-field">
+                    <span>Campaign</span>
+                    <input value={locDraft.campaign || ''} onChange={(e) => setLocDraft(item.id, 'campaign', e.target.value)} />
+                  </label>
+                  <label className="admin-field">
+                    <span>Region Id</span>
+                    <input
+                      value={locDraft.regionId ?? ''}
+                      onChange={(e) => setLocDraft(item.id, 'regionId', e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </label>
+                  <label className="admin-field">
+                    <span>Marker Id</span>
+                    <input
+                      value={locDraft.markerId ?? ''}
+                      onChange={(e) => setLocDraft(item.id, 'markerId', e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </label>
+                  <label className="admin-field">
+                    <span>Secret</span>
+                    <select
+                      value={locDraft.secretId || ''}
+                      onChange={(e) => setLocDraft(item.id, 'secretId', e.target.value || undefined)}
+                    >
+                      <option value="">None (public when visible)</option>
+                      {SECRET_OPTIONS.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="mini-list">
+                    <p className="account-muted">Linked NPCs</p>
+                    {relatedNpcs.length ? relatedNpcs.map((n) => <span key={n.id}>{n.name}</span>) : <span>No NPCs linked.</span>}
+                  </div>
+                  <button
+                    type="button"
+                    className={`admin-toggle-btn ${savingLocId === item.id ? 'admin-toggle-btn--active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      saveLocation(item.id);
+                    }}
+                    disabled={savingLocId === item.id}
+                  >
+                    {savingLocId === item.id ? 'Saving...' : 'Save Location'}
+                  </button>
+                </div>
+              ) : (
+                <div className="view-card__details">
+                  <div className="view-card__detail-block">
+                    <p className="detail-label">Description</p>
+                    <p>{locDraft.description || 'No description provided.'}</p>
+                  </div>
+                  <div className="view-card__detail-block">
+                    <p className="detail-label">NPCs here</p>
+                    <div className="mini-list">
+                      {relatedNpcs.length ? relatedNpcs.map((n) => <span key={n.id}>{n.name}</span>) : <span>No NPCs linked.</span>}
+                    </div>
+                  </div>
+                  <div className="view-card__detail-block">
+                    <p className="detail-label">Characters here</p>
+                    <div className="mini-list">
+                      {relatedChars.length ? relatedChars.map((c) => <span key={c.id}>{c.name}</span>) : <span>No characters linked.</span>}
+                    </div>
+                  </div>
+                  {heroImage && (
+                    <div className="view-card__detail-image">
+                      <img src={heroImage} alt={`${locDraft.name} detail`} />
+                    </div>
+                  )}
+                  {isAdmin && adminView && item.secretId && (
+                    <div className="secret-meta">
+                      <p className="account-muted">Requires secret: {item.secretId}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       );

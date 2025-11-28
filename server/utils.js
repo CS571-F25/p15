@@ -13,12 +13,45 @@ const BACKUP_DIR = path.join(__dirname, 'backups');
 const CHARACTER_VISIBILITY_PATH = path.join(__dirname, 'characters-visibility.json');
 const LOCATION_VISIBILITY_PATH = path.join(__dirname, 'locations-visibility.json');
 const NPC_VISIBILITY_PATH = path.join(__dirname, 'npcs-visibility.json');
+const SECRETS_FILE_PATH = path.join(__dirname, 'data', 'secrets.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const JWT_SECRET = process.env.JWT_SECRET || 'azterra_dev_secret_change_me';
 const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@azterra.com';
 const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || 'admin12345';
 const DEFAULT_ADMIN_NAME = process.env.DEFAULT_ADMIN_NAME || 'Azterra Admin';
 const ALLOWED_ROLES = ['pending', 'editor', 'admin'];
+const DEFAULT_SECRETS = [
+  {
+    id: 'aurora-ember',
+    title: 'Aurora Ember',
+    description: 'A faint ember reveals a hidden stanza in the night sky.',
+    keyword: 'light the northern flame',
+  },
+  {
+    id: 'silent-archive',
+    title: 'Silent Archive',
+    description: "You have located a sealed folio in the Archivists' stacks.",
+    keyword: 'quiet books speak',
+  },
+  {
+    id: 'gilded-horizon',
+    title: 'Gilded Horizon',
+    description: 'A map pin now glows faint gold at the edge of the world.',
+    keyword: 'beyond the western gold',
+  },
+  {
+    id: 'amber-archive',
+    title: 'Amber Archive',
+    description: 'An amber seal cracks to reveal forgotten correspondence.',
+    keyword: 'amber light endures',
+  },
+  {
+    id: 'shadow-court',
+    title: 'Shadow Court',
+    description: 'Whispers from the Shadow Court mark a new allegiance.',
+    keyword: 'the court waits in dusk',
+  },
+];
 
 async function ensureUsersFile() {
   if (!existsSync(USERS_FILE_PATH)) {
@@ -52,6 +85,13 @@ async function ensureNpcVisibilityFile() {
     // placeholder default NPC IDs 1-10
     const defaultVisible = Array.from({ length: 10 }, (_, i) => i + 1);
     await fs.writeFile(NPC_VISIBILITY_PATH, JSON.stringify(defaultVisible, null, 2));
+  }
+}
+
+async function ensureSecretsFile() {
+  if (!existsSync(SECRETS_FILE_PATH)) {
+    await fs.mkdir(path.dirname(SECRETS_FILE_PATH), { recursive: true });
+    await fs.writeFile(SECRETS_FILE_PATH, JSON.stringify(DEFAULT_SECRETS, null, 2));
   }
 }
 
@@ -152,6 +192,23 @@ export async function readNpcVisibility() {
 export async function writeNpcVisibility(list) {
   await ensureNpcVisibilityFile();
   await fs.writeFile(NPC_VISIBILITY_PATH, JSON.stringify(list, null, 2));
+}
+
+export async function readSecrets() {
+  await ensureSecretsFile();
+  const raw = await fs.readFile(SECRETS_FILE_PATH, 'utf-8');
+  if (!raw) return [...DEFAULT_SECRETS];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [...DEFAULT_SECRETS];
+  } catch {
+    return [...DEFAULT_SECRETS];
+  }
+}
+
+export async function writeSecrets(secrets) {
+  await ensureSecretsFile();
+  await fs.writeFile(SECRETS_FILE_PATH, JSON.stringify(secrets, null, 2));
 }
 
 export async function ensureDefaultAdmin() {
