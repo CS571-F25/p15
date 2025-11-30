@@ -550,7 +550,11 @@
           2264,
           1444.7922493768247
         ]
-      ]
+      ],
+      "labelSize": 1.5,
+      "labelWidth": 1.15,
+      "labelOffsetX": 5,
+      "labelOffsetY": 20
     }
   ]
 }
