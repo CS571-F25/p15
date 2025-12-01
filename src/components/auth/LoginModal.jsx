@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-function LoginModal({ isOpen, onClose, onSubmit, onOpenSignup, onGoogleLogin }) {
+function LoginModal({ isOpen, onClose, onSubmit, onOpenSignup, onGoogleLogin, onToggleAdmin, isAdminMode }) {
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const [username, setUsername] = useState('');
@@ -174,6 +174,17 @@ function LoginModal({ isOpen, onClose, onSubmit, onOpenSignup, onGoogleLogin }) 
               </svg>
             </span>
             {googleSubmitting ? 'Opening Google...' : 'Sign in with Google'}
+          </button>
+          <button
+            type="button"
+            className="auth-modal__google auth-modal__google--alt"
+            onClick={() => {
+              setError('');
+              onToggleAdmin?.();
+            }}
+            disabled={submitting}
+          >
+            {isAdminMode ? 'Disable Admin Mode' : 'Toggle Admin Mode'}
           </button>
           {error && <p className="auth-modal__error">{error}</p>}
         </form>

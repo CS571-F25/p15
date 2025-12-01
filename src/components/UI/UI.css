@@ -240,6 +240,13 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+.auth-modal__google--alt {
+  margin-top: 0.5rem;
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
 .auth-modal__google:hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 22px rgba(0, 0, 0, 0.4);

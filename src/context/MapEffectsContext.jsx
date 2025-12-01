@@ -5,10 +5,12 @@ const MapEffectsContext = createContext({
   fogEnabled: true,
   vignetteEnabled: true,
   heatmapMode: 'none',
+  intensities: { clouds: 0.9, fog: 0.9, vignette: 1 },
   setCloudsEnabled: () => {},
   setFogEnabled: () => {},
   setVignetteEnabled: () => {},
   setHeatmapMode: () => {},
+  setIntensity: () => {},
 });
 
 export function MapEffectsProvider({ children }) {
@@ -16,6 +18,11 @@ export function MapEffectsProvider({ children }) {
   const [fogEnabled, setFogEnabled] = useState(true);
   const [vignetteEnabled, setVignetteEnabled] = useState(true);
   const [heatmapMode, setHeatmapMode] = useState('none');
+  const [intensities, setIntensities] = useState({ clouds: 0.9, fog: 0.9, vignette: 1 });
+
+  const setIntensity = (key, value) => {
+    setIntensities((prev) => ({ ...prev, [key]: value }));
+  };
 
   const value = useMemo(
     () => ({
@@ -23,12 +30,14 @@ export function MapEffectsProvider({ children }) {
       fogEnabled,
       vignetteEnabled,
       heatmapMode,
+      intensities,
       setCloudsEnabled,
       setFogEnabled,
       setVignetteEnabled,
       setHeatmapMode,
+      setIntensity,
     }),
-    [cloudsEnabled, fogEnabled, vignetteEnabled, heatmapMode]
+    [cloudsEnabled, fogEnabled, vignetteEnabled, heatmapMode, intensities]
   );
 
   return <MapEffectsContext.Provider value={value}>{children}</MapEffectsContext.Provider>;

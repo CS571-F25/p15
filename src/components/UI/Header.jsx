@@ -120,7 +120,7 @@ export default function Header() {
   const location = useLocation();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignupOpen, setIsSignupOpen] = useState(false);
-  const { user, role, login, googleLogin, logout } = useAuth();
+  const { user, role, login, googleLogin, logout, toggleLocalAdmin, isLocalAdmin } = useAuth();
 
   const navLinks = role === 'admin'
     ? [...baseNavLinks, { to: '/admin', label: 'Admin', icon: NAV_ICONS.admin }]
@@ -229,6 +229,8 @@ export default function Header() {
         onSubmit={handleLogin}
         onOpenSignup={handleSignupOpen}
         onGoogleLogin={handleGoogleLogin}
+        onToggleAdmin={toggleLocalAdmin}
+        isAdminMode={isLocalAdmin}
       />
       <SignupModal
         isOpen={isSignupOpen}

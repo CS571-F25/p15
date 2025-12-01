@@ -12,6 +12,7 @@ import CloudLayer from './layers/CloudLayer';
 import HeatmapLayer from './layers/HeatmapLayer';
 import RegionLayer from './layers/RegionLayer';
 import ParallaxLayer from './layers/ParallaxLayer';
+import DiagnosticsPanel from './DiagnosticsPanel';
 import MarkerPalette from './MarkerPalette';
 import RegionInfoPanel from './RegionInfoPanel';
 import EditorSidePanel from './EditorSidePanel';
@@ -27,6 +28,9 @@ import 'leaflet/dist/leaflet.css';
 import './Map.css';
 import locationsData from '../../data/locations.json';
 
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const ASSET_BASE_URL = import.meta.env.BASE_URL || '/';
+const ICON_BASE_URL = `${ASSET_BASE_URL}icons/cities/`;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const getFallbackLocations = () => locationsData.map((location) => ({ ...location }));
 
@@ -118,6 +122,9 @@ const getTypeConfig = (type) => {
   return TYPE_CONFIG[key] || GENERIC_MARKER_TYPE;
 };
 
+const resolveIconKey = (location) => location.iconKey || getDefaultIconKey(location.type);
+const buildIconSrc = (iconKey) => `${ICON_BASE_URL}${iconKey}.png`;
+
 const normalizeLocationEntry = (location) => {
   const typeConfig = getTypeConfig(location.type);
   const iconKey = location.iconKey || getDefaultIconKey(typeConfig.id);
@@ -184,7 +191,7 @@ const MAP_PADDING_DEFAULT = {
   bottom: TILE_SIZE * 0.8,
   left: TILE_SIZE * 0.8,
 };
-const TILE_URL = `${import.meta.env.BASE_URL}tiles/{z}/{x}/{y}.jpg`;
+const TILE_URL = `${ASSET_BASE_URL}tiles/{z}/{x}/{y}.jpg`;
 const PAN_STEP = 200;
 const ZOOM_SNAP = 0.25;
 const ZOOM_DELTA = 0.5;
@@ -382,14 +389,20 @@ function LocationMarker({
   isEditorMode,
   onDragEnd,
   zoomLevel,
+  resolveIcon,
 }) {
   const [isHovered, setIsHovered] = useState(false);
 
   const iconSize = (() => {
     const base = 36;
     const scale = 1 + (zoomLevel - 4) * 0.08;
-    return Math.min(Math.max(base * scale, 20), 60);
+    return clamp(base * scale, 20, 64);
   })();
+
+  const fallbackSrc = buildIconSrc(DEFAULT_TYPE_ICON.generic);
+  const resolvedIcon = resolveIcon ? resolveIcon(location) : { src: buildIconSrc(resolveIconKey(location)) };
+  const iconSrc = resolvedIcon?.src || fallbackSrc;
+  const safeName = (location.name || '').replace(/"/g, '&quot;');
 
   return (
     <Marker
@@ -401,8 +414,10 @@ function LocationMarker({
         }`,
         html: `
           <div class="custom-marker__wrapper ${isHovered ? 'is-hovered' : ''}">
-            <img src="/icons/cities/${location.iconKey}.png" alt="${location.name}"
-              class="custom-marker__image" style="width:${iconSize}px;height:${iconSize}px;" />
+            <img src="${iconSrc}" alt="${safeName}"
+              class="custom-marker__image" loading="lazy"
+              style="width:${iconSize}px;height:${iconSize}px;"
+              onerror="this.onerror=null;this.dataset.missing='1';this.src='${fallbackSrc}'" />
           </div>
         `,
         iconSize: [iconSize, iconSize],
@@ -432,7 +447,8 @@ function LocationMarker({
 
 function InteractiveMap({ isEditorMode = false }) {
   const { role, token } = useAuth();
-  const { cloudsEnabled, fogEnabled, vignetteEnabled, heatmapMode } = useMapEffects();
+  const { cloudsEnabled, fogEnabled, vignetteEnabled, heatmapMode, intensities, setIntensity } =
+    useMapEffects();
   const { locations, setLocations, selectedLocationId, selectLocation } = useLocationData();
   const { regions, setRegions, selectedRegionId: activeRegionId, selectRegion } = useRegions();
   const [editorSelection, setEditorSelection] = useState(null);
@@ -470,7 +486,13 @@ function InteractiveMap({ isEditorMode = false }) {
   const skipNextAutoSaveRef = useRef(false);
   const regionSaveTimeoutRef = useRef(null);
   const lastRegionSnapshotRef = useRef('[]');
+  const mapContainerRef = useRef(null);
+  const iconCheckQueueRef = useRef(new Set());
   const [saveWarning, setSaveWarning] = useState('');
+  const [diagnostics, setDiagnostics] = useState({});
+  const [diagRefreshToken, setDiagRefreshToken] = useState(0);
+  const [iconStatuses, setIconStatuses] = useState({});
+  const isAdmin = role === 'admin';
   const center = MAP_CENTER;
   const zoom = 2;
   const activeMarkerType = MARKER_TYPES.find((type) => type.id === activePlacementTypeId) || null;
@@ -501,6 +523,40 @@ function InteractiveMap({ isEditorMode = false }) {
     [regions, regionFilters, isRegionMode, activeRegionId, showRegionsLayer]
   );
   const regionLabelsEnabled = filteredRegions.some((region) => region.labelEnabled !== false);
+  const reportDiagnostics = useCallback((key, entry) => {
+    setDiagnostics((prev) => {
+      const current = prev[key] || {};
+      const next = { ...current, ...entry };
+      if (current.status === next.status && current.message === next.message) {
+        return prev;
+      }
+      return { ...prev, [key]: next };
+    });
+  }, []);
+  const handleDiagnosticsRefresh = () => {
+    iconCheckQueueRef.current = new Set();
+    setIconStatuses({});
+    setDiagRefreshToken((prev) => prev + 1);
+    reportDiagnostics('marker-icons', { status: 'pending', message: 'Rechecking icon sprites...' });
+  };
+  const handleIntensityChange = (key, value) => {
+    const safeValue = clamp(value, 0, 1.25);
+    setIntensity(key, safeValue);
+  };
+  const resolveMarkerIcon = useCallback(
+    (location) => {
+      const iconKey = resolveIconKey(location);
+      const status = iconStatuses[iconKey];
+      if (status?.status === 'ok') {
+        return { key: iconKey, src: status.src };
+      }
+      if (status?.status === 'error') {
+        return { key: iconKey, src: buildIconSrc(DEFAULT_TYPE_ICON.generic), fallback: true };
+      }
+      return { key: iconKey, src: buildIconSrc(iconKey) };
+    },
+    [iconStatuses]
+  );
   const mapBounds = useMemo(() => {
     const pad = MAP_PADDING_DEFAULT;
     return L.latLngBounds(
@@ -584,6 +640,50 @@ function InteractiveMap({ isEditorMode = false }) {
       return changed ? next : prev;
     });
   }, [regions]);
+
+  useEffect(() => {
+    const uniqueKeys = new Set(locations.map((location) => resolveIconKey(location)));
+    uniqueKeys.add(DEFAULT_TYPE_ICON.generic);
+    uniqueKeys.forEach((key) => {
+      if (!key) return;
+      if (iconCheckQueueRef.current.has(key)) return;
+      iconCheckQueueRef.current.add(key);
+      const src = buildIconSrc(key);
+      const img = new Image();
+      img.onload = () => {
+        setIconStatuses((prev) => {
+          if (prev[key]?.status === 'ok') return prev;
+          return { ...prev, [key]: { status: 'ok', src } };
+        });
+      };
+      img.onerror = () => {
+        setIconStatuses((prev) => {
+          if (prev[key]?.status === 'error') return prev;
+          return { ...prev, [key]: { status: 'error', src } };
+        });
+      };
+      img.src = src;
+    });
+  }, [locations, diagRefreshToken]);
+
+  useEffect(() => {
+    const uniqueKeys = new Set(locations.map((location) => resolveIconKey(location)));
+    uniqueKeys.add(DEFAULT_TYPE_ICON.generic);
+    let missing = 0;
+    let loaded = 0;
+    let pending = 0;
+    uniqueKeys.forEach((key) => {
+      const status = iconStatuses[key]?.status;
+      if (status === 'ok') loaded += 1;
+      else if (status === 'error') missing += 1;
+      else pending += 1;
+    });
+    const message = `${locations.length} markers; ${loaded}/${uniqueKeys.size} icons loaded${
+      missing ? `; ${missing} using fallback` : ''
+    }${pending ? `; ${pending} pending` : ''}`;
+    const status = missing ? 'warn' : pending ? 'pending' : 'ok';
+    reportDiagnostics('marker-icons', { status, message });
+  }, [locations, iconStatuses, reportDiagnostics]);
 
   const handleLocationClick = (location) => {
     selectLocation(location.id);
@@ -1197,7 +1297,7 @@ function InteractiveMap({ isEditorMode = false }) {
           />
         )}
         <div className="map-layout__canvas">
-          <div className="map-container-wrapper">
+          <div className="map-container-wrapper" ref={mapContainerRef}>
             <MapContainer
               center={center}
               zoom={zoom}
@@ -1251,6 +1351,7 @@ function InteractiveMap({ isEditorMode = false }) {
                   isEditorMode={isEditorMode}
                   onDragEnd={handleMarkerDragEnd}
                   zoomLevel={mapZoom}
+                  resolveIcon={resolveMarkerIcon}
                 />
               ))}
               <RegionLayer
@@ -1263,16 +1364,36 @@ function InteractiveMap({ isEditorMode = false }) {
                 zoomLevel={mapZoom}
               />
             </MapContainer>
-            <VignetteLayer enabled={vignetteEnabled} />
-            <FogLayer enabled={fogEnabled} map={mapInstance} />
-            <CloudLayer enabled={cloudsEnabled} map={mapInstance} />
+            <VignetteLayer
+              enabled={vignetteEnabled}
+              intensity={intensities.vignette}
+              onDiagnostics={reportDiagnostics}
+            />
+            <FogLayer
+              enabled={fogEnabled}
+              map={mapInstance}
+              intensity={intensities.fog}
+              onDiagnostics={reportDiagnostics}
+            />
+            <CloudLayer
+              enabled={cloudsEnabled}
+              map={mapInstance}
+              intensity={intensities.clouds}
+              onDiagnostics={reportDiagnostics}
+            />
             <HeatmapLayer
               enabled={heatmapMode !== 'none'}
               map={mapInstance}
               locations={filteredLocations}
               heatmapMode={heatmapMode}
+              onDiagnostics={reportDiagnostics}
             />
-            <ParallaxLayer enabled />
+            <ParallaxLayer
+              enabled
+              map={mapInstance}
+              containerRef={mapContainerRef}
+              onDiagnostics={reportDiagnostics}
+            />
           </div>
         </div>
       </div>
@@ -1284,6 +1405,14 @@ function InteractiveMap({ isEditorMode = false }) {
       )}
       {isIntroVisible && (
         <IntroOverlay onFinish={handleIntroFinish} />
+      )}
+      {isAdmin && (
+        <DiagnosticsPanel
+          diagnostics={diagnostics}
+          onRefresh={handleDiagnosticsRefresh}
+          intensities={intensities}
+          onIntensityChange={handleIntensityChange}
+        />
       )}
       <FilterHoverPanel
         showMarkers={showMarkers}

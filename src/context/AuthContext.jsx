@@ -17,6 +17,8 @@ const AuthContext = createContext({
   refreshUser: async () => {},
   isSecretUnlocked: () => false,
   canView: () => false,
+  isLocalAdmin: false,
+  toggleLocalAdmin: () => {},
 });
 
 const TOKEN_KEY = 'p15_auth_token';
@@ -80,6 +82,7 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => getStoredToken());
   const [loading, setLoading] = useState(Boolean(getStoredToken()));
   const [error, setError] = useState(null);
+  const [isLocalAdmin, setIsLocalAdmin] = useState(false);
 
   const normalizedUser = normalizeUser(user);
   const role = normalizedUser?.role || 'guest';
@@ -89,9 +92,22 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   useEffect(() => {
-    if (!token) {
+    if (!token || isLocalAdmin) {
       setUser(null);
       setLoading(false);
+      if (isLocalAdmin) {
+        setUser(
+          normalizeUser({
+            id: 'local-admin',
+            name: 'Local Admin',
+            email: 'local-admin@example.com',
+            role: 'admin',
+            favorites: [],
+            unlockedSecrets: [],
+            profile: {},
+          })
+        );
+      }
       return;
     }
     let isMounted = true;
@@ -116,7 +132,7 @@ export function AuthProvider({ children }) {
     return () => {
       isMounted = false;
     };
-  }, [token]);
+  }, [token, isLocalAdmin]);
 
   const login = async ({ email, password }) => {
     setError(null);
@@ -190,6 +206,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     setToken(null);
+    setIsLocalAdmin(false);
   };
 
   const refreshUser = async () => {
@@ -197,6 +214,32 @@ export function AuthProvider({ children }) {
     const data = await request({ path: '/auth/me', token });
     setUser(normalizeUser(data.user));
     return data.user;
+  };
+
+  const toggleLocalAdmin = () => {
+    setIsLocalAdmin((prev) => {
+      const next = !prev;
+      if (next) {
+        setToken('local-admin-token');
+        setUser(
+          normalizeUser({
+            id: 'local-admin',
+            name: 'Local Admin',
+            email: 'local-admin@example.com',
+            role: 'admin',
+            favorites: [],
+            unlockedSecrets: [],
+            profile: {},
+          })
+        );
+        setError(null);
+        setLoading(false);
+      } else {
+        setUser(null);
+        setToken(null);
+      }
+      return next;
+    });
   };
 
   const value = useMemo(
@@ -215,8 +258,10 @@ export function AuthProvider({ children }) {
       isSecretUnlocked: (secretId) =>
         Array.isArray(normalizedUser?.unlockedSecrets) && normalizedUser.unlockedSecrets.includes(secretId),
       canView: (config) => baseCanView(normalizedUser, config),
+      isLocalAdmin,
+      toggleLocalAdmin,
     }),
-    [normalizedUser, role, token, loading, error]
+    [normalizedUser, role, token, loading, error, isLocalAdmin]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
