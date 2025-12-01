@@ -3,8 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 function LoginModal({ isOpen, onClose, onSubmit, onOpenSignup, onGoogleLogin }) {
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
@@ -13,8 +12,7 @@ function LoginModal({ isOpen, onClose, onSubmit, onOpenSignup, onGoogleLogin }) 
 
   useEffect(() => {
     if (!isOpen) {
-      setEmail('');
-      setPassword('');
+      setUsername('');
       setError('');
       setSubmitting(false);
       setGoogleSubmitting(false);
@@ -55,20 +53,6 @@ function LoginModal({ isOpen, onClose, onSubmit, onOpenSignup, onGoogleLogin }) 
       script.onload = null;
     };
   }, [isOpen]);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setSubmitting(true);
-    setError('');
-    try {
-      await onSubmit({ email, password });
-      onClose();
-    } catch (err) {
-      setError(err.message || 'Unable to login.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const handleOpenSignup = () => {
     if (onOpenSignup) {
@@ -149,26 +133,19 @@ function LoginModal({ isOpen, onClose, onSubmit, onOpenSignup, onGoogleLogin }) 
             ×
           </button>
         </header>
-        <form className="auth-modal__form" onSubmit={handleSubmit}>
+        <form className="auth-modal__form">
           <label>
-            <span>Email</span>
-            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-          </label>
-          <label>
-            <span>Password</span>
+            <span>Username (for display)</span>
             <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="Choose a display name"
             />
           </label>
-          <button type="submit" className="auth-modal__submit" disabled={submitting}>
-            {submitting ? 'Signing in...' : 'Login'}
-          </button>
-          <div className="auth-modal__divider" aria-hidden="true">
-            <span>or</span>
-          </div>
+          <p className="auth-modal__note">
+            Accounts are secured with Google. Pick a display username, then continue with Google.
+          </p>
           <button
             type="button"
             className="auth-modal__google"

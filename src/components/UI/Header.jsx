@@ -120,7 +120,7 @@ export default function Header() {
   const location = useLocation();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignupOpen, setIsSignupOpen] = useState(false);
-  const { user, role, login, signup, googleLogin, logout } = useAuth();
+  const { user, role, login, googleLogin, logout } = useAuth();
 
   const navLinks = role === 'admin'
     ? [...baseNavLinks, { to: '/admin', label: 'Admin', icon: NAV_ICONS.admin }]
@@ -132,7 +132,6 @@ export default function Header() {
     setIsSignupOpen(true);
   };
   const handleSignupClose = () => setIsSignupOpen(false);
-  const handleSignup = (formData) => signup(formData);
   const handleLoginOpen = () => {
     setIsSignupOpen(false);
     setIsLoginOpen(true);
@@ -234,7 +233,6 @@ export default function Header() {
       <SignupModal
         isOpen={isSignupOpen}
         onClose={handleSignupClose}
-        onSubmit={handleSignup}
         onOpenLogin={handleLoginOpen}
         onGoogleLogin={handleGoogleLogin}
       />

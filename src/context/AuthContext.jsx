@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { canView as baseCanView } from '../utils/permissions';
 
+console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
+
 const AuthContext = createContext({
   user: null,
   role: 'guest',
