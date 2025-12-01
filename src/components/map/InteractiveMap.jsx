@@ -6,6 +6,7 @@ import EditorInfoPanel from './EditorInfoPanel';
 import { useAuth } from '../../context/AuthContext';
 import { useMapEffects } from '../../context/MapEffectsContext';
 import { useLocationData } from '../../context/LocationDataContext';
+import { useContent } from '../../context/ContentContext';
 import VignetteLayer from './layers/VignetteLayer';
 import FogLayer from './layers/FogLayer';
 import CloudLayer from './layers/CloudLayer';
@@ -23,6 +24,7 @@ import {
   REGION_CATEGORIES,
   normalizeRegionEntry,
 } from '../../constants/regionConstants';
+import { evaluateContentHealth } from '../../utils/contentDiagnostics';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
@@ -451,6 +453,11 @@ function InteractiveMap({ isEditorMode = false }) {
     useMapEffects();
   const { locations, setLocations, selectedLocationId, selectLocation } = useLocationData();
   const { regions, setRegions, selectedRegionId: activeRegionId, selectRegion } = useRegions();
+  const {
+    entries: contentEntries,
+    loading: contentLoading,
+    error: contentError,
+  } = useContent();
   const [editorSelection, setEditorSelection] = useState(null);
   const [activePlacementTypeId, setActivePlacementTypeId] = useState(null);
   const [selectedPaletteItem, setSelectedPaletteItem] = useState(null);
@@ -684,6 +691,32 @@ function InteractiveMap({ isEditorMode = false }) {
     const status = missing ? 'warn' : pending ? 'pending' : 'ok';
     reportDiagnostics('marker-icons', { status, message });
   }, [locations, iconStatuses, reportDiagnostics]);
+
+  useEffect(() => {
+    if (contentLoading) {
+      reportDiagnostics('content', { status: 'pending', message: 'Loading content entries...' });
+      return;
+    }
+    if (!locations.length) {
+      reportDiagnostics('content', {
+        status: 'pending',
+        message: 'Waiting for map data to validate content references.',
+      });
+      return;
+    }
+    const locationIds = locations.map((location) => location.id);
+    const { status, message } = evaluateContentHealth(contentEntries, { locationIds });
+    reportDiagnostics('content', { status, message });
+  }, [contentEntries, contentLoading, locations, reportDiagnostics]);
+
+  useEffect(() => {
+    if (contentError) {
+      reportDiagnostics('content', {
+        status: 'warn',
+        message: `Using fallback content: ${contentError}`,
+      });
+    }
+  }, [contentError, reportDiagnostics]);
 
   const handleLocationClick = (location) => {
     selectLocation(location.id);

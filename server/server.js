@@ -11,6 +11,7 @@ import charactersRoutes from './characters.js';
 import filesRoutes from './files.js';
 import viewRoutes from './view.js';
 import entitiesRoutes from './entities.js';
+import contentRoutes from './content.js';
 import { ensureDefaultAdmin } from './utils.js';
 
 const loadEnvFile = (filename) => {
@@ -57,6 +58,7 @@ app.use('/api/characters', charactersRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api/view', viewRoutes);
 app.use('/api/entities', entitiesRoutes);
+app.use('/api/content', contentRoutes);
 
 await ensureDefaultAdmin();
 
