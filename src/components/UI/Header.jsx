@@ -80,6 +80,13 @@ const NAV_ICONS = {
       <path d="M10 14 14 10" />
       <path d="m12.5 7.5-1 5-5 1 10-3.5z" />
     </svg>
+  ),
+  about: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="16" x2="12" y2="12" />
+      <circle cx="12" cy="8" r="0.8" />
+    </svg>
   )
 };
 
@@ -90,6 +97,7 @@ const baseNavLinks = [
   { to: "/compendium", label: "Compendium", icon: NAV_ICONS.compendium },
   { to: "/players", label: "Players", icon: NAV_ICONS.players },
   { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
+  { to: "/about", label: "About", icon: NAV_ICONS.about },
 ];
 
 export default function Header() {

@@ -12,6 +12,7 @@ import LorePlaceholderPage from './components/pages/lore/LorePlaceholderPage';
 import PlayersPage from './components/pages/PlayersPage';
 import PlayerPublicPage from './components/pages/PlayerPublicPage';
 import DashboardPage from './components/pages/DashboardPage';
+import AboutPage from './components/pages/AboutPage';
 import Header from './components/UI/Header';
 import PageLayout from './components/UI/PageLayout';
 import './components/UI/PageUI.css';
@@ -33,6 +34,9 @@ function App() {
             {/* 1. Map (Default Home) */}
             <Route path="/" element={<MapPage />} />
             <Route path="/map" element={<Navigate to="/" replace />} />
+
+            {/* About */}
+            <Route path="/about" element={<AboutPage />} />
 
             {/* 2. CAMPAIGN (Simplified) */}
             <Route path="/campaign" element={<CharactersPage />} />
