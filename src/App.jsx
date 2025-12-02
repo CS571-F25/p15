@@ -12,6 +12,7 @@ import LorePlaceholderPage from './components/pages/lore/LorePlaceholderPage';
 import PlayersPage from './components/pages/PlayersPage';
 import PlayerPublicPage from './components/pages/PlayerPublicPage';
 import DashboardPage from './components/pages/DashboardPage';
+import AboutPage from './components/pages/AboutPage';
 import ViewingPage from './components/pages/ViewingPage';
 import AdminEntitiesPage from './components/pages/AdminEntitiesPage';
 import RegionDetailPage from './components/pages/RegionDetailPage';
@@ -38,55 +39,31 @@ function App() {
             <Route path="/" element={<MapPage />} />
             <Route path="/map" element={<Navigate to="/" replace />} />
 
-            {/* 2. Azterra (Almanac) */}
-            <Route path="/azterra" element={<PageLayout title="Azterra" tabs={[
-              { to: "", label: "Almanac", end: true },
-              { to: "geography", label: "Geography" },
+            {/* About */}
+            <Route path="/about" element={<AboutPage />} />
+
+            {/* 2. CAMPAIGN (Simplified) */}
+            <Route path="/campaign" element={<CharactersPage />} />
+
+            {/* 3. ATLAS (Promoted to its own top-level view) */}
+            <Route path="/atlas" element={<PageLayout title="World Atlas" tabs={[
+                { to: "", label: "View Map", end: true },
+                { to: "editor", label: "Map Editor" },
             ]} />}>
-              <Route index element={<AlmanacPage />} />
-              <Route path="geography" element={<Placeholder title="Geography" />} />
+                <Route index element={<LocationsAtlasPage />} />
+                <Route path="editor" element={<LocationsEditorPage />} />
             </Route>
 
-            {/* 3. Locations */}
-            <Route path="/locations" element={<PageLayout title="Locations" tabs={[
-              { to: "", label: "Atlas", end: true },
-              { to: "editor", label: "Editor" },
+            {/* 4. COMPENDIUM (The Big Merge) */}
+            {/* We merge People, Magic, and Almanac here to clean up the Sidebar */}
+            <Route path="/compendium" element={<PageLayout title="Azterra Compendium" tabs={[
+                { to: "", label: "Almanac", end: true }, // General History
+                { to: "societies", label: "Societies" }, // Races, Factions, Cultures
+                { to: "cosmos", label: "Cosmos" },       // Magic, Deities
             ]} />}>
-              <Route index element={<LocationsAtlasPage />} />
-              <Route path="editor" element={<LocationsEditorPage />} />
-            </Route>
-
-            {/* 4. People */}
-            <Route path="/people" element={<PageLayout title="People of Azterra" tabs={[
-              { to: "", label: "Races", end: true },
-              { to: "factions", label: "Factions" },
-              { to: "cultures", label: "Cultures" },
-            ]} />}>
-              <Route index element={<WorldRaces />} />
-              <Route path="factions" element={<Placeholder title="Factions" />} />
-              <Route path="cultures" element={<Placeholder title="Cultures" />} />
-            </Route>
-
-            {/* 5. Magic & Lore */}
-            <Route path="/magic" element={<PageLayout title="Magic & Lore" tabs={[
-              { to: "", label: "Magic System", end: true },
-              { to: "deities", label: "Deities" },
-              { to: "monsters", label: "Monsters" },
-            ]} />}>
-              <Route index element={<Placeholder title="Magic System" />} />
-              <Route path="deities" element={<Placeholder title="Deities" />} />
-              <Route path="monsters" element={<Placeholder title="Monsters" />} />
-            </Route>
-
-            {/* 6. Campaign */}
-            <Route path="/campaign" element={<PageLayout title="Campaign" tabs={[
-              { to: "", label: "Characters", end: true },
-              { to: "logbook", label: "Logbook" },
-              { to: "inventory", label: "Inventory" },
-            ]} />}>
-              <Route index element={<CharactersPage />} />
-              <Route path="logbook" element={<Placeholder title="Logbook" />} />
-              <Route path="inventory" element={<Placeholder title="Inventory" />} />
+                <Route index element={<AlmanacPage />} />
+                <Route path="societies" element={<WorldRaces />} /> {/* Merge Factions here too? */}
+                <Route path="cosmos" element={<Placeholder title="Magic System" />} />
             </Route>
 
             {/* Progression */}

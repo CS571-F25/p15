@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
 export default function PageLayout({ title, tabs }) {
     return (
-        <div className="min-h-screen text-[#f5e5c9] p-8 pb-16 relative overflow-hidden">
+        <div className="min-h-screen text-[#f5e5c9] p-8 pb-16 relative">
             <div className="max-w-7xl mx-auto">
                 {/* Page Title */}
                 <h1 className="text-center text-[#d4af37] text-4xl md:text-5xl font-serif tracking-widest mb-8 drop-shadow-[0_0_8px_rgba(212,175,55,0.6)] font-[Cinzel]">

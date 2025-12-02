@@ -21,8 +21,6 @@ const getCardClass = (index, activeIndex, total) => {
 };
 
 export default function CharactersPage() {
-  const [vanished, setVanished] = useState(false);
-
   const [currentColor, setCurrentColor] = useState(characters[0].color);
   const [targetColor, setTargetColor] = useState(characters[0].color);
   const [fade, setFade] = useState(0);
@@ -89,65 +87,23 @@ export default function CharactersPage() {
     }
   }, [activeIndex]);
 
-  const handleCardKeyDown = useCallback((event, index) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      setActiveIndex(index);
-      if (index === activeIndex) {
-        setExpandedIndex(index);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }
-  }, [activeIndex]);
-
   const handleBackToCarousel = useCallback(() => {
     setExpandedIndex(null);
   }, []);
 
-  // Arrow keys navigation
-  useEffect(() => {
-    const handleKey = (event) => {
-      if (event.key === 'ArrowLeft') {
-        goPrev();
-        if (isExpanded) {
-           setExpandedIndex(prev => (prev - 1 + characters.length) % characters.length);
-        }
-      } else if (event.key === 'ArrowRight') {
-        goNext();
-        if (isExpanded) {
-           setExpandedIndex(prev => (prev + 1) % characters.length);
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [goNext, goPrev, isExpanded]);
-
-  // Vanish tool: press 'v' to toggle
-  useEffect(() => {
-    const onKey = (event) => {
-      if (event.key === 'v' || event.key === 'V') {
-        setVanished((v) => !v);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
   return (
-    <div className={`characters-page ${isExpanded ? 'is-expanded' : ''}`}>
+    <div className={`characters-page custom-scrollbar ${isExpanded ? 'is-expanded' : ''}`}>
       <ShaderBackgroundDualCrossfade
         modA={currentColor}
         modB={targetColor}
         fade={fade}
       />
 
-      {!vanished && (
-        <>
+      <>
           <div className={`carousel-section ${isExpanded ? 'fade-out' : ''}`}>
              <h1 className="page-title">Stars of Azterra</h1>
              <div className="characters-wrapper">
-               <p className="nav-hint">Use the arrow keys or buttons to browse the codex</p>
+               <p className="nav-hint">Use the on-screen controls to browse the codex</p>
                <div className="carousel-controls">
                  <button
                    className="arrow-btn arrow-left"
@@ -166,12 +122,7 @@ export default function CharactersPage() {
                          <div
                            key={char.id}
                            className={getCardClass(index, activeIndex, characters.length)}
-                           role="button"
-                           tabIndex={isActive ? 0 : -1}
-                           aria-label={`Select ${char.name}`}
-                           aria-pressed={isActive}
                            onClick={() => handleCardClick(index)}
-                           onKeyDown={(event) => handleCardKeyDown(event, index)}
                          >
                            {isActive && (
                              <CardShader
@@ -215,7 +166,6 @@ export default function CharactersPage() {
             />
           )}
         </>
-      )}
-    </div>
+      </div>
   );
 }

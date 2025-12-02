@@ -11,7 +11,7 @@ out vec4 out_color;
 
 vec4 core(vec4 params) {
     vec2 I = gl_FragCoord.xy;
-    float t = u_time, z = 0.0, d = 0.0, s = 0.0;
+    float t = u_time*0.5, z = 0.0, d = 0.0, s = 0.0;
     float i = 0.0;
     vec4 O = vec4(0.0);
     for(O*=i; i++<8e1; O+=(cos(s+params)+1.0)/d*z) {
@@ -19,8 +19,6 @@ vec4 core(vec4 params) {
         vec3 a = normalize(cos(vec3(1,2,0)+t-d*7.0));
         p.z+=5.0;
         a = a*dot(a,p)-cross(a,p);
-        for(d=1.0; d++<1.0;)
-            a+=sin(a*d+t).yzx/d;
         z+=d=.1*abs(length(p)-3.0)+.04*abs(s=a.y);
     }
     return tanh(O/3e4);
