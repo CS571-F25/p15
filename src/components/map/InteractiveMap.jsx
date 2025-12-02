@@ -457,6 +457,7 @@ function InteractiveMap({ isEditorMode = false }) {
     entries: contentEntries,
     loading: contentLoading,
     error: contentError,
+    issues: contentIssues,
   } = useContent();
   const [editorSelection, setEditorSelection] = useState(null);
   const [activePlacementTypeId, setActivePlacementTypeId] = useState(null);
@@ -708,6 +709,26 @@ function InteractiveMap({ isEditorMode = false }) {
     const { status, message } = evaluateContentHealth(contentEntries, { locationIds });
     reportDiagnostics('content', { status, message });
   }, [contentEntries, contentLoading, locations, reportDiagnostics]);
+
+  useEffect(() => {
+    if (!contentIssues) return;
+    const unreadable = contentIssues.unreadableFiles || [];
+    if (unreadable.length) {
+      reportDiagnostics('content-importer', {
+        status: 'warn',
+        message: `Unreadable files: ${unreadable.map((item) => item.path).join(', ')}`,
+      });
+      return;
+    }
+    const issueCount = contentIssues.issueCount || 0;
+    const status = issueCount ? contentIssues.status || 'warn' : 'ok';
+    reportDiagnostics('content-importer', {
+      status,
+      message: issueCount
+        ? `Importer reported ${issueCount} issues across ${contentIssues.entryCount || contentEntries.length} entries.`
+        : `Importer validated ${contentIssues.entryCount || contentEntries.length} entries.`,
+    });
+  }, [contentIssues, contentEntries.length, reportDiagnostics]);
 
   useEffect(() => {
     if (contentError) {

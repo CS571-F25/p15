@@ -21,15 +21,25 @@ async function ensureContentFile() {
   }
 }
 
+async function readDiagnosticsFile() {
+  try {
+    const raw = await fs.readFile(path.join(DATA_DIR, 'content-diagnostics.json'), 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 async function readContentFile() {
   await ensureContentFile();
   try {
     const raw = await fs.readFile(CONTENT_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
     const entries = Array.isArray(parsed.entries) ? parsed.entries : [];
-    return { entries: normalizeContentList(entries) };
+    const diagnostics = await readDiagnosticsFile();
+    return { entries: normalizeContentList(entries), diagnostics };
   } catch {
-    return { entries: [] };
+    return { entries: [], diagnostics: null };
   }
 }
 

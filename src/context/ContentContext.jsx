@@ -14,6 +14,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export function ContentProvider({ children }) {
   const [entries, setEntries] = useState([]);
+  const [issues, setIssues] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastLoadedAt, setLastLoadedAt] = useState(null);
@@ -29,10 +30,12 @@ export function ContentProvider({ children }) {
       }
       const normalized = normalizeContentList(data.entries || []);
       setEntries(normalized);
+      setIssues(data.diagnostics || data.issues || null);
       setLastLoadedAt(new Date().toISOString());
     } catch (err) {
       const fallback = normalizeContentList(fallbackContent?.entries || []);
       setEntries(fallback);
+      setIssues(null);
       setError(err.message || 'Unable to load content.');
       setLastLoadedAt(new Date().toISOString());
     } finally {
@@ -53,6 +56,17 @@ export function ContentProvider({ children }) {
     [entries]
   );
 
+  const getByCategory = useCallback(
+    (category) => {
+      if (!category) return entries;
+      const normalized = String(category).toLowerCase();
+      return entries.filter(
+        (entry) => String(entry.category || '').toLowerCase() === normalized,
+      );
+    },
+    [entries],
+  );
+
   const getById = useCallback(
     (id) => entries.find((entry) => String(entry.id) === String(id)) || null,
     [entries]
@@ -68,18 +82,43 @@ export function ContentProvider({ children }) {
     return Array.from(set);
   }, [entries]);
 
+  const availableCategories = useMemo(() => {
+    const set = new Set();
+    entries.forEach((entry) => {
+      if (entry.category) {
+        set.add(String(entry.category).toLowerCase());
+      }
+    });
+    return Array.from(set);
+  }, [entries]);
+
   const value = useMemo(
     () => ({
       entries,
+      issues,
       loading,
       error,
       lastLoadedAt,
       refresh,
       getByType,
+      getByCategory,
       getById,
       availableTypes,
+      availableCategories,
     }),
-    [entries, loading, error, lastLoadedAt, refresh, getByType, getById, availableTypes]
+    [
+      entries,
+      issues,
+      loading,
+      error,
+      lastLoadedAt,
+      refresh,
+      getByType,
+      getByCategory,
+      getById,
+      availableTypes,
+      availableCategories,
+    ]
   );
 
   return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>;
