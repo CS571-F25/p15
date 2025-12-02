@@ -101,7 +101,7 @@ const baseNavLinks = [
   { to: "/campaign", label: "Campaign", icon: NAV_ICONS.campaign },
   { to: "/atlas", label: "Atlas", icon: NAV_ICONS.atlas },
   { to: "/compendium", label: "Compendium", icon: NAV_ICONS.compendium },
-  { to: "/viewing", label: "Viewing", icon: NAV_ICONS.viewing },
+  { to: "/people", label: "People", icon: NAV_ICONS.viewing },
   { to: "/players", label: "Players", icon: NAV_ICONS.players },
   { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
   { to: "/about", label: "About", icon: NAV_ICONS.about },

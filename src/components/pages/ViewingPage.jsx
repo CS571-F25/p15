@@ -4,11 +4,12 @@ import characters from '../../data/characters';
 import npcsData from '../../data/npcs';
 import locationsData from '../../data/locations.json';
 import { useAuth } from '../../context/AuthContext';
+import { useContent } from '../../context/ContentContext';
 import { canView as canViewHelper } from '../../utils/permissions';
 import '../UI/PageUI.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-const TABS = ['locations', 'npcs', 'players'];
+const TABS = ['npcs', 'players'];
 const CAMPAIGNS = ['All', 'Main', 'Side'];
 const SECRET_OPTIONS = [
   { id: 'aurora-ember', label: 'Aurora Ember' },
@@ -147,10 +148,11 @@ const CARD_THEMES = [
   },
 ];
 
-function ViewingPage() {
+function PeoplePage() {
   const { role, token, user } = useAuth();
+  const { portraitConfig, portraitStatus, refreshPortraitStatus, generatePortrait } = useContent();
   const isAdmin = role === 'admin';
-  const [tab, setTab] = useState('locations');
+  const [tab, setTab] = useState('npcs');
   const [campaign, setCampaign] = useState('All');
   const [adminView, setAdminView] = useState(false);
   const [visibleIds, setVisibleIds] = useState([]);
@@ -169,8 +171,10 @@ function ViewingPage() {
   const [favPending, setFavPending] = useState(false);
   const [pendingNpcEdits, setPendingNpcEdits] = useState({});
   const [pendingLocEdits, setPendingLocEdits] = useState({});
+  const [pendingPlayerEdits, setPendingPlayerEdits] = useState({});
   const [savingNpcId, setSavingNpcId] = useState(null);
   const [savingLocId, setSavingLocId] = useState(null);
+  const [savingPlayerId, setSavingPlayerId] = useState(null);
   const [viewFavorites, setViewFavorites] = useState([]);
   const [expanded, setExpanded] = useState({});
   const [previewSecrets, setPreviewSecrets] = useState([]);
@@ -178,6 +182,8 @@ function ViewingPage() {
   const [draggingCard, setDraggingCard] = useState(null);
   const [editingCard, setEditingCard] = useState(null);
   const [editorTab, setEditorTab] = useState('details');
+  const [portraitPending, setPortraitPending] = useState({});
+  const [playerMeta, setPlayerMeta] = useState({});
 
   useEffect(() => {
     const load = async () => {
@@ -225,6 +231,20 @@ function ViewingPage() {
           });
           const playerData = await playerRes.json();
           if (playerRes.ok) setPlayers(playerData.users || []);
+
+          if (isAdmin) {
+            const playerMetaRes = await fetch(`${API_BASE_URL}/entities/players`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (playerMetaRes.ok) {
+              const metaJson = await playerMetaRes.json();
+              const map = {};
+              (metaJson.items || []).forEach((item) => {
+                map[item.id] = item;
+              });
+              setPlayerMeta(map);
+            }
+          }
         }
       } catch (err) {
         setError(err.message || 'Unable to load view data.');
@@ -280,18 +300,6 @@ function ViewingPage() {
         adminView && isAdmin ? base : base.filter((n) => passesVisibility(n, viewer));
       return filtered.filter((n) => campaignFilter(n.campaign));
     }
-    if (tab === 'locations') {
-      const source = locItems.length ? locItems : locationsData.locations;
-      const base = source.map((loc) => ({
-        ...loc,
-        visible: loc.visible !== false,
-        truesight: locTruesight.includes(loc.id),
-        campaign: loc.campaign || 'Main',
-      }));
-      const filtered =
-        adminView && isAdmin ? base : base.filter((loc) => passesVisibility(loc, viewer));
-      return filtered.filter((loc) => campaignFilter(loc.campaign));
-    }
     if (tab === 'players') {
       const base =
         players.length && adminView && isAdmin
@@ -314,7 +322,18 @@ function ViewingPage() {
       return filtered;
     }
     return [];
-  }, [tab, players, visibleIds, npcItems, locItems, npcVisibility, locVisibility, isAdmin, campaign, adminView, role, npcTruesight, locTruesight, previewSecrets, user]);
+  }, [tab, players, visibleIds, npcItems, isAdmin, campaign, adminView, role, npcTruesight, previewSecrets, user]);
+
+  useEffect(() => {
+    if (tab !== 'players') return;
+    const ids = new Set();
+    currentList.forEach((item) => {
+      const character =
+        item.character || characters.find((c) => c.id === item.featuredCharacter) || characters.find((c) => c.id === item.id);
+      if (character?.id) ids.add(character.id);
+    });
+    ids.forEach((id) => refreshPortraitStatus(id));
+  }, [tab, currentList, refreshPortraitStatus]);
 
   useEffect(() => {
     setCardOrder((prev) => {
@@ -489,6 +508,27 @@ function ViewingPage() {
     setDraggingCard(null);
   };
 
+  const handlePortraitGenerate = async (characterId) => {
+    if (!characterId || !isAdmin || !token) return;
+    setPortraitPending((prev) => ({ ...prev, [characterId]: true }));
+    setError('');
+    try {
+      const result = await generatePortrait(characterId, token);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      await refreshPortraitStatus(characterId);
+    } catch (err) {
+      setError(err.message || 'Unable to generate portrait.');
+    } finally {
+      setPortraitPending((prev) => {
+        const copy = { ...prev };
+        delete copy[characterId];
+        return copy;
+      });
+    }
+  };
+
   const openEditor = (itemType, itemId) => {
     if (!adminView || !isAdmin) return;
     setEditingCard({ type: itemType, id: itemId });
@@ -514,6 +554,12 @@ function ViewingPage() {
   const mergedLoc = (item) => ({
     ...item,
     ...(pendingLocEdits[item.id] || {}),
+  });
+
+  const mergedPlayerMeta = (item) => ({
+    ...item,
+    ...(playerMeta[item.id] || {}),
+    ...(pendingPlayerEdits[item.id] || {}),
   });
 
   const saveNpc = async (id) => {
@@ -610,6 +656,47 @@ function ViewingPage() {
     }
   };
 
+  const savePlayerMeta = async (player) => {
+    if (!isAdmin || !token || !player) return;
+    const merged = mergedPlayerMeta(player);
+    setSavingPlayerId(player.id);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/entities/players/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...merged,
+          id: player.id,
+          name: merged.name || player.name,
+          description: merged.description || '',
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Unable to save player metadata.');
+      }
+      const nextItems = Array.isArray(data.items) ? data.items : [data.item].filter(Boolean);
+      const map = {};
+      nextItems.forEach((entry) => {
+        map[entry.id] = entry;
+      });
+      setPlayerMeta(map);
+      setPendingPlayerEdits((prev) => {
+        const copy = { ...prev };
+        delete copy[player.id];
+        return copy;
+      });
+    } catch (err) {
+      setError(err.message || 'Unable to save player metadata.');
+    } finally {
+      setSavingPlayerId(null);
+    }
+  };
+
   const toggleFavorite = async (itemId) => {
     if (!token) return;
     setFavPending(true);
@@ -665,7 +752,13 @@ function ViewingPage() {
 
     if (tab === 'players') {
       const character = item.character || characters.find((c) => c.id === item.featuredCharacter) || characters.find((c) => c.id === item.id);
+      const merged = mergedPlayerMeta(item);
       const visibleChars = characters.filter((c) => (adminView && isAdmin) || visibleIds.includes(c.id));
+      const portraitInfo = character ? portraitStatus[character.id] : null;
+      const portraitUrl = portraitInfo?.url;
+      const canGeneratePortrait =
+        isAdmin && adminView && character && (character.imageDescription || item.imageDescription);
+      const portraitDisabled = portraitConfig.checked && !portraitConfig.enabled;
       return (
         <div
           className={`view-card ${isExpanded ? 'view-card--expanded' : ''} ${isDragging ? 'view-card--dragging' : ''}`}
@@ -693,13 +786,76 @@ function ViewingPage() {
               </button>
             )}
           </div>
-          {character && <p className="account-muted">{character.class} · {character.race}</p>}
+          {character && (
+            <div className="view-card__body">
+              {portraitUrl ? (
+                <div className="view-card__media" style={{ maxHeight: 220 }}>
+                  <img src={portraitUrl} alt={`${character.name} portrait`} />
+                </div>
+              ) : (
+                <p className="account-muted">No portrait yet.</p>
+              )}
+              <p className="account-muted">
+                {character.class} · {character.race}
+              </p>
+              {isAdmin && adminView ? (
+                <label className="admin-field">
+                  <span>Description</span>
+                  <textarea
+                    value={merged.description || ''}
+                    rows={3}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) =>
+                      setPendingPlayerEdits((prev) => ({
+                        ...prev,
+                        [item.id]: { ...(prev[item.id] || {}), description: e.target.value },
+                      }))
+                    }
+                  />
+                </label>
+              ) : (
+                merged.description && <p className="account-muted">{merged.description}</p>
+              )}
+            </div>
+          )}
           {isExpanded && (
             <div className="view-card__body">
               <p className="account-muted">Visible Characters</p>
               <div className="mini-list">
                 {visibleChars.length ? visibleChars.map((c) => <span key={c.id}>{c.name}</span>) : <span>No characters visible.</span>}
               </div>
+              {character && canGeneratePortrait && (
+                <div className="view-card__actions" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className="admin-toggle-btn"
+                    disabled={portraitDisabled || portraitPending[character.id]}
+                    title={portraitDisabled ? 'Image generation unavailable (missing API key)' : ''}
+                    onClick={() => handlePortraitGenerate(character.id)}
+                  >
+                    {portraitPending[character.id]
+                      ? 'Generating...'
+                      : portraitInfo?.exists
+                      ? 'Regenerate Portrait'
+                      : 'Generate Portrait'}
+                  </button>
+                  {portraitDisabled && (
+                    <p className="account-muted">Portrait generation disabled (no key).</p>
+                  )}
+                </div>
+              )}
+              {isAdmin && adminView && (
+                <div className="view-card__actions" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className="admin-toggle-btn"
+                    disabled={savingPlayerId === item.id}
+                    onClick={() => savePlayerMeta(item)}
+                  >
+                    {savingPlayerId === item.id ? 'Saving...' : 'Save Description'}
+                  </button>
+                </div>
+              )}
               {isAdmin && adminView && item.secretId && (
                 <div className="secret-meta">
                   <p className="account-muted">Requires secret: {item.secretId}</p>
@@ -744,7 +900,18 @@ function ViewingPage() {
               )}
             </div>
           </div>
-          <p className="account-muted">{item.blurb}</p>
+          {isAdmin && adminView ? (
+            <label className="admin-field" onClick={(e) => e.stopPropagation()}>
+              <span>Description</span>
+              <textarea
+                value={npcDraft.blurb || ''}
+                rows={2}
+                onChange={(e) => setNpcDraft(npcDraft.id, 'blurb', e.target.value)}
+              />
+            </label>
+          ) : (
+            <p className="account-muted">{item.blurb}</p>
+          )}
           {isExpanded && (
             <div className="view-card__body">
               <p className="account-muted">Related Locations</p>
@@ -755,6 +922,18 @@ function ViewingPage() {
                       .map((loc) => <span key={loc.id}>{loc.name}</span>)
                   : <span>None linked.</span>}
               </div>
+              {isAdmin && adminView && (
+                <div className="view-card__actions" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className="admin-toggle-btn"
+                    disabled={savingNpcId === item.id}
+                    onClick={() => saveNpc(item.id)}
+                  >
+                    {savingNpcId === item.id ? 'Saving...' : 'Save NPC'}
+                  </button>
+                </div>
+              )}
               {isAdmin && adminView && item.secretId && (
                 <div className="secret-meta">
                   <p className="account-muted">Requires secret: {item.secretId}</p>
@@ -1096,7 +1275,7 @@ function ViewingPage() {
       <ShaderBackgroundDualCrossfade modA={colorA} modB={colorB} fade={fade} />
       <header className="characters-header">
         <div>
-          <p className="account-card__eyebrow">Viewing</p>
+          <p className="account-card__eyebrow">People</p>
           <h1>Campaign View</h1>
           <p className="nav-hint">Browse visible players, NPCs, and locations. Admins can toggle visibility.</p>
         </div>
@@ -1141,7 +1320,6 @@ function ViewingPage() {
           >
             {name === 'players' && 'Players / Characters'}
             {name === 'npcs' && 'NPCs'}
-            {name === 'locations' && 'Locations'}
           </button>
         ))}
         <div className="campaign-tabs">
@@ -1171,4 +1349,4 @@ function ViewingPage() {
   );
 }
 
-export default ViewingPage;
+export default PeoplePage;

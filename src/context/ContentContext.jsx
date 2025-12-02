@@ -18,6 +18,8 @@ export function ContentProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastLoadedAt, setLastLoadedAt] = useState(null);
+  const [portraitConfig, setPortraitConfig] = useState({ enabled: false, checked: false });
+  const [portraitStatus, setPortraitStatus] = useState({});
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -47,6 +49,23 @@ export function ContentProvider({ children }) {
     refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    const fetchPortraitConfig = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/portraits/config`);
+        const data = await res.json();
+        if (res.ok) {
+          setPortraitConfig({ enabled: Boolean(data.enabled), checked: true });
+        } else {
+          setPortraitConfig((prev) => ({ ...prev, checked: true }));
+        }
+      } catch {
+        setPortraitConfig((prev) => ({ ...prev, checked: true }));
+      }
+    };
+    fetchPortraitConfig();
+  }, []);
+
   const getByType = useCallback(
     (type) => {
       if (!type) return entries;
@@ -71,6 +90,45 @@ export function ContentProvider({ children }) {
     (id) => entries.find((entry) => String(entry.id) === String(id)) || null,
     [entries]
   );
+
+  const refreshPortraitStatus = useCallback(async (id) => {
+    if (!id) return null;
+    try {
+      const res = await fetch(`${API_BASE_URL}/portraits/${encodeURIComponent(id)}/status`);
+      const data = await res.json();
+      if (res.ok) {
+        setPortraitStatus((prev) => ({ ...prev, [id]: data }));
+        return data;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const generatePortrait = useCallback(async (id, token) => {
+    if (!id || !token) return { error: 'Auth and id required' };
+    try {
+      const res = await fetch(`${API_BASE_URL}/portraits/${encodeURIComponent(id)}/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { error: data.error || 'Failed to generate portrait' };
+      }
+      setPortraitStatus((prev) => ({
+        ...prev,
+        [id]: { exists: true, url: data.url },
+      }));
+      return { url: data.url };
+    } catch (err) {
+      return { error: err.message || 'Failed to generate portrait' };
+    }
+  }, []);
 
   const availableTypes = useMemo(() => {
     const set = new Set();
@@ -105,6 +163,10 @@ export function ContentProvider({ children }) {
       getById,
       availableTypes,
       availableCategories,
+      portraitConfig,
+      portraitStatus,
+      refreshPortraitStatus,
+      generatePortrait,
     }),
     [
       entries,
@@ -118,6 +180,10 @@ export function ContentProvider({ children }) {
       getById,
       availableTypes,
       availableCategories,
+      portraitConfig,
+      portraitStatus,
+      refreshPortraitStatus,
+      generatePortrait,
     ]
   );
 

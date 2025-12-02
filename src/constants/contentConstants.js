@@ -39,6 +39,10 @@ export const normalizeContentEntry = (entry = {}) => {
       entry.mapLocationId === null || entry.mapLocationId === undefined
         ? null
         : entry.mapLocationId,
+    imageDescription:
+      typeof entry.imageDescription === 'string'
+        ? entry.imageDescription.trim()
+        : entry.imageDescription ?? '',
   };
 };
 

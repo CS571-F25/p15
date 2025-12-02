@@ -13,7 +13,7 @@ import PlayersPage from './components/pages/PlayersPage';
 import PlayerPublicPage from './components/pages/PlayerPublicPage';
 import DashboardPage from './components/pages/DashboardPage';
 import AboutPage from './components/pages/AboutPage';
-import ViewingPage from './components/pages/ViewingPage';
+import PeoplePage from './components/pages/ViewingPage';
 import AdminEntitiesPage from './components/pages/AdminEntitiesPage';
 import RegionDetailPage from './components/pages/RegionDetailPage';
 import LocationDetailPage from './components/pages/LocationDetailPage';
@@ -82,8 +82,9 @@ function App() {
             <Route path="/players" element={<PlayersPage />} />
             <Route path="/players/:id" element={<PlayerPublicPage />} />
 
-            {/* Viewing */}
-            <Route path="/viewing" element={<ViewingPage />} />
+            {/* People (formerly Viewing) */}
+            <Route path="/people" element={<PeoplePage />} />
+            <Route path="/viewing" element={<Navigate to="/people" replace />} />
 
             {/* Admin Entities */}
             <Route path="/admin/entities" element={<AdminEntitiesPage />} />

@@ -51,7 +51,7 @@ function LocationDetailPage() {
       <button
         type="button"
         className="tab-btn"
-        onClick={() => navigate('/viewing?tab=locations')}
+        onClick={() => navigate('/people')}
       >
         View in Viewer Page
       </button>

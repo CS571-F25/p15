@@ -17,6 +17,7 @@ const KNOWN_META_KEYS = new Set([
   'relatedevents',
   'relateditems',
   'relatedfactions',
+  'imagedescription',
   'tags',
 ]);
 
@@ -122,6 +123,7 @@ export async function parseNoteFile(filePath, rootDir) {
     relatedEvents: toList(metadata.relatedevents),
     relatedItems: toList(metadata.relateditems),
     relatedFactions: toList(metadata.relatedfactions),
+    imageDescription: metadata.imagedescription || '',
   };
 
   const metadataTags = toList(metadata.tags);

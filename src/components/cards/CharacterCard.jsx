@@ -5,12 +5,13 @@ function CharacterCard({ character, onToggleFavorite, isFavorite, onFeature, isF
   const initial = character.name ? character.name.charAt(0).toUpperCase() : '?';
   const accentHue = (character.id * 47) % 360;
   const accentColor = `hsl(${accentHue}, 70%, 60%)`;
+  const portraitSrc = character.portraitUrl || character.image;
 
   return (
     <article className="card-shell" style={{ '--portrait-accent': accentColor }}>
       <div className="card-portrait" aria-hidden="true">
-        {character.image ? (
-          <img src={character.image} alt={`${character.name} portrait`} />
+        {portraitSrc ? (
+          <img src={portraitSrc} alt={`${character.name} portrait`} />
         ) : (
           <span className="card-initial">{initial}</span>
         )}
