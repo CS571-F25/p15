@@ -231,7 +231,7 @@ function EditorSidePanel({
                 <h3>Regions</h3>
                 <p>{regionCountLabel}</p>
               </div>
-              <div className="region-list">
+              <div className="region-list custom-scrollbar">
                 {regions.length === 0 && (
                   <p className="region-list__empty">No regions yet. Switch to Create to add one.</p>
                 )}
@@ -329,7 +329,7 @@ function EditorSidePanel({
           </button>
         </div>
       </header>
-      <div className="editor-side-panel__body">{renderContent()}</div>
+      <div className="editor-side-panel__body custom-scrollbar">{renderContent()}</div>
     </aside>
   );
 }

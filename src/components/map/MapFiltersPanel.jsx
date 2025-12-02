@@ -50,7 +50,7 @@ function MapFiltersPanel({
       >
         {isOpen ? 'Close Filters' : 'Filters'}
       </button>
-      <div className="map-filters-panel__content" aria-hidden={!isOpen}>
+      <div className="map-filters-panel__content custom-scrollbar" aria-hidden={!isOpen}>
         <section className="map-filters-panel__section">
           <header>
             <h3>Locations</h3>

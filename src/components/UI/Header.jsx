@@ -7,10 +7,17 @@ import { useAuth } from '../../context/AuthContext';
 
 // Icons for the new top-level categories
 const NAV_ICONS = {
-  // Using a stylized globe/cosmology icon for Azterra (The World)
-  azterra: (
+  // Compendium (Merged Azterra/People/Magic) - Using Globe
+  compendium: (
     <svg viewBox="0 0 24 24" role="presentation">
       <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  // Atlas - Using Map Pin
+  atlas: (
+    <svg viewBox="0 0 24 24" role="presentation">
+      <path d="M12 21s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 7.2c0 7.3-8 11.8-8 11.8z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   // Map/Scroll icon
@@ -18,28 +25,6 @@ const NAV_ICONS = {
     <svg viewBox="0 0 24 24" role="presentation">
       <path d="M9 4 3.5 6.5v13L9 17l6 2.5 5.5-2.5v-13L15 6.5 9 4z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
       <path d="M9 4v13M15 6.5V20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  ),
-  // Locations icon
-  locations: (
-    <svg viewBox="0 0 24 24" role="presentation">
-      <path d="M12 21s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 7.2c0 7.3-8 11.8-8 11.8z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  // Group of Figures icon for People (Races, Factions, etc.)
-  people: (
-    <svg viewBox="0 0 24 24" role="presentation">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="9" cy="7" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  // Star/Magic icon for Magic & Lore
-  magic: (
-    <svg viewBox="0 0 24 24" role="presentation">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   // Document/Scroll icon for Campaign (Log, PCs, Inventory)
@@ -101,19 +86,25 @@ const NAV_ICONS = {
       <path d="M10 14 14 10" />
       <path d="m12.5 7.5-1 5-5 1 10-3.5z" />
     </svg>
+  ),
+  about: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="16" x2="12" y2="12" />
+      <circle cx="12" cy="8" r="0.8" />
+    </svg>
   )
 };
 
 const baseNavLinks = [
-  { to: "/azterra", label: "Azterra", icon: NAV_ICONS.azterra },
   { to: "/", label: "Map", icon: NAV_ICONS.map },
-  { to: "/locations", label: "Locations", icon: NAV_ICONS.locations },
-  { to: "/people", label: "People", icon: NAV_ICONS.people },
-  { to: "/magic", label: "Magic & Lore", icon: NAV_ICONS.magic },
   { to: "/campaign", label: "Campaign", icon: NAV_ICONS.campaign },
+  { to: "/atlas", label: "Atlas", icon: NAV_ICONS.atlas },
+  { to: "/compendium", label: "Compendium", icon: NAV_ICONS.compendium },
   { to: "/viewing", label: "Viewing", icon: NAV_ICONS.viewing },
   { to: "/players", label: "Players", icon: NAV_ICONS.players },
   { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
+  { to: "/about", label: "About", icon: NAV_ICONS.about },
 ];
 
 export default function Header() {

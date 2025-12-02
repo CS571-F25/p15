@@ -10,7 +10,7 @@ out vec4 out_color;
 
 void main() {
     vec2 I = gl_FragCoord.xy;
-    float t = u_time * 0.2, z = 0.0, d = 0.0, s = 0.0;
+    float t = u_time*0.2, z = 0.0, d = 0.0, s = 0.0;
     float i = 0.0;
     vec4 O = vec4(0.0);
 

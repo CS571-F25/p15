@@ -12,7 +12,7 @@ export default function WorldRaces() {
   };
 
   return (
-    <div className="characters-page world-races-page">
+    <div className="characters-page world-races-page custom-scrollbar">
       <div className="sun-overlay" aria-hidden="true" />
       <div className="world-races-content">
         <h1 className="page-title">Races of Azterra</h1>
