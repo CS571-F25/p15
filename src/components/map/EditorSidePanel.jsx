@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import RegionInfoPanel from './RegionInfoPanel';
 
 const PANEL_VIEWS = {
   HOME: 'home',
@@ -11,12 +12,16 @@ function EditorSidePanel({
   markerPalette,
   markerToolbox,
   locationEditor,
-  regionInfoPanel,
   regions = [],
   activeRegionId,
   onSelectRegion,
   onFocusRegion,
   onDeleteRegion,
+  onRegionFieldChange,
+  onMergeRegion,
+  onStartSubregion,
+  onCancelSubregion,
+  regionDraftTargetId,
   canAutoSave = false,
   isRegionMode,
   onToggleRegionMode,
@@ -30,8 +35,8 @@ function EditorSidePanel({
 }) {
   const [view, setView] = useState(PANEL_VIEWS.HOME);
   const [markerView, setMarkerView] = useState('palette');
-  const [regionView, setRegionView] = useState('create');
   const [panelWidth, setPanelWidth] = useState(360);
+  const [expandedRegions, setExpandedRegions] = useState(() => new Set());
   const isResizingRef = React.useRef(false);
 
   const handleResizeStart = (event) => {
@@ -158,124 +163,112 @@ function EditorSidePanel({
   const renderRegions = () => (
     <>
       <div className="editor-side-panel__section">
-        <div className="editor-side-panel__tabs editor-side-panel__tabs--sub">
-        <button
-          type="button"
-          className={regionView === 'create' ? 'active' : ''}
-          onClick={() => {
-            setRegionView('create');
-            onToggleRegionMode();
-          }}
-        >
-          Create
-        </button>
-        <button
-          type="button"
-          className={regionView === 'edit' ? 'active' : ''}
-          onClick={() => {
-            setRegionView('edit');
-            if (isRegionMode) {
-              onToggleRegionMode();
-            }
-            onResetRegionDraft();
-          }}
-        >
-          Edit
-        </button>
-      </div>
         <div className="editor-side-panel__section-body">
-          {regionView === 'create' && (
-            <div className="editor-side-panel__actions-grid">
-              <article className="editor-side-panel__action-card">
-                <header>
-                  <h4>Create Region</h4>
-                  <p>Enable region mode to start plotting boundaries.</p>
-                </header>
-                <button
-                  type="button"
-                  className="toolbox-button"
-                  onClick={onToggleRegionMode}
-                  disabled={!canAutoSave}
-                >
-                  {isRegionMode ? 'Exit Region Mode' : 'Start Region Mode'}
-                </button>
-                {isRegionMode && (
-                  <div className="editor-side-panel__region-draft">
-                    <span>Draft points: {regionDraftPoints.length}</span>
-                    <div>
-                      <button
-                        type="button"
-                        className="toolbox-button"
-                        onClick={onFinishRegion}
-                        disabled={regionDraftPoints.length < 3}
-                      >
-                        Finish
-                      </button>
-                      <button
-                        type="button"
-                        className="toolbox-button toolbox-button--ghost"
-                        onClick={onResetRegionDraft}
-                      >
-                        Clear
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </article>
-            </div>
-          )}
-
-          {regionView === 'edit' && (
-            <>
-              <div className="editor-side-panel__section-header">
-                <h3>Regions</h3>
-                <p>{regionCountLabel}</p>
-              </div>
-              <div className="region-list custom-scrollbar">
-                {regions.length === 0 && (
-                  <p className="region-list__empty">No regions yet. Switch to Create to add one.</p>
-                )}
-                {regions.map((region) => (
-                  <div
-                    key={region.id}
-                    className={`region-item ${activeRegionId === region.id ? 'region-item--active' : ''}`}
-                  >
+          <div className="editor-side-panel__actions-grid">
+            <article className="editor-side-panel__action-card">
+              <header>
+                <h4>Create / Edit Regions</h4>
+                <p>Enable region mode to plot new areas or detached parts.</p>
+              </header>
+              <button
+                type="button"
+                className="toolbox-button"
+                onClick={onToggleRegionMode}
+                disabled={!canAutoSave}
+              >
+                {isRegionMode ? 'Exit Region Mode' : 'Start Region Mode'}
+              </button>
+              {isRegionMode && (
+                <div className="editor-side-panel__region-draft">
+                  <span>Draft points: {regionDraftPoints.length}</span>
+                  <div>
                     <button
                       type="button"
-                      className="region-item__select"
-                      onClick={() => onSelectRegion(region.id)}
+                      className="toolbox-button"
+                      onClick={onFinishRegion}
+                      disabled={regionDraftPoints.length < 3}
                     >
-                      <span
-                        className="region-item__color"
-                        style={{ backgroundColor: region.color || '#f97316' }}
-                      />
-                      {region.name}
+                      Finish
                     </button>
-                    <div className="region-item__actions">
-                      <button type="button" onClick={() => onFocusRegion(region.id)}>
-                        Focus
-                      </button>
-                      <button type="button" onClick={() => onDeleteRegion(region.id)}>
-                        Delete
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      className="toolbox-button toolbox-button--ghost"
+                      onClick={onResetRegionDraft}
+                    >
+                      Clear
+                    </button>
                   </div>
-                ))}
-              </div>
-            </>
-          )}
+                </div>
+              )}
+            </article>
+          </div>
+
+          <div className="editor-side-panel__section-header">
+            <h3>Regions</h3>
+            <p>{regionCountLabel}</p>
+          </div>
+          <div className="region-list custom-scrollbar">
+            {regions.length === 0 && (
+              <p className="region-list__empty">No regions yet. Start region mode to add one.</p>
+            )}
+            {regions.map((region) => (
+              <div
+                key={region.id}
+                className={`region-item ${activeRegionId === region.id ? 'region-item--active' : ''}`}
+              >
+                <button
+                  type="button"
+                  className="region-item__select"
+                  onClick={() => {
+                    onSelectRegion(region.id);
+                    setExpandedRegions((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(region.id)) {
+                        next.delete(region.id);
+                      } else {
+                        next.add(region.id);
+                      }
+                      return next;
+                    });
+                  }}
+                >
+                  <span
+                    className="region-item__color"
+                    style={{ backgroundColor: region.color || '#f97316' }}
+                  />
+                  {region.name}
+                </button>
+                <div className="region-item__actions">
+                  <button type="button" onClick={() => onFocusRegion(region.id)}>
+                    Focus
+                  </button>
+                  <button type="button" onClick={() => onDeleteRegion(region.id)}>
+                    Delete
+                  </button>
+                </div>
+                {expandedRegions.has(region.id) && (
+                  <div className="region-item__details">
+                      <RegionInfoPanel
+                        region={region}
+                        isOpen
+                        onFieldChange={(id, field, value) => onRegionFieldChange?.(field, value, id)}
+                        onDelete={(id) => onDeleteRegion(id)}
+                        onClose={() =>
+                          setExpandedRegions((prev) => {
+                            const next = new Set(prev);
+                            next.delete(region.id);
+                            return next;
+                          })
+                        }
+                        onMergeRegion={(targetId, sourceId) => onMergeRegion?.(targetId, sourceId)}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
         </div>
       </div>
-
-      {regionView === 'edit' && regionInfoPanel && (
-        <div className="editor-side-panel__section">
-          <div className="editor-side-panel__section-header">
-            <h3>Region Details</h3>
-            <p>Edit the selected region or delete it.</p>
-          </div>
-          {regionInfoPanel}
-        </div>
-      )}
 
       {canAssignSelection && (
         <div className="editor-side-panel__section">

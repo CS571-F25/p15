@@ -17,10 +17,18 @@ const clamp = (value, min = 0, max = 1) => {
 };
 
 export const normalizeRegionEntry = (region = {}) => {
-  const points = Array.isArray(region.points)
-    ? region.points
-        .filter((point) => Array.isArray(point) && point.length >= 2)
-        .map(([x, y]) => [Number(x) || 0, Number(y) || 0])
+  const sanitizePoints = (arr = []) =>
+    Array.isArray(arr)
+      ? arr
+          .filter((point) => Array.isArray(point) && point.length >= 2)
+          .map(([x, y]) => [Number(x) || 0, Number(y) || 0])
+      : [];
+
+  const points = sanitizePoints(region.points);
+  const parts = Array.isArray(region.parts)
+    ? region.parts
+        .map((part) => sanitizePoints(part))
+        .filter((part) => part.length >= 3)
     : [];
 
   return {
@@ -35,5 +43,6 @@ export const normalizeRegionEntry = (region = {}) => {
     category: region.category || DEFAULT_REGION_CATEGORY,
     labelEnabled: region.labelEnabled !== false,
     points,
+    parts,
   };
 };

@@ -469,6 +469,7 @@ function InteractiveMap({ isEditorMode = false }) {
   const [mapZoom, setMapZoom] = useState(2);
   const [isRegionMode, setIsRegionMode] = useState(false);
   const [regionDraftPoints, setRegionDraftPoints] = useState([]);
+  const [regionDraftTargetId, setRegionDraftTargetId] = useState(null);
   const [showMarkers, setShowMarkers] = useState(true);
   const [markerFilters, setMarkerFilters] = useState({
     city: true,
@@ -773,10 +774,22 @@ function InteractiveMap({ isEditorMode = false }) {
   const focusRegionOnMap = (regionId) => {
     if (!mapInstance) return;
     const region = regions.find((entry) => entry.id === regionId);
-    if (!region || !Array.isArray(region.points) || !region.points.length) return;
-    const latLngs = region.points.map(([x, y]) => L.latLng(y, x));
+    if (!region) return;
+    const polygons = getRegionPolygons(region);
+    const allPoints = polygons.flat();
+    if (!allPoints.length) return;
+    const latLngs = allPoints.map(([x, y]) => L.latLng(y, x));
     mapInstance.fitBounds(L.latLngBounds(latLngs).pad(0.2));
   };
+
+  const getRegionPolygons = useCallback((region) => {
+    if (!region) return [];
+    const base = Array.isArray(region.points) && region.points.length >= 3 ? [region.points] : [];
+    const extras = Array.isArray(region.parts)
+      ? region.parts.filter((part) => Array.isArray(part) && part.length >= 3)
+      : [];
+    return [...base, ...extras];
+  }, []);
 
   const updateRegionField = (regionId, field, value) => {
     setRegions((prev) =>
@@ -799,17 +812,34 @@ function InteractiveMap({ isEditorMode = false }) {
   const handleRegionFinish = () => {
     setRegionDraftPoints((prevPoints) => {
       if (prevPoints.length < 3) return prevPoints;
+      if (regionDraftTargetId) {
+        setRegions((existing) =>
+          existing.map((region) => {
+            if (region.id !== regionDraftTargetId) return region;
+            const polygons = getRegionPolygons(region);
+            const [first, ...rest] = polygons;
+            const nextParts = first ? [...rest, prevPoints] : [...rest];
+            return {
+              ...region,
+              points: first || prevPoints,
+              parts: nextParts,
+            };
+          })
+        );
+        return [];
+      }
       const regionId = crypto.randomUUID ? crypto.randomUUID() : `region-${Date.now()}`;
-    const newRegion = {
-      id: regionId,
-      name: 'New Region',
-      color: '#f97316',
-      borderColor: '#ea580c',
-      opacity: 0.3,
-      category: DEFAULT_REGION_CATEGORY,
-      labelEnabled: true,
-      points: prevPoints.map(([x, y]) => [x, y]),
-    };
+      const newRegion = {
+        id: regionId,
+        name: 'New Region',
+        color: '#f97316',
+        borderColor: '#ea580c',
+        opacity: 0.3,
+        category: DEFAULT_REGION_CATEGORY,
+        labelEnabled: true,
+        points: prevPoints.map(([x, y]) => [x, y]),
+        parts: [],
+      };
       setRegions((existing) => [...existing, newRegion]);
       selectRegion(regionId);
       return [];
@@ -818,6 +848,19 @@ function InteractiveMap({ isEditorMode = false }) {
 
   const handleRegionDraftReset = () => {
     setRegionDraftPoints([]);
+  };
+
+  const handleStartSubregion = (regionId) => {
+    if (!regionId || !canAutoSave) return;
+    setRegionDraftPoints([]);
+    setRegionDraftTargetId(regionId);
+    setIsRegionMode(true);
+    selectRegion(regionId);
+  };
+
+  const handleCancelSubregion = () => {
+    setRegionDraftPoints([]);
+    setRegionDraftTargetId(null);
   };
 
   const handleSelectPaletteItem = (item) => {
@@ -835,17 +878,21 @@ function InteractiveMap({ isEditorMode = false }) {
       if (!next) {
         setRegionDraftPoints([]);
         selectRegion(null);
+        setRegionDraftTargetId(null);
       } else {
         setSelectedPaletteItem(null);
         setActivePlacementTypeId(null);
+        setRegionDraftTargetId(null);
+        setRegionDraftPoints([]);
+        selectRegion(null);
       }
       return next;
     });
   };
 
-  const handleRegionFieldChange = (field, value) => {
-    if (!activeRegionId) return;
-    updateRegionField(activeRegionId, field, value);
+  const handleRegionFieldChange = (field, value, regionId = activeRegionId) => {
+    if (!regionId) return;
+    updateRegionField(regionId, field, value);
   };
 
   const handleDeleteRegion = (targetId = activeRegionId) => {
@@ -865,6 +912,32 @@ function InteractiveMap({ isEditorMode = false }) {
       const base = import.meta.env.BASE_URL || '/';
       window.location.href = `${base}region/${regionId}`;
     }
+  };
+
+  const handleMergeRegions = (targetId, sourceId) => {
+    if (!targetId || !sourceId || targetId === sourceId) return;
+    setRegions((prev) => {
+      const target = prev.find((r) => r.id === targetId);
+      const source = prev.find((r) => r.id === sourceId);
+      if (!target || !source) return prev;
+      const mergedPolygons = [...getRegionPolygons(target), ...getRegionPolygons(source)];
+      if (!mergedPolygons.length) return prev.filter((r) => r.id !== sourceId);
+      const [first, ...rest] = mergedPolygons;
+      return prev
+        .filter((region) => region.id !== sourceId)
+        .map((region) =>
+          region.id === targetId
+            ? {
+                ...region,
+                points: first,
+                parts: rest,
+              }
+            : region
+        );
+    });
+    selectRegion(targetId);
+    setRegionDraftTargetId(null);
+    setRegionDraftPoints([]);
   };
 
   const handleAssignLocationToRegion = () => {
@@ -1211,15 +1284,6 @@ function InteractiveMap({ isEditorMode = false }) {
       onDelete={handleDeleteLocation}
     />
   ) : null;
-  const regionInfoPanelNode = isEditorMode ? (
-    <RegionInfoPanel
-      isOpen={Boolean(activeRegionId)}
-      onFieldChange={handleRegionFieldChange}
-      onDelete={handleDeleteRegion}
-      onClose={() => selectRegion(null)}
-    />
-  ) : null;
-
   useEffect(() => {
     if (!mapInstance) return;
     setMapZoom(mapInstance.getZoom());
@@ -1229,6 +1293,34 @@ function InteractiveMap({ isEditorMode = false }) {
     mapInstance.on('zoomend', handleZoomLevel);
     return () => mapInstance.off('zoomend', handleZoomLevel);
   }, [mapInstance]);
+
+  useEffect(() => {
+    const node = mapContainerRef.current;
+    if (!node) return undefined;
+    const preventCtrlWheel = (event) => {
+      if (event.ctrlKey) {
+        event.preventDefault();
+      }
+    };
+    const preventBrowserZoomKeys = (event) => {
+      if ((event.ctrlKey || event.metaKey) && ['+', '-', '=', '_', '0'].includes(event.key)) {
+        event.preventDefault();
+      }
+    };
+    const preventGesture = (event) => event.preventDefault();
+
+    node.addEventListener('wheel', preventCtrlWheel, { passive: false });
+    window.addEventListener('keydown', preventBrowserZoomKeys, { passive: false });
+    window.addEventListener('gesturestart', preventGesture, { passive: false });
+    window.addEventListener('gesturechange', preventGesture, { passive: false });
+
+    return () => {
+      node.removeEventListener('wheel', preventCtrlWheel);
+      window.removeEventListener('keydown', preventBrowserZoomKeys);
+      window.removeEventListener('gesturestart', preventGesture);
+      window.removeEventListener('gesturechange', preventGesture);
+    };
+  }, []);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -1316,12 +1408,21 @@ function InteractiveMap({ isEditorMode = false }) {
   };
 
   useEffect(() => {
-    if (mapInstance && mapBounds) {
+    if (!mapInstance) return;
+    if (isEditorMode) {
+      const looseBounds = L.latLngBounds([-1e7, -1e7], [1e7, 1e7]);
+      mapInstance.setMaxBounds(looseBounds);
+      mapInstance.options.maxBounds = looseBounds;
+      mapInstance.options.maxBoundsViscosity = 0;
+      mapInstance.dragging?.enable();
+      return;
+    }
+    if (mapBounds) {
       mapInstance.setMaxBounds(mapBounds);
       mapInstance.options.maxBoundsViscosity = boundsViscosity;
       mapInstance.panInsideBounds(mapBounds, { animate: false });
     }
-  }, [mapInstance, mapBounds, boundsViscosity]);
+  }, [mapInstance, mapBounds, boundsViscosity, isEditorMode]);
 
   return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
@@ -1332,7 +1433,6 @@ function InteractiveMap({ isEditorMode = false }) {
             markerPalette={markerPaletteNode}
             markerToolbox={markerToolboxNode}
             locationEditor={locationEditorNode}
-            regionInfoPanel={regionInfoPanelNode}
             regions={regions}
             activeRegionId={activeRegionId}
             onSelectRegion={selectRegion}
@@ -1348,6 +1448,11 @@ function InteractiveMap({ isEditorMode = false }) {
             onAssignSelection={handleAssignLocationToRegion}
             selectedRegionName={selectedRegion?.name || ''}
             selectedLocationName={selectedLocation?.name || ''}
+            onRegionFieldChange={handleRegionFieldChange}
+            onMergeRegion={handleMergeRegions}
+            onStartSubregion={handleStartSubregion}
+            onCancelSubregion={handleCancelSubregion}
+            regionDraftTargetId={regionDraftTargetId}
           />
         )}
         <div className="map-layout__canvas">
@@ -1413,7 +1518,7 @@ function InteractiveMap({ isEditorMode = false }) {
                 draftPoints={regionDraftPoints}
                 selectedRegionId={activeRegionId}
                 onRegionClick={handleRegionClick}
-                interactionEnabled={isRegionMode}
+                interactionEnabled={!isRegionMode}
                 showLabels={regionLabelsEnabled}
                 zoomLevel={mapZoom}
               />
