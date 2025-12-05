@@ -1,28 +1,16 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 
 function AuthCallback() {
-  const fallbackUrl = () => {
-    if (typeof window === 'undefined') return '/';
-    const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
-    return `${window.location.origin}${base}/#/`;
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
 
     const finish = () => {
       if (cancelled) return;
-      if (window.opener && !window.opener.closed) {
-        try {
-          window.opener.postMessage({ type: 'supabase-auth-complete' }, window.location.origin);
-        } catch {
-          /* ignore cross-origin failures */
-        }
-        window.close();
-      } else {
-        window.location.replace(fallbackUrl());
-      }
+      navigate('/campaign', { replace: true });
     };
 
     const checkSession = async () => {

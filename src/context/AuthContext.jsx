@@ -243,23 +243,13 @@ export function AuthProvider({ children }) {
         provider: 'google',
         options: {
           redirectTo,
-          skipBrowserRedirect: true,
         },
       });
       if (error) {
         throw error;
       }
       if (data?.url) {
-        const popup = window.open(
-          data.url,
-          'supabase-auth',
-          'width=480,height=640,left=100,top=100'
-        );
-        if (!popup) {
-          window.location.href = data.url;
-          throw new Error('Pop-up was blocked. Please allow pop-ups and try again.');
-        }
-        popup.focus();
+        window.location.href = data.url;
       } else {
         throw new Error('Supabase did not provide a login URL.');
       }
