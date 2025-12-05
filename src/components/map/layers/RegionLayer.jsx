@@ -4,6 +4,14 @@ import L from 'leaflet';
 
 const toLatLngs = (points = []) => points.map(([x, y]) => [y, x]);
 
+const collectPolygons = (region) => {
+  const base = Array.isArray(region.points) && region.points.length >= 3 ? [region.points] : [];
+  const extras = Array.isArray(region.parts)
+    ? region.parts.filter((part) => Array.isArray(part) && part.length >= 3)
+    : [];
+  return [...base, ...extras];
+};
+
 const calculateBounds = (points = []) => {
   if (!points.length) return { width: 0, height: 0 };
   let minX = Infinity;
@@ -97,11 +105,11 @@ function RegionLayer({
       .filter(
         (region) =>
           region.labelEnabled !== false &&
-          Array.isArray(region.points) &&
-          region.points.length > 2
+          collectPolygons(region).some((poly) => Array.isArray(poly) && poly.length > 2)
       )
       .map((region) => {
-        const total = region.points.reduce(
+        const allPoints = collectPolygons(region).flat();
+        const total = allPoints.reduce(
           (acc, [x, y]) => {
             acc.sumX += x;
             acc.sumY += y;
@@ -109,10 +117,10 @@ function RegionLayer({
           },
           { sumX: 0, sumY: 0 }
         );
-        const count = region.points.length;
+        const count = allPoints.length || 1;
         const centroidX = total.sumX / count;
         const centroidY = total.sumY / count;
-        const bounds = calculateBounds(region.points);
+        const bounds = calculateBounds(allPoints);
         return {
           id: region.id,
           name: region.name || 'Region',
@@ -125,32 +133,36 @@ function RegionLayer({
   return (
     <LayerGroup>
       {regions.map((region) => {
-        if (!Array.isArray(region.points) || region.points.length < 3) return null;
-        const positions = toLatLngs(region.points);
-        return (
-          <Polygon
-            key={region.id}
-            positions={positions}
-            pathOptions={{
-              color: region.borderColor || '#ea580c',
-              weight: region.id === selectedRegionId ? 4 : 2,
-              fillColor: region.color || '#f97316',
-              fillOpacity: region.opacity ?? 0.3,
-              pane: 'overlayPane',
-            }}
-            interactive={interactionEnabled}
-            eventHandlers={
-              interactionEnabled && onRegionClick
-                ? {
-                    click: (event) => {
-                      event.originalEvent?.stopPropagation();
-                      onRegionClick(region.id);
-                    },
-                  }
-                : undefined
-            }
-          />
-        );
+        const polygons = collectPolygons(region);
+        if (!polygons.length) return null;
+        return polygons.map((poly, index) => {
+          const positions = toLatLngs(poly);
+          const key = `${region.id}-part-${index}`;
+          return (
+            <Polygon
+              key={key}
+              positions={positions}
+              pathOptions={{
+                color: region.borderColor || '#ea580c',
+                weight: region.id === selectedRegionId ? 4 : 2,
+                fillColor: region.color || '#f97316',
+                fillOpacity: region.opacity ?? 0.3,
+                pane: 'overlayPane',
+              }}
+              interactive={interactionEnabled}
+              eventHandlers={
+                interactionEnabled && onRegionClick
+                  ? {
+                      click: (event) => {
+                        event.originalEvent?.stopPropagation();
+                        onRegionClick(region.id);
+                      },
+                    }
+                  : undefined
+              }
+            />
+          );
+        });
       })}
       {draftLatLngs.length >= 2 && (
         <Polygon
