@@ -61,5 +61,47 @@
     "supabaseId": "453950fb-c791-412b-aecd-b095481d1113",
     "createdAt": "2025-12-05T07:26:40.483Z",
     "id": 4
+  },
+  {
+    "email": "rmpratt@wisc.edu",
+    "name": "Horse",
+    "username": "Horse",
+    "favorites": [],
+    "featuredCharacter": null,
+    "profilePicture": "",
+    "profile": {
+      "bio": "",
+      "labelOne": "",
+      "labelTwo": "",
+      "documents": [],
+      "viewFavorites": []
+    },
+    "unlockedSecrets": [],
+    "role": "pending",
+    "provider": "supabase",
+    "supabaseId": "45db8582-949d-4b30-b628-68e7db9b4ca2",
+    "createdAt": "2025-12-05T07:28:21.512Z",
+    "id": 5
+  },
+  {
+    "email": "notsmurfing860@gmail.com",
+    "name": "test",
+    "username": "test",
+    "favorites": [],
+    "featuredCharacter": null,
+    "profilePicture": "",
+    "profile": {
+      "bio": "",
+      "labelOne": "",
+      "labelTwo": "",
+      "documents": [],
+      "viewFavorites": []
+    },
+    "unlockedSecrets": [],
+    "role": "pending",
+    "provider": "supabase",
+    "supabaseId": "f855c932-4640-4aac-8881-531ae37e5624",
+    "createdAt": "2025-12-05T07:31:05.781Z",
+    "id": 6
   }
 ]
