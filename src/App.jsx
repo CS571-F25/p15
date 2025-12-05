@@ -17,9 +17,12 @@ import PeoplePage from './components/pages/ViewingPage';
 import AdminEntitiesPage from './components/pages/AdminEntitiesPage';
 import RegionDetailPage from './components/pages/RegionDetailPage';
 import LocationDetailPage from './components/pages/LocationDetailPage';
+import LoginPage from './components/pages/LoginPage';
+import SignupPage from './components/pages/SignupPage';
 import Header from './components/UI/Header';
 import PageLayout from './components/UI/PageLayout';
 import './components/UI/PageUI.css';
+import AuthCallback from './components/auth/AuthCallback';
 
 // Placeholder components for missing tabs
 const Placeholder = ({ title }) => (
@@ -74,9 +77,12 @@ function App() {
             <Route path="/lore/silent-archive" element={<LorePlaceholderPage secretId="silent-archive" />} />
             <Route path="/lore/gilded-horizon" element={<LorePlaceholderPage secretId="gilded-horizon" />} />
 
-            {/* Account */}
+            {/* Account & Auth */}
             <Route path="/account" element={<AccountSettingsPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
             {/* Players */}
             <Route path="/players" element={<PlayersPage />} />

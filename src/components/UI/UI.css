@@ -150,6 +150,18 @@
   background: rgba(255, 215, 0, 0.5);
 }
 
+.auth-page {
+  min-height: calc(100vh - 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.auth-page__content {
+  width: min(420px, 100%);
+}
+
 
 
 .auth-modal {

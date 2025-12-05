@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './UI.css';
-import LoginModal from '../auth/LoginModal';
-import SignupModal from '../auth/SignupModal';
 import { useAuth } from '../../context/AuthContext';
 
 // Icons for the new top-level categories
@@ -109,26 +107,11 @@ const baseNavLinks = [
 
 export default function Header() {
   const location = useLocation();
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isSignupOpen, setIsSignupOpen] = useState(false);
-  const { user, role, login, googleLogin, logout, toggleLocalAdmin, isLocalAdmin } = useAuth();
+  const { user, role, logout } = useAuth();
 
   const navLinks = role === 'admin'
     ? [...baseNavLinks, { to: '/admin', label: 'Admin', icon: NAV_ICONS.admin }]
     : baseNavLinks;
-
-  const handleLogin = (formData) => login(formData);
-  const handleSignupOpen = () => {
-    setIsLoginOpen(false);
-    setIsSignupOpen(true);
-  };
-  const handleSignupClose = () => setIsSignupOpen(false);
-  const handleLoginOpen = () => {
-    setIsSignupOpen(false);
-    setIsLoginOpen(true);
-  };
-
-  const handleGoogleLogin = (credential) => googleLogin(credential);
 
   return (
     <>
@@ -162,17 +145,28 @@ export default function Header() {
 
         <div className="azterra-sidebar__footer">
           {!user && (
-            <button
-              type="button"
-              className="azterra-nav__link"
-              onClick={() => setIsLoginOpen(true)}
-              title="Login"
-            >
-              <span className="azterra-nav__icon text-[#ffd700]">
-                {NAV_ICONS.login}
-              </span>
-              <span className="azterra-nav__label">Login</span>
-            </button>
+            <div className="azterra-sidebar__guest">
+              <Link
+                to="/login"
+                className="azterra-nav__link"
+                title="Login"
+              >
+                <span className="azterra-nav__icon text-[#ffd700]">
+                  {NAV_ICONS.login}
+                </span>
+                <span className="azterra-nav__label">Login</span>
+              </Link>
+              <Link
+                to="/signup"
+                className="azterra-nav__link"
+                title="Sign Up"
+              >
+                <span className="azterra-nav__icon text-[#ffd700]">
+                  {NAV_ICONS.account}
+                </span>
+                <span className="azterra-nav__label">Sign Up</span>
+              </Link>
+            </div>
           )}
 
           {user && (
@@ -214,21 +208,6 @@ export default function Header() {
         </div>
       </aside>
 
-      <LoginModal
-        isOpen={isLoginOpen}
-        onClose={() => setIsLoginOpen(false)}
-        onSubmit={handleLogin}
-        onOpenSignup={handleSignupOpen}
-        onGoogleLogin={handleGoogleLogin}
-        onToggleAdmin={toggleLocalAdmin}
-        isAdminMode={isLocalAdmin}
-      />
-      <SignupModal
-        isOpen={isSignupOpen}
-        onClose={handleSignupClose}
-        onOpenLogin={handleLoginOpen}
-        onGoogleLogin={handleGoogleLogin}
-      />
     </>
   );
 }

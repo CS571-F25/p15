@@ -12,6 +12,7 @@ import {
   verifyToken,
   writeUsers,
   updateUsers,
+  verifySupabaseToken,
 } from './utils.js';
 
 const router = Router();
@@ -39,7 +40,7 @@ router.post('/signup', async (req, res) => {
     email: normalizedEmail,
     passwordHash,
     name: name.trim(),
-    username: '',
+      username: '',
     favorites: [],
     featuredCharacter: null,
     profilePicture: '',
@@ -129,6 +130,83 @@ router.post('/google', async (req, res) => {
   } catch (error) {
     return res.status(401).json({ error: 'Invalid Google credential.' });
   }
+});
+
+router.post('/supabase', async (req, res) => {
+  if (!process.env.SUPABASE_JWT_SECRET) {
+    return res.status(500).json({ error: 'Supabase Auth is not configured on the server.' });
+  }
+  const header = req.headers.authorization || '';
+  const bearerToken = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const { accessToken = '', displayName = '' } = req.body || {};
+  const token = accessToken || bearerToken;
+  if (!token) {
+    return res.status(400).json({ error: 'Supabase access token is required.' });
+  }
+  let payload;
+  try {
+    payload = verifySupabaseToken(token);
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid Supabase token.' });
+  }
+
+  const supabaseId = payload?.sub;
+  const email = (payload?.email || payload?.user?.email || '').toLowerCase();
+  if (!supabaseId || !email) {
+    return res.status(400).json({ error: 'Supabase token is missing required claims.' });
+  }
+  const meta = payload?.user_metadata || {};
+  const normalizedDisplayName =
+    (typeof displayName === 'string' && displayName.trim()) ||
+    meta.full_name ||
+    meta.name ||
+    meta.preferred_username ||
+    payload?.name ||
+    email.split('@')[0] ||
+    'Adventurer';
+
+  const users = await readUsers();
+  let existing = users.find((entry) => entry.supabaseId === supabaseId || entry.email === email);
+
+  if (!existing) {
+    existing = await addUser({
+      email,
+      name: normalizedDisplayName,
+      username: typeof displayName === 'string' ? displayName.trim() : '',
+      favorites: [],
+      featuredCharacter: null,
+      profilePicture: '',
+      profile: { bio: '', labelOne: '', labelTwo: '', documents: [], viewFavorites: [] },
+      unlockedSecrets: [],
+      role: 'pending',
+      provider: 'supabase',
+      supabaseId,
+      createdAt: new Date().toISOString(),
+    });
+  } else {
+    await updateUsers((list) => {
+      const index = list.findIndex((entry) => entry.id === existing.id);
+      if (index === -1) {
+        return list;
+      }
+      const current = list[index];
+      const nextUser = { ...current };
+      nextUser.supabaseId = supabaseId;
+      nextUser.email = email;
+      if (!nextUser.name) {
+        nextUser.name = normalizedDisplayName;
+      }
+      if (typeof displayName === 'string' && displayName.trim()) {
+        nextUser.username = displayName.trim();
+      }
+      list[index] = nextUser;
+      existing = nextUser;
+      return list;
+    });
+  }
+
+  const tokenResponse = generateToken(existing);
+  return res.json({ success: true, token: tokenResponse, user: sanitizeUser(existing) });
 });
 
 router.put('/me', async (req, res) => {

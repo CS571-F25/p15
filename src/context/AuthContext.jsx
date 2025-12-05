@@ -1,8 +1,6 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { canView as baseCanView } from '../utils/permissions';
-
-console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
-
+import { supabase, getSupabaseRedirectUrl } from '../lib/supabaseClient';
 
 const AuthContext = createContext({
   user: null,
@@ -22,6 +20,7 @@ const AuthContext = createContext({
 });
 
 const TOKEN_KEY = 'p15_auth_token';
+const PENDING_PROFILE_KEY = 'p15_supabase_profile';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const isBrowser = () => typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
@@ -37,6 +36,25 @@ const persistToken = (token) => {
     window.localStorage.removeItem(TOKEN_KEY);
   } else {
     window.localStorage.setItem(TOKEN_KEY, token);
+  }
+};
+
+const getPendingProfile = () => {
+  if (!isBrowser()) return null;
+  try {
+    const raw = window.localStorage.getItem(PENDING_PROFILE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const setPendingProfile = (profile) => {
+  if (!isBrowser()) return;
+  if (!profile) {
+    window.localStorage.removeItem(PENDING_PROFILE_KEY);
+  } else {
+    window.localStorage.setItem(PENDING_PROFILE_KEY, JSON.stringify(profile));
   }
 };
 
@@ -91,6 +109,59 @@ export function AuthProvider({ children }) {
     persistToken(token);
   }, [token]);
 
+  const syncSupabaseSession = useCallback(
+    async (session) => {
+      if (!session?.access_token || isLocalAdmin) {
+        if (!isLocalAdmin) {
+          setUser(null);
+          setToken(null);
+        }
+        return;
+      }
+      setError(null);
+      try {
+        setLoading(true);
+        const pendingProfile = getPendingProfile();
+        const data = await request({
+          path: '/auth/supabase',
+          method: 'POST',
+          body: {
+            accessToken: session.access_token,
+            displayName: pendingProfile?.displayName || '',
+          },
+        });
+        if (pendingProfile) {
+          setPendingProfile(null);
+        }
+        setUser(normalizeUser(data.user));
+        setToken(data.token);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [isLocalAdmin]
+  );
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+    let isMounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!isMounted) return;
+      if (data?.session) {
+        syncSupabaseSession(data.session);
+      }
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncSupabaseSession(session);
+    });
+    return () => {
+      isMounted = false;
+      listener?.subscription?.unsubscribe();
+    };
+  }, [syncSupabaseSession]);
+
   useEffect(() => {
     if (!token || isLocalAdmin) {
       setUser(null);
@@ -134,36 +205,67 @@ export function AuthProvider({ children }) {
     };
   }, [token, isLocalAdmin]);
 
-  const login = async ({ email, password }) => {
+  const login = async ({ email, password } = {}) => {
+    if (!supabase) {
+      throw new Error('Supabase is not configured.');
+    }
+    if (!email || !password) {
+      throw new Error('Email and password are required.');
+    }
     setError(null);
     try {
-      const data = await request({
-        path: '/auth/login',
-        method: 'POST',
-        body: { email, password },
+      const { error: supabaseError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       });
-      setUser(normalizeUser(data.user));
-      setToken(data.token);
-      return data.user;
+      if (supabaseError) {
+        throw supabaseError;
+      }
+      return true;
     } catch (err) {
       setError(err.message);
       throw err;
     }
   };
 
-  const googleLogin = async (credential) => {
-    setError(null);
+  const startGoogleLogin = async ({ displayName } = {}) => {
+    if (!supabase) {
+      throw new Error('Supabase is not configured.');
+    }
+    if (displayName) {
+      setPendingProfile({ displayName });
+    } else {
+      setPendingProfile(null);
+    }
+    const redirectTo = getSupabaseRedirectUrl();
     try {
-      const data = await request({
-        path: '/auth/google',
-        method: 'POST',
-        body: { credential },
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
       });
-      setUser(normalizeUser(data.user));
-      setToken(data.token);
-      return data.user;
+      if (error) {
+        throw error;
+      }
+      if (data?.url) {
+        const popup = window.open(
+          data.url,
+          'supabase-auth',
+          'width=480,height=640,left=100,top=100'
+        );
+        if (!popup) {
+          window.location.href = data.url;
+          throw new Error('Pop-up was blocked. Please allow pop-ups and try again.');
+        }
+        popup.focus();
+      } else {
+        throw new Error('Supabase did not provide a login URL.');
+      }
     } catch (err) {
-      setError(err.message);
+      setPendingProfile(null);
+      setError(err.message || 'Unable to start Supabase login.');
       throw err;
     }
   };
@@ -188,22 +290,40 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const signup = async ({ name, email, password }) => {
+  const signup = async ({ email, password, displayName } = {}) => {
+    if (!supabase) {
+      throw new Error('Supabase is not configured.');
+    }
+    if (!email || !password || !displayName || !displayName.trim()) {
+      throw new Error('Email, password, and display name are required.');
+    }
     setError(null);
+    const trimmedName = displayName.trim();
+    setPendingProfile({ displayName: trimmedName });
     try {
-      await request({
-        path: '/auth/signup',
-        method: 'POST',
-        body: { name, email, password },
+      const { error: supabaseError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: { display_name: trimmedName },
+          emailRedirectTo: getSupabaseRedirectUrl(),
+        },
       });
-      return login({ email, password });
+      if (supabaseError) {
+        throw supabaseError;
+      }
+      return true;
     } catch (err) {
+      setPendingProfile(null);
       setError(err.message);
       throw err;
     }
   };
 
   const logout = () => {
+    if (!isLocalAdmin) {
+      supabase?.auth.signOut();
+    }
     setUser(null);
     setToken(null);
     setIsLocalAdmin(false);
@@ -251,7 +371,7 @@ export function AuthProvider({ children }) {
       error,
       login,
       updateAccount,
-      googleLogin,
+      googleLogin: startGoogleLogin,
       signup,
       logout,
       refreshUser,
