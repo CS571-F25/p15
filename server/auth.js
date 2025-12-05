@@ -147,6 +147,7 @@ router.post('/supabase', async (req, res) => {
   try {
     payload = verifySupabaseToken(token);
   } catch (error) {
+    console.error('Failed to verify Supabase token:', error);
     return res.status(401).json({ error: 'Invalid Supabase token.' });
   }
 

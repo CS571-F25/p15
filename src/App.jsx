@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MapPage from './components/pages/MapPage';
 import AlmanacPage from './components/pages/AlmanacPage';
 import CharactersPage from './components/pages/CharactersPage';
@@ -23,6 +23,7 @@ import Header from './components/UI/Header';
 import PageLayout from './components/UI/PageLayout';
 import './components/UI/PageUI.css';
 import AuthCallback from './components/auth/AuthCallback';
+import AuthLandingPage from './components/pages/AuthLandingPage';
 
 // Placeholder components for missing tabs
 const Placeholder = ({ title }) => (
@@ -31,7 +32,7 @@ const Placeholder = ({ title }) => (
   </div>
 );
 
-function App() {
+function HashApp() {
   return (
     <HashRouter>
       <div className="app-shell">
@@ -82,7 +83,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/callback" element={<AuthLandingPage />} />
 
             {/* Players */}
             <Route path="/players" element={<PlayersPage />} />
@@ -106,5 +107,23 @@ function App() {
       </div>
     </HashRouter>
   );
+}
+
+function App() {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+  const isAuthCallback =
+    typeof window !== 'undefined' && window.location.pathname === `${base}/auth/callback`;
+
+  if (isAuthCallback) {
+    return (
+      <BrowserRouter basename={base || '/'}>
+        <Routes>
+          <Route path="/auth/callback" element={<AuthCallback />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  return <HashApp />;
 }
 export default App;

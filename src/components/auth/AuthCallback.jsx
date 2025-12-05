@@ -1,49 +1,26 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 
 function AuthCallback() {
-  const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    let cancelled = false;
-
-    const finish = () => {
-      if (cancelled) return;
-      navigate('/campaign', { replace: true });
-    };
-
-    const checkSession = async () => {
-      if (!supabase) {
-        finish();
-        return;
-      }
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) {
-        finish();
-      }
-    };
-
-    const subscription = supabase?.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
-        finish();
-      }
-    });
-
-    checkSession();
-
-    return () => {
-      cancelled = true;
-      subscription?.data?.subscription?.unsubscribe();
-    };
+    supabase?.auth.getSession();
   }, []);
+
+  useEffect(() => {
+    if (!loading && user) {
+      const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+      const target = `${base || ''}/#/auth/callback`;
+      window.location.replace(target);
+    }
+  }, [user, loading]);
 
   return (
     <div className="page-container">
       <h1>Completing login…</h1>
-      <p>
-        Returning to Azterra. You can close this tab if it does not close automatically.
-      </p>
+      <p>Finishing Supabase sign-in…</p>
     </div>
   );
 }

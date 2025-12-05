@@ -22,7 +22,7 @@ export function getSupabaseRedirectUrl() {
     return import.meta.env.VITE_SUPABASE_REDIRECT_URL;
   }
   if (typeof window === 'undefined') return '';
-  // Default to hash-based routing so the callback works in dev and static hosting.
-  const origin = window.location.origin;
-  return `${origin}/#/auth/callback`;
+  const origin = window.location.origin.replace(/\/$/, '');
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+  return `${origin}${base}/auth/callback`;
 }

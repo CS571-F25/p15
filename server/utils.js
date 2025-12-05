@@ -16,7 +16,7 @@ const NPC_VISIBILITY_PATH = path.join(__dirname, 'npcs-visibility.json');
 const SECRETS_FILE_PATH = path.join(__dirname, 'data', 'secrets.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const JWT_SECRET = process.env.JWT_SECRET || 'azterra_dev_secret_change_me';
-const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET || '';
+const getSupabaseJwtSecret = () => process.env.SUPABASE_JWT_SECRET || '';
 const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@azterra.com';
 const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || 'admin12345';
 const DEFAULT_ADMIN_NAME = process.env.DEFAULT_ADMIN_NAME || 'Azterra Admin';
@@ -263,10 +263,11 @@ export function verifyToken(token) {
 }
 
 export function verifySupabaseToken(token) {
-  if (!SUPABASE_JWT_SECRET) {
+  const secret = getSupabaseJwtSecret();
+  if (!secret) {
     throw new Error('Supabase JWT secret is not configured.');
   }
-  return jwt.verify(token, SUPABASE_JWT_SECRET);
+  return jwt.verify(token, secret);
 }
 
 function extractToken(req) {
