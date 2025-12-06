@@ -63,6 +63,11 @@ const normalizeUser = (incoming) => {
   const unlocked = Array.isArray(incoming.unlockedSecrets) ? incoming.unlockedSecrets : [];
   const favorites = Array.isArray(incoming.favorites) ? incoming.favorites : [];
   const featuredCharacter = incoming.featuredCharacter ?? null;
+  const friends = Array.isArray(incoming.friends) ? incoming.friends : [];
+  const friendRequests = {
+    incoming: Array.isArray(incoming.friendRequests?.incoming) ? incoming.friendRequests.incoming : [],
+    outgoing: Array.isArray(incoming.friendRequests?.outgoing) ? incoming.friendRequests.outgoing : [],
+  };
   const profile = {
     bio: incoming.profile?.bio || '',
     labelOne: incoming.profile?.labelOne || '',
@@ -70,7 +75,7 @@ const normalizeUser = (incoming) => {
     documents: Array.isArray(incoming.profile?.documents) ? incoming.profile.documents : [],
     viewFavorites: Array.isArray(incoming.profile?.viewFavorites) ? incoming.profile.viewFavorites : [],
   };
-  return { ...incoming, unlockedSecrets: unlocked, favorites, featuredCharacter, profile };
+  return { ...incoming, unlockedSecrets: unlocked, favorites, featuredCharacter, profile, friends, friendRequests };
 };
 
 async function request({ path, method = 'GET', body, headers = {}, token }) {

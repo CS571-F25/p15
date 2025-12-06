@@ -13,6 +13,7 @@ import viewRoutes from './view.js';
 import entitiesRoutes from './entities.js';
 import contentRoutes from './content.js';
 import portraitsRoutes from './portraits.js';
+import usersRoutes from './users.js';
 import { ensureDefaultAdmin } from './utils.js';
 
 const loadEnvFile = (filename) => {
@@ -61,6 +62,7 @@ app.use('/api/view', viewRoutes);
 app.use('/api/entities', entitiesRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/portraits', portraitsRoutes);
+app.use('/api/users', usersRoutes);
 
 await ensureDefaultAdmin();
 

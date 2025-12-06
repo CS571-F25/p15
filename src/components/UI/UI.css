@@ -1705,6 +1705,229 @@
   color: #ffd700;
 }
 
+.players-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.players-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  border-radius: 999px;
+}
+
+.players-tab {
+  border: none;
+  background: transparent;
+  color: #f5e5c9;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.players-tab:hover {
+  color: #ffd700;
+}
+
+.players-tab--active {
+  background: linear-gradient(120deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
+  color: #ffd700;
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.friends-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.friends-panel {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 1.1rem;
+  background: rgba(18, 14, 24, 0.75);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.friends-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.friend-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.friend-actions button {
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  background: rgba(255, 215, 0, 0.12);
+  color: #ffd700;
+  padding: 0.45rem 0.9rem;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.friends-panel__section {
+  border-top: 1px solid rgba(255, 215, 0, 0.12);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.friends-panel__subheader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.friend-search {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  color: #f5e5c9;
+  min-width: 220px;
+}
+
+.friends-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.85rem;
+}
+
+.friend-card {
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  border-radius: 12px;
+  padding: 0.9rem;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.friend-requests {
+  margin-bottom: 0.75rem;
+}
+
+.friend-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.friend-chip {
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  background: rgba(255, 215, 0, 0.05);
+  border-radius: 12px;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.friend-chip__actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.friend-chip__actions button,
+.friend-chip__remove {
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  background: transparent;
+  color: #ffd700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.friend-character-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.35rem 0;
+}
+
+.friend-character-btn {
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  background: rgba(255, 255, 255, 0.02);
+  color: #f5e5c9;
+  padding: 0.45rem 0.65rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.friend-character-btn:hover {
+  border-color: rgba(255, 215, 0, 0.55);
+  color: #ffd700;
+}
+
+.friend-character-btn--active {
+  background: linear-gradient(120deg, rgba(255, 215, 0, 0.18), rgba(247, 167, 70, 0.16));
+  color: #ffd700;
+  border-color: rgba(255, 215, 0, 0.8);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
+}
+
+.friend-character-tag {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 215, 0, 0.8);
+}
+
+.friend-invite-note {
+  color: rgba(245, 229, 201, 0.7);
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0;
+}
+
+.friend-card__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.friend-invite-summary {
+  border-top: 1px solid rgba(255, 215, 0, 0.12);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.65rem;
+  background: rgba(255, 215, 0, 0.12);
+  color: #ffd700;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  font-weight: 700;
+}
+
 .view-card__header {
   display: flex;
   justify-content: space-between;

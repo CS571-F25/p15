@@ -218,7 +218,7 @@ export async function ensureDefaultAdmin() {
   if (hasAdmin) return;
 
   const passwordHash = await hashPassword(DEFAULT_ADMIN_PASSWORD);
-  const adminUser = {
+  const adminUser = applyFriendState({
     id: 1,
     email: DEFAULT_ADMIN_EMAIL.toLowerCase(),
     passwordHash,
@@ -231,13 +231,13 @@ export async function ensureDefaultAdmin() {
     unlockedSecrets: [],
     role: 'admin',
     createdAt: new Date().toISOString(),
-  };
+  });
   await writeUsers([adminUser, ...users]);
 }
 
 export function sanitizeUser(user) {
   if (!user) return null;
-  const { passwordHash, ...rest } = user;
+  const { passwordHash, ...rest } = applyFriendState(user);
   return rest;
 }
 
@@ -278,6 +278,31 @@ function extractToken(req) {
   return null;
 }
 
+const normalizeNumberList = (list) => {
+  if (!Array.isArray(list)) return [];
+  return Array.from(
+    new Set(
+      list
+        .map((val) => Number(val))
+        .filter((val) => Number.isFinite(val) && val >= 0)
+    )
+  );
+};
+
+const applyFriendState = (user) => {
+  const friends = normalizeNumberList(user?.friends);
+  const incoming = normalizeNumberList(user?.friendRequests?.incoming);
+  const outgoing = normalizeNumberList(user?.friendRequests?.outgoing);
+  return {
+    ...user,
+    friends,
+    friendRequests: {
+      incoming,
+      outgoing,
+    },
+  };
+};
+
 export const authRequired = async (req, res, next) => {
   try {
     const token = extractToken(req);
@@ -290,6 +315,7 @@ export const authRequired = async (req, res, next) => {
     if (!currentUser) {
       return res.status(401).json({ error: 'Invalid user.' });
     }
+    const friendState = applyFriendState(currentUser);
     req.user = {
       ...currentUser,
       favorites: Array.isArray(currentUser.favorites) ? currentUser.favorites : [],
@@ -304,6 +330,8 @@ export const authRequired = async (req, res, next) => {
           : [],
       },
       unlockedSecrets: Array.isArray(currentUser.unlockedSecrets) ? currentUser.unlockedSecrets : [],
+      friends: friendState.friends,
+      friendRequests: friendState.friendRequests,
     };
     next();
   } catch (error) {
@@ -328,7 +356,7 @@ export const editorRequired = (req, res, next) => {
 export async function addUser(userData) {
   const users = await readUsers();
   const nextId = getNextUserId(users);
-  const newUser = { ...userData, id: nextId };
+  const newUser = applyFriendState({ ...userData, id: nextId });
   await writeUsers([...users, newUser]);
   return newUser;
 }
@@ -340,4 +368,4 @@ export async function updateUsers(updater) {
   return updatedUsers;
 }
 
-export { ALLOWED_ROLES };
+export { ALLOWED_ROLES, applyFriendState };

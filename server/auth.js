@@ -9,6 +9,7 @@ import {
   hashPassword,
   readUsers,
   sanitizeUser,
+  applyFriendState,
   verifyToken,
   writeUsers,
   updateUsers,
@@ -103,9 +104,9 @@ router.post('/google', async (req, res) => {
     const users = await readUsers();
     const existingUser = users.find((entry) => entry.email === email);
 
-    const userToReturn =
+    let userToReturn =
       existingUser ||
-      {
+      applyFriendState({
         id: randomUUID(),
         email,
         googleName,
@@ -119,10 +120,20 @@ router.post('/google', async (req, res) => {
         googleId,
         unlockedSecrets: [],
         createdAt: new Date().toISOString(),
-      };
+      });
 
     if (!existingUser) {
       await writeUsers([...users, userToReturn]);
+    } else if (!existingUser.friends || !existingUser.friendRequests) {
+      await updateUsers((list) => {
+        const idx = list.findIndex((entry) => entry.id === existingUser.id);
+        if (idx !== -1) {
+          const updated = applyFriendState(list[idx]);
+          list[idx] = updated;
+          userToReturn = updated;
+        }
+        return list;
+      });
     }
 
     const token = generateToken(userToReturn);
@@ -190,7 +201,7 @@ router.post('/supabase', async (req, res) => {
       if (index === -1) {
         return list;
       }
-      const current = list[index];
+      const current = applyFriendState(list[index]);
       const nextUser = { ...current };
       nextUser.supabaseId = supabaseId;
       nextUser.email = email;
@@ -226,7 +237,7 @@ router.put('/me', async (req, res) => {
       if (index === -1) {
         throw new Error('User not found.');
       }
-      const current = users[index];
+      const current = applyFriendState(users[index]);
       const nextUser = { ...current };
       if (username !== undefined) {
         nextUser.username = typeof username === 'string' ? username.trim() : current.username;

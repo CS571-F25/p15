@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './UI.css';
 import { useAuth } from '../../context/AuthContext';
 
@@ -107,7 +107,13 @@ const baseNavLinks = [
 
 export default function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, role, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   const navLinks = role === 'admin'
     ? [...baseNavLinks, { to: '/admin', label: 'Admin', icon: NAV_ICONS.admin }]
@@ -194,7 +200,7 @@ export default function Header() {
               <button
                 type="button"
                 className="azterra-nav__link azterra-nav__link--muted"
-                onClick={logout}
+                onClick={handleLogout}
                 data-label="Logout"
                 title="Logout"
               >

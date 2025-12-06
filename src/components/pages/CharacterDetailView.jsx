@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../UI/PageUI.css';
 
-const tabs = ['details', 'logbook', 'inventory', 'showcase'];
+const tabs = ['details', 'background', 'showcase'];
 const tabLabels = {
   details: 'Details',
-  logbook: 'Logbook',
-  inventory: 'Inventory',
+  background: 'Background',
   showcase: 'Mana',
 };
 
@@ -13,16 +12,39 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
   const [activeTab, setActiveTab] = useState('details');
   const [isContentVisible, setIsContentVisible] = useState(true);
   const [isSwapLocked, setIsSwapLocked] = useState(false);
+  const [expandedPanel, setExpandedPanel] = useState(null);
   const [showBackdropHint, setShowBackdropHint] = useState(false);
   const [hasAnimatedInfo, setHasAnimatedInfo] = useState(false);
   const [shouldAnimateInfo, setShouldAnimateInfo] = useState(false);
-  const [expandedPanel, setExpandedPanel] = useState(null);
   const [displayCharacter, setDisplayCharacter] = useState(propCharacter);
   const swapDelay = 250;
   const contentRef = useRef(null);
   const modalCloseRef = useRef(null);
 
   if (!propCharacter || !displayCharacter) return null;
+
+  const sheet = displayCharacter.sheet || {};
+  const abilityScores = sheet.abilityScores || displayCharacter.stats || {};
+  const proficiencies = sheet.proficiencies || {};
+  const combat = sheet.combat || {
+    armorClass: displayCharacter.ac,
+    initiative: '+0',
+    speed: `${displayCharacter.speed} ft`,
+    hitPoints: String(displayCharacter.hp),
+    hitDice: '',
+    passivePerception: displayCharacter.passivePerception,
+    proficiencyBonus: `+${displayCharacter.profBonus}`,
+  };
+  const spellsDetail = sheet.spellsDetail || {};
+  const equipmentDetail = sheet.equipmentDetail || { starting: displayCharacter.equipment || [], wealth: '' };
+
+  const renderChips = (items = [], empty = 'None listed') => (
+    <div className="detail-chip-row">
+      {items.length > 0 ? items.map((item) => (
+        <span key={item} className="detail-chip">{item}</span>
+      )) : <span className="detail-chip detail-chip--muted">{empty}</span>}
+    </div>
+  );
 
   useEffect(() => {
     setIsContentVisible(false);
@@ -44,6 +66,15 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
       setShowBackdropHint(false);
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'showcase' && !hasAnimatedInfo) {
+      setShouldAnimateInfo(true);
+      setHasAnimatedInfo(true);
+      const t = setTimeout(() => setShouldAnimateInfo(false), 300);
+      return () => clearTimeout(t);
+    }
+  }, [activeTab, hasAnimatedInfo]);
 
   useEffect(() => {
     if (contentRef.current && isContentVisible) {
@@ -107,15 +138,6 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
   const nextTabName = tabLabels[tabs[(currentTabIndex + 1) % tabs.length]];
   const slideOffset = -(100 / tabs.length) * currentTabIndex;
 
-  useEffect(() => {
-    if (activeTab === 'showcase' && !hasAnimatedInfo) {
-      setShouldAnimateInfo(true);
-      setHasAnimatedInfo(true);
-      const t = setTimeout(() => setShouldAnimateInfo(false), 300);
-      return () => clearTimeout(t);
-    }
-  }, [activeTab, hasAnimatedInfo]);
-
   const handlePanelOpen = (panelId) => {
     setExpandedPanel(panelId);
   };
@@ -128,24 +150,61 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
   };
 
   const panelTitles = {
-    attributes: 'Attributes',
-    vitals: 'Vitals',
-    lore: 'Lore & Background',
-    abilities: 'Abilities',
-    equipment: 'Equipment',
+    core: 'Core Character Information',
+    abilities: 'Ability Scores',
+    proficiencies: 'Proficiencies',
+    combat: 'Combat Stats',
+    attacks: 'Attacks & Weapons',
+    equipment: 'Equipment & Wealth',
+    features: 'Features & Traits',
+    spells: 'Spells & Spellcasting',
+    extras: 'Extras & Languages',
+    background: 'Background & Description',
+    personality: 'Personality & Roleplay',
     notes: 'Notes',
-    logbook: 'Character Logbook',
-    inventory: 'Character Inventory',
   };
 
-  const renderPanelContent = (panelId) => {
+  const renderPanelContent = (panelId, { showHeading = true } = {}) => {
     switch (panelId) {
-      case 'attributes':
+      case 'core':
         return (
           <>
-            <h3>Attributes</h3>
-            <div className="stat-grid custom-scrollbar">
-              {Object.entries(displayCharacter.stats).map(([key, value]) => (
+            {showHeading && <h3>Core Character Information</h3>}
+            <div className="detail-pill-row">
+              <div className="detail-mini-block">
+                <p className="detail-eyebrow">Class & Level</p>
+                <p className="detail-line">{displayCharacter.class} — Level {displayCharacter.level} (Hit Die {sheet.core?.hitDie || '—'})</p>
+              </div>
+              <div className="detail-mini-block">
+                <p className="detail-eyebrow">Race</p>
+                <p className="detail-line">{displayCharacter.race}</p>
+              </div>
+              <div className="detail-mini-block">
+                <p className="detail-eyebrow">Alignment</p>
+                <p className="detail-line">{displayCharacter.alignment}</p>
+              </div>
+              <div className="detail-mini-block">
+                <p className="detail-eyebrow">Background</p>
+                <p className="detail-line">{displayCharacter.background}</p>
+                {sheet.core?.backgroundFeature && (
+                  <p className="detail-line detail-line--muted">{sheet.core.backgroundFeature}</p>
+                )}
+              </div>
+            </div>
+            <div className="detail-divider" />
+            <p className="detail-eyebrow">Racial Traits</p>
+            {renderChips(sheet.core?.raceTraits)}
+            <p className="detail-eyebrow" style={{ marginTop: '0.8rem' }}>Class Features</p>
+            {renderChips(sheet.core?.classFeatures)}
+          </>
+        );
+      case 'abilities':
+        return (
+          <>
+            {showHeading && <h3>Ability Scores</h3>}
+            <p className="detail-line detail-line--muted">{sheet.abilityMethod || 'Manual entry'}</p>
+            <div className="stat-grid custom-scrollbar expanded-stat-grid">
+              {Object.entries(abilityScores).map(([key, value]) => (
                 <div key={key} className="stat-pill">
                   <span className="stat-pill__label">{key.toUpperCase()}</span>
                   <span className="stat-pill__value">{value}</span>
@@ -154,49 +213,80 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
             </div>
           </>
         );
-      case 'vitals':
+      case 'proficiencies':
         return (
           <>
-            <h3>Vitals</h3>
-            <div className="stat-grid custom-scrollbar">
-              <div className="stat-pill">
-                <span className="stat-pill__label">HP</span>
-                <span className="stat-pill__value">{displayCharacter.hp}</span>
+            {showHeading && <h3>Proficiencies</h3>}
+            <div className="detail-list-grid">
+              <div>
+                <p className="detail-eyebrow">Saving Throws</p>
+                {renderChips(proficiencies.savingThrows)}
               </div>
-              <div className="stat-pill">
-                <span className="stat-pill__label">AC</span>
-                <span className="stat-pill__value">{displayCharacter.ac}</span>
+              <div>
+                <p className="detail-eyebrow">Armor & Weapons</p>
+                {renderChips(proficiencies.armorWeapons)}
               </div>
-              <div className="stat-pill">
-                <span className="stat-pill__label">SPD</span>
-                <span className="stat-pill__value">{displayCharacter.speed}</span>
+              <div>
+                <p className="detail-eyebrow">Tools</p>
+                {renderChips(proficiencies.tools)}
               </div>
-              <div className="stat-pill">
-                <span className="stat-pill__label">PROF</span>
-                <span className="stat-pill__value">+{displayCharacter.profBonus}</span>
+              <div>
+                <p className="detail-eyebrow">Skills</p>
+                {renderChips(proficiencies.skills || displayCharacter.skills)}
+              </div>
+              <div>
+                <p className="detail-eyebrow">Languages</p>
+                {renderChips(proficiencies.languages || sheet.extras?.languages)}
               </div>
             </div>
           </>
         );
-      case 'lore':
+      case 'combat':
         return (
           <>
-            <h3>Lore & Background</h3>
-            <p className="detail-line">{displayCharacter.lore}</p>
-            {displayCharacter.background && (
-              <p className="detail-line detail-line--muted" style={{ marginTop: '1rem' }}>
-                Background: {displayCharacter.background}
-              </p>
-            )}
+            {showHeading && <h3>Combat Stats</h3>}
+            <div className="stat-grid custom-scrollbar">
+              {[
+                { label: 'Armor Class', value: combat.armorClass ?? displayCharacter.ac },
+                { label: 'Initiative', value: combat.initiative || '+0' },
+                { label: 'Speed', value: combat.speed || `${displayCharacter.speed} ft` },
+                { label: 'Hit Points', value: combat.hitPoints || displayCharacter.hp },
+                { label: 'Hit Dice', value: combat.hitDice || '—' },
+                { label: 'Passive Perception', value: combat.passivePerception || displayCharacter.passivePerception },
+                { label: 'Proficiency', value: combat.proficiencyBonus || `+${displayCharacter.profBonus}` },
+              ].map((stat) => (
+                <div key={stat.label} className="stat-pill">
+                  <span className="stat-pill__label">{stat.label}</span>
+                  <span className="stat-pill__value stat-pill__value--tight">{stat.value}</span>
+                </div>
+              ))}
+            </div>
           </>
         );
-      case 'abilities':
+      case 'attacks':
+        if (!sheet.attacks || sheet.attacks.length === 0) {
+          return (
+            <>
+              {showHeading && <h3>Attacks & Weapons</h3>}
+              <p className="detail-line">No attacks listed yet.</p>
+            </>
+          );
+        }
         return (
           <>
-            <h3>Abilities</h3>
-            <div className="detail-block">
-              {displayCharacter.abilities.map((ability) => (
-                <span key={ability} className="detail-line">- {ability}</span>
+            {showHeading && <h3>Attacks & Weapons</h3>}
+            <div className="detail-attack-list">
+              {(sheet.attacks || []).map((attack) => (
+                <div key={attack.name} className="attack-row">
+                  <div>
+                    <p className="detail-line">{attack.name}</p>
+                    <p className="detail-line detail-line--muted">{attack.tags?.join(' • ')}</p>
+                  </div>
+                  <div className="attack-metrics">
+                    <span className="detail-chip">{attack.bonus}</span>
+                    <span className="detail-chip">{attack.damage}</span>
+                  </div>
+                </div>
               ))}
             </div>
           </>
@@ -204,44 +294,146 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
       case 'equipment':
         return (
           <>
-            <h3>Equipment</h3>
+            {showHeading && <h3>Equipment & Wealth</h3>}
             <div className="detail-block">
-              {displayCharacter.equipment.map((item) => (
+              {equipmentDetail.starting?.map((item) => (
                 <span key={item} className="detail-line">- {item}</span>
               ))}
+            </div>
+            {equipmentDetail.wealth && (
+              <p className="detail-line detail-line--muted" style={{ marginTop: '0.6rem' }}>
+                Wealth: {equipmentDetail.wealth}
+              </p>
+            )}
+          </>
+        );
+      case 'features':
+        return (
+          <>
+            {showHeading && <h3>Features & Traits</h3>}
+            <div className="detail-list-grid">
+              <div>
+                <p className="detail-eyebrow">Class Features</p>
+                {renderChips(sheet.features?.classFeatures)}
+              </div>
+              <div>
+                <p className="detail-eyebrow">Racial Traits</p>
+                {renderChips(sheet.features?.racialTraits || sheet.core?.raceTraits)}
+              </div>
+              <div>
+                <p className="detail-eyebrow">Background</p>
+                {renderChips([sheet.features?.background].filter(Boolean))}
+              </div>
+              <div>
+                <p className="detail-eyebrow">Feats</p>
+                {renderChips(sheet.features?.feats)}
+              </div>
+            </div>
+          </>
+        );
+      case 'spells':
+        if (!spellsDetail.ability || spellsDetail.ability === 'None') {
+          return (
+            <>
+              {showHeading && <h3>Spellcasting</h3>}
+              <p className="detail-line">This character does not cast spells at level 1.</p>
+            </>
+          );
+        }
+        return (
+          <>
+            {showHeading && <h3>Spellcasting</h3>}
+            <div className="detail-pill-row">
+              <div className="detail-mini-block">
+                <p className="detail-eyebrow">Spellcasting Ability</p>
+                <p className="detail-line">{spellsDetail.ability}</p>
+              </div>
+              <div className="detail-mini-block">
+                <p className="detail-eyebrow">Spell Save DC</p>
+                <p className="detail-line">{spellsDetail.saveDC}</p>
+              </div>
+              <div className="detail-mini-block">
+                <p className="detail-eyebrow">Spell Attack Bonus</p>
+                <p className="detail-line">{spellsDetail.attackBonus}</p>
+              </div>
+            </div>
+            {spellsDetail.slots && (
+              <p className="detail-line detail-line--muted">Slots: {spellsDetail.slots}</p>
+            )}
+            {spellsDetail.prepared && (
+              <p className="detail-line detail-line--muted">Prepared/Known: {spellsDetail.prepared}</p>
+            )}
+            <div className="detail-block" style={{ marginTop: '0.6rem' }}>
+              {renderChips(spellsDetail.known || displayCharacter.spells || [])}
+            </div>
+          </>
+        );
+      case 'extras':
+        return (
+          <>
+            {showHeading && <h3>Extras & Languages</h3>}
+            <div className="detail-mini-block">
+              <p className="detail-eyebrow">Languages</p>
+              {renderChips(sheet.extras?.languages || proficiencies.languages)}
+            </div>
+            {sheet.extras?.inventoryWeight && (
+              <p className="detail-line detail-line--muted" style={{ marginTop: '0.6rem' }}>
+                Inventory Weight: {sheet.extras.inventoryWeight}
+              </p>
+            )}
+            {(sheet.extras?.notes || displayCharacter.notes) && (
+              <p className="detail-line" style={{ marginTop: '0.4rem' }}>
+                {sheet.extras?.notes || displayCharacter.notes}
+              </p>
+            )}
+          </>
+        );
+      case 'background':
+        return (
+          <>
+            {showHeading && <h3>Background & Description</h3>}
+            {sheet.core?.appearance && (
+              <p className="detail-line">{sheet.core.appearance}</p>
+            )}
+            {sheet.core?.backstory && (
+              <p className="detail-line detail-line--muted" style={{ marginTop: '0.5rem' }}>
+                {sheet.core.backstory}
+              </p>
+            )}
+            {displayCharacter.lore && (
+              <p className="detail-line" style={{ marginTop: '0.8rem' }}>{displayCharacter.lore}</p>
+            )}
+          </>
+        );
+      case 'personality':
+        return (
+          <>
+            {showHeading && <h3>Personality & Role-Play</h3>}
+            <div className="detail-list-grid">
+              <div>
+                <p className="detail-eyebrow">Traits</p>
+                {renderChips(sheet.personality?.traits)}
+              </div>
+              <div>
+                <p className="detail-eyebrow">Ideals</p>
+                {renderChips(sheet.personality?.ideals)}
+              </div>
+              <div>
+                <p className="detail-eyebrow">Bonds</p>
+                {renderChips(sheet.personality?.bonds)}
+              </div>
+              <div>
+                <p className="detail-eyebrow">Flaws</p>
+                {renderChips(sheet.personality?.flaws)}
+              </div>
             </div>
           </>
         );
       case 'notes':
         return (
           <>
-            <h3>Notes</h3>
+            {showHeading && <h3>Notes</h3>}
             <p className="detail-line">{displayCharacter.notes}</p>
-          </>
-        );
-      case 'logbook':
-        return (
-          <>
-            <h3>Character Logbook</h3>
-            <p className="detail-line italic text-white/50">No entries recorded for {displayCharacter.name} yet.</p>
-          </>
-        );
-      case 'inventory':
-        return (
-          <>
-            <h3>Character Inventory</h3>
-            <div className="detail-block">
-              {displayCharacter.equipment.length > 0 ? (
-                displayCharacter.equipment.map((item) => (
-                  <div key={item} className="p-2 border-b border-white/10 flex justify-between">
-                    <span>{item}</span>
-                    <span className="text-white/50 text-sm">1</span>
-                  </div>
-                ))
-              ) : (
-                <p className="detail-line italic text-white/50">Inventory is empty.</p>
-              )}
-            </div>
           </>
         );
       default:
@@ -322,55 +514,69 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
             data-visible={isContentVisible ? 'in' : 'out'}
           >
             <div className="detail-content" tabIndex={0} ref={contentRef} >
-              <div className="detail-columns">
+              <div className="detail-columns detail-columns--tight">
                 <div
                   className="detail-card detail-card--interactive"
                   role="button"
                   tabIndex={0}
-                  aria-label="Expand attributes panel"
-                  onClick={() => handlePanelOpen('attributes')}
-                  onKeyDown={(event) => handlePanelKeyDown(event, 'attributes')}
+                  aria-label="Expand core information panel"
+                  onClick={() => handlePanelOpen('core')}
+                  onKeyDown={(event) => handlePanelKeyDown(event, 'core')}
                 >
-                  {renderPanelContent('attributes')}
-                  <span className="detail-card__hint">Click to zoom</span>
+                  {renderPanelContent('core')}
+                  <span className="detail-card__hint">Click to view</span>
                 </div>
 
                 <div
                   className="detail-card detail-card--interactive"
                   role="button"
                   tabIndex={0}
-                  aria-label="Expand vitals panel"
-                  onClick={() => handlePanelOpen('vitals')}
-                  onKeyDown={(event) => handlePanelKeyDown(event, 'vitals')}
-                >
-                  {renderPanelContent('vitals')}
-                  <span className="detail-card__hint">Click to zoom</span>
-                </div>
-              </div>
-
-              <div
-                className="detail-card detail-card--interactive"
-                role="button"
-                tabIndex={0}
-                aria-label="Expand lore panel"
-                onClick={() => handlePanelOpen('lore')}
-                onKeyDown={(event) => handlePanelKeyDown(event, 'lore')}
-              >
-                {renderPanelContent('lore')}
-                <span className="detail-card__hint">Click to zoom</span>
-              </div>
-
-              <div className="detail-columns">
-                <div
-                  className="detail-card detail-card--interactive"
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Expand abilities panel"
+                  aria-label="Expand ability scores panel"
                   onClick={() => handlePanelOpen('abilities')}
                   onKeyDown={(event) => handlePanelKeyDown(event, 'abilities')}
                 >
                   {renderPanelContent('abilities')}
-                  <span className="detail-card__hint">Click to zoom</span>
+                  <span className="detail-card__hint">Click to view</span>
+                </div>
+              </div>
+
+              <div className="detail-columns detail-columns--tight">
+                <div
+                  className="detail-card detail-card--interactive"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Expand proficiencies panel"
+                  onClick={() => handlePanelOpen('proficiencies')}
+                  onKeyDown={(event) => handlePanelKeyDown(event, 'proficiencies')}
+                >
+                  {renderPanelContent('proficiencies')}
+                  <span className="detail-card__hint">Click to view</span>
+                </div>
+
+                <div
+                  className="detail-card detail-card--interactive"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Expand combat stats panel"
+                  onClick={() => handlePanelOpen('combat')}
+                  onKeyDown={(event) => handlePanelKeyDown(event, 'combat')}
+                >
+                  {renderPanelContent('combat')}
+                  <span className="detail-card__hint">Click to view</span>
+                </div>
+              </div>
+
+              <div className="detail-columns detail-columns--tight">
+                <div
+                  className="detail-card detail-card--interactive"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Expand attacks panel"
+                  onClick={() => handlePanelOpen('attacks')}
+                  onKeyDown={(event) => handlePanelKeyDown(event, 'attacks')}
+                >
+                  {renderPanelContent('attacks')}
+                  <span className="detail-card__hint">Click to view</span>
                 </div>
 
                 <div
@@ -382,10 +588,84 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
                   onKeyDown={(event) => handlePanelKeyDown(event, 'equipment')}
                 >
                   {renderPanelContent('equipment')}
-                  <span className="detail-card__hint">Click to zoom</span>
+                  <span className="detail-card__hint">Click to view</span>
                 </div>
               </div>
               
+              <div className="detail-columns detail-columns--tight">
+                <div
+                  className="detail-card detail-card--interactive"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Expand features panel"
+                  onClick={() => handlePanelOpen('features')}
+                  onKeyDown={(event) => handlePanelKeyDown(event, 'features')}
+                >
+                  {renderPanelContent('features')}
+                  <span className="detail-card__hint">Click to view</span>
+                </div>
+
+                <div
+                  className="detail-card detail-card--interactive"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Expand spellcasting panel"
+                  onClick={() => handlePanelOpen('spells')}
+                  onKeyDown={(event) => handlePanelKeyDown(event, 'spells')}
+                >
+                  {renderPanelContent('spells')}
+                  <span className="detail-card__hint">Click to view</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Slide 2: Background */}
+          <div
+            className="detail-slide custom-scrollbar"
+            role="region"
+            aria-label="Character background and role-play"
+            data-visible={isContentVisible ? 'in' : 'out'}
+          >
+            <div className="detail-content" tabIndex={0} >
+              <div
+                className="detail-card detail-card--interactive"
+                role="button"
+                tabIndex={0}
+                aria-label="Expand background panel"
+                onClick={() => handlePanelOpen('background')}
+                onKeyDown={(event) => handlePanelKeyDown(event, 'background')}
+              >
+                {renderPanelContent('background')}
+                <span className="detail-card__hint">Click to view</span>
+              </div>
+
+              <div className="detail-columns detail-columns--tight">
+                <div
+                  className="detail-card detail-card--interactive"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Expand personality panel"
+                  onClick={() => handlePanelOpen('personality')}
+                  onKeyDown={(event) => handlePanelKeyDown(event, 'personality')}
+                >
+                  {renderPanelContent('personality')}
+                  <span className="detail-card__hint">Click to view</span>
+                </div>
+
+                <div
+                  className="detail-card detail-card--interactive"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Expand extras panel"
+                  onClick={() => handlePanelOpen('extras')}
+                  onKeyDown={(event) => handlePanelKeyDown(event, 'extras')}
+                >
+                  {renderPanelContent('extras')}
+                  <span className="detail-card__hint">Click to view</span>
+                </div>
+              </div>
+
               {displayCharacter.notes && (
                 <div
                   className="detail-card detail-card--interactive"
@@ -396,90 +676,22 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
                   onKeyDown={(event) => handlePanelKeyDown(event, 'notes')}
                 >
                   {renderPanelContent('notes')}
-                  <span className="detail-card__hint">Click to zoom</span>
+                  <span className="detail-card__hint">Click to view</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Slide 2: Logbook */}
-          <div
-            className="detail-slide custom-scrollbar"
-            role="region"
-            aria-label="Character logbook"
-            data-visible={isContentVisible ? 'in' : 'out'}
-          >
-            <div className="detail-content" tabIndex={0} >
-              <div
-                className="detail-card detail-card--interactive"
-                role="button"
-                tabIndex={0}
-                aria-label="Expand logbook panel"
-                onClick={() => handlePanelOpen('logbook')}
-                onKeyDown={(event) => handlePanelKeyDown(event, 'logbook')}
-              >
-                {renderPanelContent('logbook')}
-                <span className="detail-card__hint">Click to zoom</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Slide 3: Inventory */}
-          <div
-            className="detail-slide custom-scrollbar"
-            role="region"
-            aria-label="Character inventory"
-            data-visible={isContentVisible ? 'in' : 'out'}
-          >
-            <div className="detail-content" tabIndex={0} >
-              <div
-                className="detail-card detail-card--interactive"
-                role="button"
-                tabIndex={0}
-                aria-label="Expand inventory panel"
-                onClick={() => handlePanelOpen('inventory')}
-                onKeyDown={(event) => handlePanelKeyDown(event, 'inventory')}
-              >
-                {renderPanelContent('inventory')}
-                <span className="detail-card__hint">Click to zoom</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Slide 4: Mana */}
+          {/* Slide 3: Mana */}
           <div
             className="detail-slide backdrop-slide custom-scrollbar"
             role="region"
             aria-label="Mana view"
             data-visible={isContentVisible ? 'in' : 'out'}
           >
-            <div className="detail-content backdrop-content" tabIndex={0} >
-            </div>
+            <div className="detail-content backdrop-content" tabIndex={0} />
           </div>
         </div>
-        {activeTab === 'showcase' && (
-          <div className="detail-backdrop-info">
-            <div className="backdrop-info-wrapper">
-              <button
-                type="button"
-                className="backdrop-info"
-                aria-label="What is this glowing circle?"
-                aria-describedby="backdrop-info-desc"
-                onClick={() => setShowBackdropHint((v) => !v)}
-              >
-                What is this glowing circle?
-              </button>
-              <span id="backdrop-info-desc" className="sr-only">
-                This is the color of your mana, visit the almanac to learn more!
-              </span>
-              {showBackdropHint && (
-                <div className="backdrop-tooltip" role="status">
-                  This is the color of your mana, visit the almanac to learn more!
-                </div>
-              )}
-            </div>
-          </div>
-        )}
         <div className="detail-carousel-bottom">
           <button type="button" onClick={handlePrevTab} aria-label={`Previous section: ${prevTabName}`}>
             {`< ${prevTabName}`}
@@ -510,8 +722,32 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
               </button>
             </header>
             <div className="detail-modal__content custom-scrollbar">
-              {renderPanelContent(expandedPanel)}
+              {renderPanelContent(expandedPanel, { showHeading: false })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'showcase' && (
+        <div className="detail-backdrop-info">
+          <div className="backdrop-info-wrapper">
+            <button
+              type="button"
+              className="backdrop-info"
+              aria-label="What is this glowing circle?"
+              aria-describedby="backdrop-info-desc"
+              onClick={() => setShowBackdropHint((v) => !v)}
+            >
+              What is this glowing circle?
+            </button>
+            <span id="backdrop-info-desc" className="sr-only">
+              This is the color of your mana, visit the almanac to learn more!
+            </span>
+            {showBackdropHint && (
+              <div className="backdrop-tooltip" role="status" data-animate={shouldAnimateInfo ? 'pulse' : 'rest'}>
+                This is the color of your mana, visit the almanac to learn more!
+              </div>
+            )}
           </div>
         </div>
       )}
