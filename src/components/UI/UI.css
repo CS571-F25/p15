@@ -443,7 +443,7 @@
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.55);
   flex-shrink: 0;
   transition: width 0.28s ease;
-  overflow: hidden;
+  overflow: visible;
   z-index: 20;
 }
 
@@ -499,6 +499,10 @@
   margin-top: 8px;
 }
 
+.azterra-nav__item {
+  position: relative;
+}
+
 .azterra-nav__link {
   display: flex;
   align-items: center;
@@ -529,6 +533,11 @@
   color: #ffa38c;
 }
 
+.azterra-nav__link--disabled {
+  cursor: default;
+  opacity: 0.9;
+}
+
 .azterra-nav__icon {
   width: 24px;
   height: 24px;
@@ -556,6 +565,59 @@
   height: 100%;
   background: #ffd700;
   border-radius: 0 4px 4px 0;
+}
+
+.azterra-nav__submenu {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 0;
+  background: rgba(26, 19, 14, 0.95);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 160px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-8px, 6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 25;
+}
+
+.azterra-nav__item--parent:hover .azterra-nav__submenu,
+.azterra-nav__item--parent:focus-within .azterra-nav__submenu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(0, 0);
+}
+
+.azterra-nav__item--open .azterra-nav__submenu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(0, 0);
+}
+
+.azterra-nav__sublink {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #faeacd;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.03rem;
+  white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.azterra-nav__sublink:hover {
+  background: rgba(255, 215, 0, 0.12);
+  color: #ffe5ba;
+}
+
+.azterra-nav__sublink--active {
+  background: rgba(255, 215, 0, 0.22);
+  color: #ffe5ba;
+  box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.25);
 }
 
 .azterra-sidebar__footer {

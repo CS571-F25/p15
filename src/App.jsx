@@ -24,6 +24,7 @@ import PageLayout from './components/UI/PageLayout';
 import './components/UI/PageUI.css';
 import AuthCallback from './components/auth/AuthCallback';
 import AuthLandingPage from './components/pages/AuthLandingPage';
+import CharacterSheetPage from './components/pages/CharacterSheetPage';
 
 // Placeholder components for missing tabs
 const Placeholder = ({ title }) => (
@@ -49,6 +50,9 @@ function HashApp() {
             {/* 2. CAMPAIGN (Simplified) */}
             <Route path="/campaign" element={<CharactersPage />} />
 
+            {/* Character Sheet */}
+            <Route path="/character-sheet" element={<CharacterSheetPage />} />
+
             {/* 3. ATLAS (Promoted to its own top-level view) */}
             <Route path="/atlas" element={<PageLayout title="World Atlas" tabs={[
                 { to: "", label: "View Map", end: true },
@@ -60,7 +64,7 @@ function HashApp() {
 
             {/* 4. COMPENDIUM (The Big Merge) */}
             {/* We merge People, Magic, and Almanac here to clean up the Sidebar */}
-            <Route path="/compendium" element={<PageLayout title="Azterra Compendium" tabs={[
+            <Route path="/compendium" element={<PageLayout title="Azterra Compendium" renderBottomTabs tabs={[
                 { to: "", label: "Almanac", end: true }, // General History
                 { to: "societies", label: "Societies" }, // Races, Factions, Cultures
                 { to: "cosmos", label: "Cosmos" },       // Magic, Deities

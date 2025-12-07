@@ -103,7 +103,7 @@ export default function CharactersPage() {
           <div className={`carousel-section ${isExpanded ? 'fade-out' : ''}`}>
              <h1 className="page-title">Stars of Azterra</h1>
              <div className="characters-wrapper">
-               <p className="nav-hint">Use the on-screen controls to browse the codex</p>
+               <p className="nav-hint">Use the on-screen controls to view our Heroes</p>
                <div className="carousel-controls">
                  <button
                    className="arrow-btn arrow-left"

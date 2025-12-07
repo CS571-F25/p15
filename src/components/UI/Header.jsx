@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './UI.css';
 import { useAuth } from '../../context/AuthContext';
@@ -98,7 +98,17 @@ const baseNavLinks = [
   { to: "/", label: "Map", icon: NAV_ICONS.map },
   { to: "/campaign", label: "Campaign", icon: NAV_ICONS.campaign },
   { to: "/atlas", label: "Atlas", icon: NAV_ICONS.atlas },
-  { to: "/compendium", label: "Compendium", icon: NAV_ICONS.compendium },
+  { 
+    to: "/compendium",
+    label: "Compendium",
+    icon: NAV_ICONS.compendium,
+    isDisabled: true,
+    children: [
+      { to: "/compendium", label: "Almanac" },
+      { to: "/compendium/societies", label: "Societies" },
+      { to: "/compendium/cosmos", label: "Cosmos" },
+    ]
+  },
   { to: "/people", label: "People", icon: NAV_ICONS.viewing },
   { to: "/players", label: "Players", icon: NAV_ICONS.players },
   { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
@@ -109,6 +119,21 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, role, logout } = useAuth();
+  const [compendiumOpen, setCompendiumOpen] = useState(false);
+  const blurTimeoutRef = useRef(null);
+
+  const handleCompendiumEnter = () => {
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    setCompendiumOpen(true);
+  };
+
+  const handleCompendiumLeave = () => {
+    setCompendiumOpen(false);
+  };
+
+  const handleCompendiumBlur = () => {
+    blurTimeoutRef.current = setTimeout(() => setCompendiumOpen(false), 50);
+  };
 
   const handleLogout = () => {
     logout();
@@ -130,21 +155,53 @@ export default function Header() {
         </div>
 
         <nav className="azterra-nav">
-          {navLinks.map(({ to, label, icon }) => {
+          {navLinks.map(({ to, label, icon, children, isDisabled }) => {
             const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
+            const isCompendium = label === 'Compendium';
+            const itemClass = `azterra-nav__item ${children ? 'azterra-nav__item--parent' : ''} ${isCompendium ? 'azterra-nav__item--compendium' : ''} ${isCompendium && compendiumOpen ? 'azterra-nav__item--open' : ''}`;
             return (
-              <Link
+              <div
                 key={to}
-                to={to}
-                className={`azterra-nav__link ${isActive ? 'azterra-nav__link--active' : ''}`}
-                aria-current={isActive ? 'page' : undefined}
+                className={itemClass}
+                onMouseEnter={isCompendium ? handleCompendiumEnter : undefined}
+                onMouseLeave={isCompendium ? handleCompendiumLeave : undefined}
+                onFocusCapture={isCompendium ? handleCompendiumEnter : undefined}
+                onBlurCapture={isCompendium ? handleCompendiumBlur : undefined}
               >
-                <span className="azterra-nav__icon" aria-hidden="true">
-                  {icon}
-                </span>
-                <span className="azterra-nav__label">{label}</span>
-                {isActive && <div className="azterra-nav__indicator" />}
-              </Link>
+                <Link
+                  to={to}
+                  className={`azterra-nav__link ${isActive ? 'azterra-nav__link--active' : ''} ${isDisabled ? 'azterra-nav__link--disabled' : ''}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  aria-haspopup={children ? 'true' : undefined}
+                  aria-disabled={isDisabled ? 'true' : undefined}
+                  onClick={isDisabled ? (e) => e.preventDefault() : undefined}
+                >
+                  <span className="azterra-nav__icon" aria-hidden="true">
+                    {icon}
+                  </span>
+                  <span className="azterra-nav__label">{label}</span>
+                  {isActive && <div className="azterra-nav__indicator" />}
+                </Link>
+
+                {children && (
+                  <div className="azterra-nav__submenu" role="menu" aria-label={`${label} shortcuts`}>
+                    {children.map((child) => {
+                      const isChildActive = location.pathname === child.to;
+                      return (
+                        <Link
+                          key={child.to}
+                          to={child.to}
+                          className={`azterra-nav__sublink ${isChildActive ? 'azterra-nav__sublink--active' : ''}`}
+                          role="menuitem"
+                          onClick={isCompendium ? handleCompendiumLeave : undefined}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
