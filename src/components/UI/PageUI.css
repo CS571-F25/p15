@@ -604,17 +604,18 @@ body,
   --detail-shift: 0px;
   transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.25, 1, 0.5, 1);
 }
-
 .detail-content:focus-visible {
   outline: 2px solid rgba(255, 215, 0, 0.6);
   outline-offset: 4px;
 }
 
 .backdrop-content {
-  display: grid;
-  place-items: end center;
-  min-height: 60vh;
-  padding-bottom: 6rem; /* keep above tab bar */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 100%;
+  padding-bottom: 2rem;
 }
 
 .backdrop-card {
@@ -640,7 +641,7 @@ body,
   letter-spacing: 0.02em;
   cursor: pointer;
   margin-bottom: 0.25rem;
-  text-align: left;
+  text-align: center;
 }
 
 .backdrop-info:hover {
@@ -649,28 +650,11 @@ body,
 }
 
 .backdrop-info-area {
-  display: grid;
-  place-items: center;
-  padding-top: 2rem;
-  width: 100%;
-}
-
-.detail-backdrop-info {
-  position: absolute;
-  left: 50%;
-  bottom: 3.5rem;
-  transform: translateX(-50%);
-  width: 100%;
   display: flex;
-  justify-content: center;
-  pointer-events: none;
-  padding: 0 1rem;
-}
-
-.detail-backdrop-info .backdrop-info-wrapper,
-.detail-backdrop-info .backdrop-tooltip,
-.detail-backdrop-info .backdrop-info {
-  pointer-events: auto;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 1rem 0;
 }
 
 .backdrop-info-wrapper {
@@ -825,16 +809,6 @@ body,
   background: linear-gradient(90deg, rgba(255, 215, 0, 0.05), rgba(255, 215, 0, 0.16), rgba(255, 215, 0, 0.05));
   box-shadow: 0 0 18px rgba(255, 215, 0, 0.18);
   overflow: hidden;
-}
-
-.character-detail-overlay.is-showcase .detail-tab-bar {
-  position: fixed;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 0;
-  width: min(1100px, 96%);
-  z-index: 8;
 }
 
 .detail-tab-bar__segment {

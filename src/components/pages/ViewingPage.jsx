@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ShaderBackgroundDualCrossfade from '../visuals/ShaderBackgroundDualCrossfade';
-import characters from '../../data/characters';
+import characters from '../../data/characters_heroes';
 import npcsData from '../../data/npcs';
 import locationsData from '../../data/locations.json';
 import { useAuth } from '../../context/AuthContext';

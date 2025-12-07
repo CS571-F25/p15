@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import characters from '../../data/characters';
+import characters from '../../data/characters_heroes';
 import {
   getAbilityModifier,
   formatModifier,

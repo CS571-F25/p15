@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import characters from '../../data/characters';
+import characters from '../../data/characters_heroes';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 

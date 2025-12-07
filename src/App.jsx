@@ -25,6 +25,7 @@ import './components/UI/PageUI.css';
 import AuthCallback from './components/auth/AuthCallback';
 import AuthLandingPage from './components/pages/AuthLandingPage';
 import CharacterSheetPage from './components/pages/CharacterSheetPage';
+import CampaignPage from './components/pages/CampaignPage';
 
 // Placeholder components for missing tabs
 const Placeholder = ({ title }) => (
@@ -47,8 +48,8 @@ function HashApp() {
             {/* About */}
             <Route path="/about" element={<AboutPage />} />
 
-            {/* 2. CAMPAIGN (Simplified) */}
-            <Route path="/campaign" element={<CharactersPage />} />
+            {/* 2. CAMPAIGN (User's campaigns and characters) */}
+            <Route path="/campaign" element={<CampaignPage />} />
 
             {/* Character Sheet */}
             <Route path="/character-sheet" element={<CharacterSheetPage />} />
@@ -65,13 +66,15 @@ function HashApp() {
             {/* 4. COMPENDIUM (The Big Merge) */}
             {/* We merge People, Magic, and Almanac here to clean up the Sidebar */}
             <Route path="/compendium" element={<PageLayout title="Azterra Compendium" renderBottomTabs tabs={[
-                { to: "", label: "Almanac", end: true }, // General History
-                { to: "societies", label: "Societies" }, // Races, Factions, Cultures
-                { to: "cosmos", label: "Cosmos" },       // Magic, Deities
+                { to: "", label: "Almanac", end: true },
+                { to: "societies", label: "Societies" },
+                { to: "cosmos", label: "Cosmos" },
+                { to: "heroes", label: "Heroes" },
             ]} />}>
                 <Route index element={<AlmanacPage />} />
-                <Route path="societies" element={<WorldRaces />} /> {/* Merge Factions here too? */}
+                <Route path="societies" element={<WorldRaces />} />
                 <Route path="cosmos" element={<Placeholder title="Magic System" />} />
+                <Route path="heroes" element={<CharactersPage />} />
             </Route>
 
             {/* Progression */}

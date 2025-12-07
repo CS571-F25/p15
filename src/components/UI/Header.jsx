@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './UI.css';
 import { useAuth } from '../../context/AuthContext';
@@ -102,11 +102,11 @@ const baseNavLinks = [
     to: "/compendium",
     label: "Compendium",
     icon: NAV_ICONS.compendium,
-    isDisabled: true,
     children: [
       { to: "/compendium", label: "Almanac" },
       { to: "/compendium/societies", label: "Societies" },
       { to: "/compendium/cosmos", label: "Cosmos" },
+      { to: "/compendium/heroes", label: "Heroes" },
     ]
   },
   { to: "/people", label: "People", icon: NAV_ICONS.viewing },
@@ -120,20 +120,19 @@ export default function Header() {
   const navigate = useNavigate();
   const { user, role, logout } = useAuth();
   const [compendiumOpen, setCompendiumOpen] = useState(false);
-  const blurTimeoutRef = useRef(null);
 
-  const handleCompendiumEnter = () => {
-    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
-    setCompendiumOpen(true);
+  const toggleCompendium = (event) => {
+    event.preventDefault();
+    setCompendiumOpen((prev) => !prev);
   };
 
-  const handleCompendiumLeave = () => {
-    setCompendiumOpen(false);
-  };
+  const closeCompendium = () => setCompendiumOpen(false);
 
-  const handleCompendiumBlur = () => {
-    blurTimeoutRef.current = setTimeout(() => setCompendiumOpen(false), 50);
-  };
+  useEffect(() => {
+    if (!location.pathname.startsWith('/compendium')) {
+      setCompendiumOpen(false);
+    }
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -155,32 +154,37 @@ export default function Header() {
         </div>
 
         <nav className="azterra-nav">
-          {navLinks.map(({ to, label, icon, children, isDisabled }) => {
+      {navLinks.map(({ to, label, icon, children, isDisabled }) => {
             const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
             const isCompendium = label === 'Compendium';
+            const linkIsActive = isCompendium ? (compendiumOpen || isActive) : isActive;
             const itemClass = `azterra-nav__item ${children ? 'azterra-nav__item--parent' : ''} ${isCompendium ? 'azterra-nav__item--compendium' : ''} ${isCompendium && compendiumOpen ? 'azterra-nav__item--open' : ''}`;
             return (
               <div
                 key={to}
                 className={itemClass}
-                onMouseEnter={isCompendium ? handleCompendiumEnter : undefined}
-                onMouseLeave={isCompendium ? handleCompendiumLeave : undefined}
-                onFocusCapture={isCompendium ? handleCompendiumEnter : undefined}
-                onBlurCapture={isCompendium ? handleCompendiumBlur : undefined}
               >
                 <Link
                   to={to}
-                  className={`azterra-nav__link ${isActive ? 'azterra-nav__link--active' : ''} ${isDisabled ? 'azterra-nav__link--disabled' : ''}`}
-                  aria-current={isActive ? 'page' : undefined}
+                  className={`azterra-nav__link ${linkIsActive ? 'azterra-nav__link--active' : ''} ${isDisabled ? 'azterra-nav__link--disabled' : ''}`}
+                  aria-current={linkIsActive ? 'page' : undefined}
                   aria-haspopup={children ? 'true' : undefined}
+                  aria-expanded={isCompendium ? compendiumOpen : undefined}
                   aria-disabled={isDisabled ? 'true' : undefined}
-                  onClick={isDisabled ? (e) => e.preventDefault() : undefined}
+                  onClick={isCompendium ? toggleCompendium : (isDisabled ? (e) => e.preventDefault() : undefined)}
                 >
                   <span className="azterra-nav__icon" aria-hidden="true">
                     {icon}
                   </span>
                   <span className="azterra-nav__label">{label}</span>
-                  {isActive && <div className="azterra-nav__indicator" />}
+                  {isCompendium && (
+                    <span className={`azterra-nav__chevron ${compendiumOpen ? 'azterra-nav__chevron--open' : ''}`} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" role="presentation">
+                        <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  )}
+                  {linkIsActive && <div className="azterra-nav__indicator" />}
                 </Link>
 
                 {children && (
@@ -193,7 +197,7 @@ export default function Header() {
                           to={child.to}
                           className={`azterra-nav__sublink ${isChildActive ? 'azterra-nav__sublink--active' : ''}`}
                           role="menuitem"
-                          onClick={isCompendium ? handleCompendiumLeave : undefined}
+                          onClick={isCompendium ? closeCompendium : undefined}
                         >
                           {child.label}
                         </Link>

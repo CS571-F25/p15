@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import characters from '../../data/characters';
+import characters from '../../data/characters_heroes';
 import '../UI/PageUI.css';
 import ShaderBackgroundDualCrossfade from '../visuals/ShaderBackgroundDualCrossfade';
 import CardShader from '../visuals/CardShader';

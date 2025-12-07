@@ -689,7 +689,30 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
             aria-label="Mana view"
             data-visible={isContentVisible ? 'in' : 'out'}
           >
-            <div className="detail-content backdrop-content" tabIndex={0} />
+            <div className="detail-content backdrop-content" tabIndex={0}>
+              {/* Backdrop info positioned inside the slide */}
+              <div className="backdrop-info-area">
+                <div className="backdrop-info-wrapper">
+                  <button
+                    type="button"
+                    className="backdrop-info"
+                    aria-label="What is this glowing circle?"
+                    aria-describedby="backdrop-info-desc"
+                    onClick={() => setShowBackdropHint((v) => !v)}
+                  >
+                    What is this glowing circle?
+                  </button>
+                  <span id="backdrop-info-desc" className="sr-only">
+                    This is the color of your mana, visit the almanac to learn more!
+                  </span>
+                  {showBackdropHint && (
+                    <div className="backdrop-tooltip" role="status" data-animate={shouldAnimateInfo ? 'pulse' : 'rest'}>
+                      This is the color of your mana, visit the almanac to learn more!
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div className="detail-carousel-bottom">
@@ -724,30 +747,6 @@ export default function CharacterDetailView({ character: propCharacter, onClose,
             <div className="detail-modal__content custom-scrollbar">
               {renderPanelContent(expandedPanel, { showHeading: false })}
             </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'showcase' && (
-        <div className="detail-backdrop-info">
-          <div className="backdrop-info-wrapper">
-            <button
-              type="button"
-              className="backdrop-info"
-              aria-label="What is this glowing circle?"
-              aria-describedby="backdrop-info-desc"
-              onClick={() => setShowBackdropHint((v) => !v)}
-            >
-              What is this glowing circle?
-            </button>
-            <span id="backdrop-info-desc" className="sr-only">
-              This is the color of your mana, visit the almanac to learn more!
-            </span>
-            {showBackdropHint && (
-              <div className="backdrop-tooltip" role="status" data-animate={shouldAnimateInfo ? 'pulse' : 'rest'}>
-                This is the color of your mana, visit the almanac to learn more!
-              </div>
-            )}
           </div>
         </div>
       )}
