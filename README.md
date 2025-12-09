@@ -16,11 +16,19 @@ Interactive campaign OS for Dungeon Masters: a Leaflet-powered world map, atlas,
 - Contexts coordinate data + effects (`src/context/*`): auth, content, map effects, regions, and locations. API calls go to `VITE_API_BASE_URL` with graceful fallbacks to `src/data/*.json` when the backend is down.
 - Feature surfaces: Map, Atlas (viewer + editor), Compendium (almanac/societies/cosmos/heroes), Campaign, Players + public profiles, Secrets pages, Admin dashboard, and detail routes for regions/locations.
 
+## Project layout
+- `src/` – React app, contexts, pages, and components.
+- `server/` – Express API (routes in `server/*.js`, mounted via `server/routes/index.js`; middleware under `server/middleware/`; env loader in `server/config/env.js`).
+- `server/data/` – JSON persistence for users, locations, regions, content, etc. (with rotating backups).
+- `docs/` – built frontend ready for static hosting (Vite `base: '/p15/'`).
+- `api/` – legacy edge-function handler kept for reference/backups.
+
 ## How it works (backend)
 - Express server (`server/server.js`) with JSON-file persistence under `server/data`. Save routes create timestamped backups to avoid map/region loss.
 - Auth: email/password, Google OAuth, and Supabase token verification. JWT secret is required; a default admin user is auto-created from env values.
 - Domain routes: locations/regions (save + fetch), content (markdown-imported lore), characters (favorites/visibility), campaigns, players, files (upload/download), secrets, entities/npcs, and view helpers for the public cards.
 - Utilities: rotating backups for users/content, visibility lists for gating public data, uploads stored on disk with MIME guards.
+- Entry wiring lives in `server/routes/index.js` (all `app.use` mounts) and middleware like Supabase auth sits under `server/middleware/`. Config + env loading is centralized in `server/config/env.js` so the entry file stays lean.
 
 ## Local setup
 1) Install deps  
@@ -42,6 +50,8 @@ npm run preview  # optional check
 ```
 
 ### Environment variables
+Use `.env.example` as a template for both client + server settings.
+
 Create `.env.local` for the client (Vite):
 - `VITE_API_BASE_URL=http://localhost:4000/api`
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (enable Supabase auth)
@@ -49,10 +59,12 @@ Create `.env.local` for the client (Vite):
 
 Create `.env` for the server:
 - `PORT=4000`
+- `ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4173`
 - `JWT_SECRET=` (required for login)
 - `DEFAULT_ADMIN_EMAIL=admin@azterra.com`, `DEFAULT_ADMIN_PASSWORD=admin12345`, `DEFAULT_ADMIN_NAME=Azterra Admin`
 - `GOOGLE_CLIENT_ID=` (optional Google Sign-In)
 - `SUPABASE_JWT_SECRET=` (to verify Supabase access tokens)
+- `SUPABASE_URL=`, `SUPABASE_SERVICE_ROLE=` (for Supabase auth middleware on `/api/hello` and protected routes)
 
 ### Content import workflow
 1) Set source folders/patterns in `content-importer.config.json` (rootFolder, include/exclude globs, extensions).  
