@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { user, login, googleLogin, toggleLocalAdmin, isLocalAdmin } = useAuth();
+  const { user, login, googleLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -108,14 +108,6 @@ function LoginPage() {
               </svg>
             </span>
             {googleSubmitting ? 'Opening Google...' : 'Sign in with Google'}
-          </button>
-          <button
-            type="button"
-            className="auth-modal__google auth-modal__google--alt"
-            onClick={() => toggleLocalAdmin?.()}
-            disabled={googleSubmitting || submitting}
-          >
-            {isLocalAdmin ? 'Disable Admin Mode' : 'Toggle Admin Mode'}
           </button>
           {error && <p className="auth-modal__error">{error}</p>}
         </form>
