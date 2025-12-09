@@ -7,6 +7,9 @@ export default defineConfig({
     outDir: 'docs'
   },
   server: {
+    watch: {
+      ignored: ['**/server/backups/**']
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:4000',
