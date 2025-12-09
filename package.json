@@ -9,7 +9,11 @@
     "lint": "eslint .",
     "import-content": "node server/importContent.js",
     "preview": "vite preview",
-    "server": "node server/server.js"
+    "server": "node server/server.js",
+    "start": "node server/server.js"
+  },
+  "engines": {
+    "node": "18.x"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10",

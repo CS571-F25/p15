@@ -16,6 +16,7 @@ import portraitsRoutes from './portraits.js';
 import usersRoutes from './users.js';
 import campaignsRoutes from './campaigns.js';
 import { ensureDefaultAdmin } from './utils.js';
+import { requireSupabaseAuth } from './supabaseAuth.js';
 
 const loadEnvFile = (filename) => {
   const filepath = path.resolve(process.cwd(), filename);
@@ -39,17 +40,28 @@ loadEnvFile('.env.local');
 loadEnvFile('.env');
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:4173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:4173'],
+    origin: allowedOrigins,
+    credentials: true,
   })
 );
 app.use(express.json());
 
+app.get('/', (req, res) => res.send('API up'));
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', usersSeeded: true });
+});
+
+app.get('/api/hello', requireSupabaseAuth, (req, res) => {
+  res.json({ message: 'Hello from Azterra API', user: req.user });
 });
 
 app.use('/api/auth', authRoutes);
@@ -68,6 +80,6 @@ app.use('/api/campaigns', campaignsRoutes);
 
 await ensureDefaultAdmin();
 
-app.listen(PORT, () => {
-  console.log(`Azterra backend listening on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Azterra backend listening on port ${PORT}`);
 });
