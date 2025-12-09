@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './UI.css';
 import { useAuth } from '../../context/AuthContext';
@@ -120,11 +120,17 @@ export default function Header() {
   const navigate = useNavigate();
   const { user, role, logout } = useAuth();
   const [compendiumOpen, setCompendiumOpen] = useState(false);
+  const brandIcon = useMemo(() => {
+    const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+    return `${base}/icon.svg`;
+  }, []);
 
   const toggleCompendium = (event) => {
     event.preventDefault();
     setCompendiumOpen((prev) => !prev);
   };
+
+  const handleCompendiumLeave = () => setCompendiumOpen(false);
 
   const closeCompendium = () => setCompendiumOpen(false);
 
@@ -145,9 +151,19 @@ export default function Header() {
 
   return (
     <>
-      <aside className="azterra-sidebar" aria-label="Azterra navigation">
+      <aside
+        className="azterra-sidebar"
+        aria-label="Azterra navigation"
+        onMouseLeave={handleCompendiumLeave}
+      >
         <div className="azterra-sidebar__brand">
-          <div className="azterra-sidebar__brand-mark">A</div>
+          <div className="azterra-sidebar__brand-mark">
+            <img
+              src={brandIcon}
+              alt="Azterra icon"
+              className="azterra-sidebar__brand-image"
+            />
+          </div>
           <div className="azterra-sidebar__brand-text">
             <span>Azterra</span>
           </div>

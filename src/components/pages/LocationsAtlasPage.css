@@ -1,49 +1,125 @@
 .locations-atlas {
-  padding: 2.5rem;
-  color: #f8fafc;
+  position: relative;
+  padding: 2.25rem clamp(1.25rem, 4vw, 2.75rem) 2.75rem;
+  color: var(--azterra-ink);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.75rem;
+  min-height: 100%;
+}
+
+.locations-atlas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 16% 12%, rgba(255, 215, 120, 0.16), transparent 40%),
+    radial-gradient(circle at 88% 22%, rgba(255, 255, 255, 0.06), transparent 40%);
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.locations-atlas > * {
+  position: relative;
+  z-index: 1;
 }
 
 .locations-atlas__hero {
-  max-width: 720px;
+  max-width: 880px;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.7rem;
 }
 
 .locations-atlas__hero h1 {
-  font-size: clamp(2rem, 3vw, 3.25rem);
+  font-size: clamp(2.15rem, 4vw, 3.25rem);
   margin: 0;
+  color: var(--azterra-ink);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
 }
 
 .eyebrow {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.25em;
-  color: #fbbf24;
+  color: var(--azterra-gold);
   margin: 0;
 }
 
 .lede {
-  font-size: 1.1rem;
-  color: #cbd5f5;
+  font-size: 1.05rem;
+  color: var(--azterra-ink-dim);
   margin: 0;
+  line-height: 1.7;
+}
+
+.locations-atlas__meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.atlas-pill {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 215, 120, 0.12);
+  border: 1px solid rgba(255, 215, 120, 0.35);
+  color: var(--azterra-ink);
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+}
+
+.atlas-pill--ghost {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--azterra-ink-dim);
+}
+
+.locations-atlas__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.atlas-stat-card {
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+  background: linear-gradient(145deg, rgba(18, 15, 13, 0.9), rgba(8, 6, 5, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--azterra-shadow);
+}
+
+.atlas-stat__label {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12rem;
+  font-size: 0.75rem;
+  color: var(--azterra-gold);
+}
+
+.atlas-stat__value {
+  margin: 0.35rem 0 0.25rem;
+  font-size: 1.35rem;
+  color: var(--azterra-ink);
+}
+
+.atlas-stat__hint {
+  margin: 0;
+  color: var(--azterra-ink-dim);
 }
 
 .locations-atlas__sections {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .atlas-section {
-  border-radius: 1.2rem;
-  background: rgba(2, 6, 23, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(18, 15, 13, 0.92), rgba(8, 6, 5, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
-  backdrop-filter: blur(12px);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55), 0 0 26px rgba(207, 170, 104, 0.15);
 }
 
 .atlas-section__header {
@@ -52,30 +128,34 @@
   display: flex;
   gap: 1rem;
   align-items: center;
-  padding: 1.25rem 1.5rem;
+  padding: 1.15rem 1.35rem;
   border: none;
   border-left: 6px solid transparent;
   background: transparent;
   cursor: pointer;
-  transition: background 0.3s ease, border-color 0.3s ease;
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
 }
 
 .atlas-section__header--open {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
+  transform: translateY(-1px);
 }
 
 .atlas-section__icon {
-  font-size: 1.8rem;
+  font-size: 1.6rem;
+  color: var(--azterra-gold);
 }
 
 .atlas-section__header h2 {
   margin: 0;
   font-size: 1.2rem;
+  letter-spacing: 0.06em;
+  color: var(--azterra-ink);
 }
 
 .atlas-section__header p {
   margin: 0.1rem 0 0;
-  color: #cbd5f5;
+  color: var(--azterra-ink-dim);
   font-size: 0.95rem;
 }
 
@@ -83,32 +163,34 @@
   margin-left: auto;
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
   font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .atlas-section__body {
-  padding: 1.25rem 1.5rem 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.25rem 1.35rem 1.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .atlas-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1rem;
 }
 
 .atlas-card {
-  border-radius: 1rem;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(0, 0, 0, 0.35);
   overflow: hidden;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .atlas-card--expanded {
   transform: translateY(-2px);
-  border-color: #fbbf24;
+  border-color: var(--azterra-gold);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
 
 .atlas-card__trigger {
@@ -123,7 +205,7 @@
 }
 
 .atlas-card__media {
-  min-height: 140px;
+  min-height: 150px;
   background-size: cover;
   background-position: center;
   display: flex;
@@ -134,7 +216,7 @@
 }
 
 .atlas-card__media[data-placeholder='true'] {
-  background: linear-gradient(130deg, rgba(248, 113, 113, 0.4), rgba(59, 130, 246, 0.3));
+  background: linear-gradient(130deg, rgba(255, 215, 120, 0.3), rgba(108, 71, 40, 0.3));
 }
 
 .atlas-card__meta {
@@ -148,18 +230,19 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-size: 0.65rem;
-  color: #94a3b8;
+  color: var(--azterra-ink-dim);
   margin: 0;
 }
 
 .atlas-card__meta h3 {
   margin: 0;
   font-size: 1.15rem;
+  color: var(--azterra-ink);
 }
 
 .atlas-card__type {
   margin: 0;
-  color: #cbd5f5;
+  color: var(--azterra-ink-dim);
   font-size: 0.9rem;
 }
 
@@ -178,13 +261,14 @@
   padding: 0 1.1rem 1.1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 0.95rem;
-  color: #e2e8f0;
+  color: var(--azterra-ink);
+  line-height: 1.55;
 }
 
 .atlas-section__empty {
   margin: 0;
   font-style: italic;
-  color: #94a3b8;
+  color: var(--azterra-ink-dim);
 }
 
 @media (max-width: 768px) {

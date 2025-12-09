@@ -139,6 +139,11 @@ html, body, #root {
   transform: translate(var(--vignette-parallax-x, 0px), var(--vignette-parallax-y, 0px));
 }
 
+/* Keep native map controls beneath custom panels */
+.leaflet-control-container {
+  z-index: 1 !important;
+}
+
 .map-layer--fog {
   z-index: 4;
   animation: driftFog 120s linear infinite;
@@ -761,17 +766,28 @@ html, body, #root {
 }
 .map-filters-panel {
   position: absolute;
-  left: 1.5rem;
-  bottom: 1.5rem;
-  width: 280px;
+  right: 1rem;
+  top: 1rem;
+  width: 260px;
   z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.map-page__frame .map-filters-panel {
+  position: absolute;
+  top: auto;
+  right: auto;
+  bottom: 1rem;
+  left: 1rem;
+  max-width: 280px;
+  z-index: 5;
 }
 
 .map-filters-panel__toggle {
-  align-self: flex-start;
+  align-self: flex-end;
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -799,6 +815,10 @@ html, body, #root {
 
 .map-filters-panel--open .map-filters-panel__content {
   display: flex;
+}
+
+.map-filters-panel__content {
+  align-self: stretch;
 }
 
 .map-filters-panel__section header {
@@ -852,7 +872,7 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   box-shadow: -12px 0 30px rgba(0, 0, 0, 0.45);
-  z-index: 2;
+  z-index: 6;
   position: relative;
   min-width: 280px;
   max-width: 520px;
@@ -1085,27 +1105,17 @@ html, body, #root {
   text-transform: uppercase;
 }
 
-.filter-hover-tab {
-  position: fixed;
-  top: 3.5rem;
-  right: 1.25rem;
+.filter-hover-tab,
+.map-page__frame .filter-hover-tab {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  z-index: 1200;
-  pointer-events: none;
-}
-
-.filter-hover-tab__handle {
-  padding: 0.45rem 1rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(9, 12, 24, 0.85);
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  color: #f8fafc;
-  pointer-events: auto;
+  z-index: 6;
+  left: auto;
+  bottom: auto;
 }
 
 .filter-hover-tab__panel {
@@ -1124,9 +1134,7 @@ html, body, #root {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.filter-hover-tab__handle:hover + .filter-hover-tab__panel,
-.filter-hover-tab:focus-within > .filter-hover-tab__panel,
-.filter-hover-tab__panel:hover {
+.filter-hover-tab--open .filter-hover-tab__panel {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
@@ -1337,4 +1345,19 @@ html, body, #root {
   padding: 0.4rem;
   border-radius: 0.5rem;
   overflow: auto;
+}
+
+@media (max-width: 768px) {
+  .map-filters-panel {
+    right: auto;
+    left: 1rem;
+    top: auto;
+    bottom: 1rem;
+    width: 240px;
+    align-items: flex-start;
+  }
+
+  .map-filters-panel__toggle {
+    align-self: flex-start;
+  }
 }

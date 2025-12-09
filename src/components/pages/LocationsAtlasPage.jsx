@@ -105,6 +105,11 @@ export default function LocationsAtlasPage() {
     });
   }, [locations]);
 
+  const totalLocations = useMemo(
+    () => sections.reduce((sum, section) => sum + section.locations.length, 0),
+    [sections]
+  );
+
   const toggleSection = (id) => {
     setOpenSection((current) => {
       const next = current === id ? null : id;
@@ -120,7 +125,7 @@ export default function LocationsAtlasPage() {
   };
 
   return (
-    <div className="locations-atlas">
+    <div className="locations-atlas custom-scrollbar">
       <header className="locations-atlas__hero">
         <p className="eyebrow">World Atlas</p>
         <h1>A curated look at Azterra&apos;s most storied places.</h1>
@@ -128,7 +133,30 @@ export default function LocationsAtlasPage() {
           Tap a realm to unfurl its tales. Every card draws directly from the interactive map but
           presents it in a gallery meant for readers, not cartographers.
         </p>
+        <div className="locations-atlas__meta">
+          <span className="atlas-pill">Live map entries</span>
+          <span className="atlas-pill">Lore-safe for players</span>
+          <span className="atlas-pill atlas-pill--ghost">Click to reveal</span>
+        </div>
       </header>
+
+      <div className="locations-atlas__stats">
+        <div className="atlas-stat-card">
+          <p className="atlas-stat__label">Entries</p>
+          <p className="atlas-stat__value">{totalLocations}</p>
+          <p className="atlas-stat__hint">Mapped across all categories</p>
+        </div>
+        <div className="atlas-stat-card">
+          <p className="atlas-stat__label">Regions</p>
+          <p className="atlas-stat__value">{regions.length || '—'}</p>
+          <p className="atlas-stat__hint">Drawn from your campaign map</p>
+        </div>
+        <div className="atlas-stat-card">
+          <p className="atlas-stat__label">Story hooks</p>
+          <p className="atlas-stat__value">Player ready</p>
+          <p className="atlas-stat__hint">Use badges to filter encounters</p>
+        </div>
+      </div>
 
       <div className="locations-atlas__sections">
         {sections.map((section) => (
