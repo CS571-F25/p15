@@ -1,0 +1,54 @@
+{
+  "name": "p15-project",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "import-content": "node server/importContent.js",
+    "preview": "vite preview",
+    "server": "node server/server.js",
+    "start": "node server/server.js"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.10",
+    "bcrypt": "^6.0.0",
+    "bootstrap": "^5.3.8",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.18.2",
+    "google-auth-library": "^10.0.0",
+    "googleapis": "^167.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "leaflet": "^1.9.4",
+    "minimatch": "^10.1.1",
+    "multer": "^2.0.2",
+    "react": "^19.1.1",
+    "react-bootstrap": "^2.10.10",
+    "react-dom": "^19.1.1",
+    "react-leaflet": "^5.0.0",
+    "react-router": "^7.9.5",
+    "react-router-dom": "^7.9.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@tailwindcss/postcss": "^4.1.17",
+    "@types/react": "^19.1.16",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.4",
+    "autoprefixer": "^10.4.22",
+    "eslint": "^9.36.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.22",
+    "globals": "^16.4.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17",
+    "vite": "^7.1.7"
+  }
+}

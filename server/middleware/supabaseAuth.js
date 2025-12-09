@@ -1,17 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE;
+let supabaseClient;
 
-const supabaseClient =
-  supabaseUrl && supabaseServiceRole
-    ? createClient(supabaseUrl, supabaseServiceRole, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      })
-    : null;
+function getSupabaseClient() {
+  if (supabaseClient) return supabaseClient;
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE;
+  if (!supabaseUrl || !supabaseServiceRole) return null;
+  supabaseClient = createClient(supabaseUrl, supabaseServiceRole, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  return supabaseClient;
+}
 
 export async function requireSupabaseAuth(req, res, next) {
-  if (!supabaseClient) {
+  const client = getSupabaseClient();
+  if (!client) {
     return res
       .status(500)
       .json({ error: 'Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE.' });
@@ -25,7 +29,7 @@ export async function requireSupabaseAuth(req, res, next) {
   const {
     data: { user },
     error,
-  } = await supabaseClient.auth.getUser(token);
+  } = await client.auth.getUser(token);
 
   if (error) {
     return res.status(401).json({ error: 'Invalid token' });
