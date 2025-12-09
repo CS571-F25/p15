@@ -1116,6 +1116,8 @@ html, body, #root {
   z-index: 6;
   left: auto;
   bottom: auto;
+  /* When closed, let pointer events pass through to the map. */
+  pointer-events: none;
 }
 
 .filter-hover-tab__panel {
@@ -1137,6 +1139,11 @@ html, body, #root {
 .filter-hover-tab--open .filter-hover-tab__panel {
   opacity: 1;
   transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Allow interaction only when open (container regains hit area). */
+.filter-hover-tab--open {
   pointer-events: auto;
 }
 

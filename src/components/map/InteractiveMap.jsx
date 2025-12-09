@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvent } from 'react-leaflet';
+import { MapContainer, Marker, Popup, useMap, useMapEvent } from 'react-leaflet';
 import SidePanel from '../UI/SidePanel';
 import IntroOverlay from '../IntroOverlay';
 import EditorInfoPanel from './EditorInfoPanel';
@@ -181,19 +181,15 @@ const getPlacementConfig = ({ paletteItem, activeTypeId }) => {
 
 const TILE_SIZE = 256;
 const TILE_MIN_ZOOM_LEVEL = 0;
-const TILE_MAX_ZOOM_LEVEL = 5;
-const INTERACTIVE_MAX_ZOOM_LEVEL = 7;
+const TILE_MAX_ZOOM_LEVEL = 8; // matches tilemapresource (orders 0..8)
+const INTERACTIVE_MAX_ZOOM_LEVEL = 8; // allow native res at max zoom
 const INTERACTIVE_MIN_ZOOM_LEVEL = 3;
-const MAP_PIXEL_WIDTH = TILE_SIZE * 20; // max zoom has 20 columns of tiles
-const MAP_PIXEL_HEIGHT = TILE_SIZE * 15; // max zoom has 15 rows of tiles
+// Native raster size derived from z=8 folder (160 x 160 tiles @256px = 40,960px square).
+const MAP_PIXEL_WIDTH = TILE_SIZE * 160;
+const MAP_PIXEL_HEIGHT = TILE_SIZE * 160;
+const BASE_TILE_COLS = MAP_PIXEL_WIDTH / TILE_SIZE;
+const BASE_TILE_ROWS = MAP_PIXEL_HEIGHT / TILE_SIZE;
 const MAP_CENTER = [MAP_PIXEL_HEIGHT / 2, MAP_PIXEL_WIDTH / 2];
-const MAP_PADDING_DEFAULT = {
-  top: TILE_SIZE * 0.8,
-  right: TILE_SIZE * 0.8,
-  bottom: TILE_SIZE * 0.8,
-  left: TILE_SIZE * 0.8,
-};
-const TILE_URL = `${ASSET_BASE_URL}tiles/{z}/{x}/{y}.jpg`;
 const PAN_STEP = 200;
 const ZOOM_SNAP = 0.25;
 const ZOOM_DELTA = 0.5;
@@ -202,10 +198,59 @@ const MAX_SCALE = Math.pow(2, TILE_MAX_ZOOM_LEVEL);
 const TILESET_CRS = L.extend({}, L.CRS.Simple, {
   scale: (zoom) => Math.pow(2, zoom) / MAX_SCALE,
   zoom: (scale) => Math.log(scale * MAX_SCALE) / Math.LN2,
-  transformation: new L.Transformation(1, 0, -1, MAP_PIXEL_HEIGHT),
+  // Use a top-left origin; tile Y inversion is handled in InvertedYTileLayer.
+  transformation: new L.Transformation(1, 0, 1, 0),
 });
 
 let introShownThisSession = false;
+
+// Helpers to invert tile Y when Leaflet requests top-origin rows against bottom-origin tiles.
+const getTileCountForZoom = (z) => {
+  const factor = Math.pow(2, TILE_MAX_ZOOM_LEVEL - z);
+  return {
+    x: Math.ceil(BASE_TILE_COLS / factor),
+    y: Math.ceil(BASE_TILE_ROWS / factor),
+  };
+};
+
+function InvertedYTileLayer({
+  minZoom,
+  maxZoom,
+  maxNativeZoom,
+  minNativeZoom,
+  tileSize,
+  keepBuffer,
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    const LayerClass = L.TileLayer.extend({
+      getTileUrl(coords) {
+        const counts = getTileCountForZoom(coords.z);
+        const invertedY = counts.y - 1 - coords.y;
+        const safeY = Math.max(0, invertedY);
+        return `${ASSET_BASE_URL}tiles/${coords.z}/${coords.x}/${safeY}.jpg`;
+      },
+    });
+
+    const layer = new LayerClass('', {
+      minZoom,
+      maxZoom,
+      maxNativeZoom,
+      minNativeZoom,
+      tileSize,
+      noWrap: true,
+      keepBuffer,
+    });
+    layer.addTo(map);
+
+    return () => {
+      layer.removeFrom(map);
+    };
+  }, [map, minZoom, maxZoom, maxNativeZoom, minNativeZoom, tileSize, keepBuffer]);
+
+  return null;
+}
 
 // Marker with glow
 const createGlowingIcon = (color = '#FFD700', typeId = 'generic', isHovered = false) => (
@@ -566,14 +611,6 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     },
     [iconStatuses]
   );
-  const mapBounds = useMemo(() => {
-    const pad = MAP_PADDING_DEFAULT;
-    return L.latLngBounds(
-      [-pad.top, -pad.left],
-      [MAP_PIXEL_HEIGHT + pad.bottom, MAP_PIXEL_WIDTH + pad.right]
-    );
-  }, []);
-  const boundsViscosity = 0.95;
   useEffect(() => {
     let isMounted = true;
     const fetchLocations = async () => {
@@ -1407,23 +1444,6 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     setIsIntroVisible(false);
   };
 
-  useEffect(() => {
-    if (!mapInstance) return;
-    if (isEditorMode) {
-      const looseBounds = L.latLngBounds([-1e7, -1e7], [1e7, 1e7]);
-      mapInstance.setMaxBounds(looseBounds);
-      mapInstance.options.maxBounds = looseBounds;
-      mapInstance.options.maxBoundsViscosity = 0;
-      mapInstance.dragging?.enable();
-      return;
-    }
-    if (mapBounds) {
-      mapInstance.setMaxBounds(mapBounds);
-      mapInstance.options.maxBoundsViscosity = boundsViscosity;
-      mapInstance.panInsideBounds(mapBounds, { animate: false });
-    }
-  }, [mapInstance, mapBounds, boundsViscosity, isEditorMode]);
-
   return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
       <div className="map-layout">
@@ -1462,7 +1482,6 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
               zoom={zoom}
               minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
               maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
-              {...(!isEditorMode ? { maxBounds: mapBounds, maxBoundsViscosity: boundsViscosity } : {})}
               crs={TILESET_CRS}
               className="leaflet-map"
               scrollWheelZoom={true}
@@ -1475,14 +1494,12 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
               whenCreated={setMapInstance}
               style={{ height: '100%', width: '100%' }}
             >
-              <TileLayer
-                url={TILE_URL}
+              <InvertedYTileLayer
                 tileSize={TILE_SIZE}
                 minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
                 maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
                 maxNativeZoom={TILE_MAX_ZOOM_LEVEL}
                 minNativeZoom={TILE_MIN_ZOOM_LEVEL}
-                noWrap={true}
                 keepBuffer={4}
               />
               <EditorPlacementHandler
