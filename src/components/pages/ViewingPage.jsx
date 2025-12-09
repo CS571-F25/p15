@@ -1271,72 +1271,72 @@ function PeoplePage() {
 
   return (
     <>
-      <div className="page-container">
-      <ShaderBackgroundDualCrossfade modA={colorA} modB={colorB} fade={fade} />
-      <header className="characters-header">
-        <div>
-          <p className="account-card__eyebrow">People</p>
-          <h1>Campaign View</h1>
-          <p className="nav-hint">Browse visible players, NPCs, and locations. Admins can toggle visibility.</p>
-        </div>
-        {isAdmin && (
-          <div className="admin-toggle">
-            <button
-              type="button"
-              className={`admin-toggle-btn ${adminView ? 'admin-toggle-btn--active' : ''}`}
-              onClick={() => setAdminView((v) => !v)}
-            >
-              {adminView ? 'Admin View' : 'User View'}
-            </button>
-            {!adminView && (
-              <div className="mini-list" aria-label="Preview secrets">
-                {SECRET_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    className={`secret-preview-button ${previewSecrets.includes(opt.id) ? 'secret-preview-button--active' : ''}`}
-                    onClick={() =>
-                      setPreviewSecrets((prev) =>
-                        prev.includes(opt.id) ? prev.filter((id) => id !== opt.id) : [...prev, opt.id]
-                      )
-                    }
-                  >
-                    {previewSecrets.includes(opt.id) ? '★' : '☆'} {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
+      <div className="page-container people-page">
+re         <div className="people-page__scrim" aria-hidden="true" />
+        <header className="characters-header">
+          <div>
+            <p className="account-card__eyebrow">People</p>
+            <h1>Campaign View</h1>
+            <p className="nav-hint">Browse visible players, NPCs, and locations. Admins can toggle visibility.</p>
           </div>
-        )}
-      </header>
+          {isAdmin && (
+            <div className="admin-toggle">
+              <button
+                type="button"
+                className={`admin-toggle-btn ${adminView ? 'admin-toggle-btn--active' : ''}`}
+                onClick={() => setAdminView((v) => !v)}
+              >
+                {adminView ? 'Admin View' : 'User View'}
+              </button>
+              {!adminView && (
+                <div className="mini-list" aria-label="Preview secrets">
+                  {SECRET_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={`secret-preview-button ${previewSecrets.includes(opt.id) ? 'secret-preview-button--active' : ''}`}
+                      onClick={() =>
+                        setPreviewSecrets((prev) =>
+                          prev.includes(opt.id) ? prev.filter((id) => id !== opt.id) : [...prev, opt.id]
+                        )
+                      }
+                    >
+                      {previewSecrets.includes(opt.id) ? '★' : '☆'} {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </header>
 
-      <div className="characters-tabs">
-        {TABS.map((name) => (
-          <button
-            key={name}
-            className={`tab-btn ${tab === name ? 'tab-btn--active' : ''}`}
-            type="button"
-            onClick={() => setTab(name)}
-          >
-            {name === 'players' && 'Players / Characters'}
-            {name === 'npcs' && 'NPCs'}
-          </button>
-        ))}
-        <div className="campaign-tabs">
-          {CAMPAIGNS.map((c) => (
+        <div className="characters-tabs">
+          {TABS.map((name) => (
             <button
-              key={c}
-              className={`tab-btn ${campaign === c ? 'tab-btn--active' : ''}`}
+              key={name}
+              className={`tab-btn ${tab === name ? 'tab-btn--active' : ''}`}
               type="button"
-              onClick={() => setCampaign(c)}
+              onClick={() => setTab(name)}
             >
-              {c} Campaign
+              {name === 'players' && 'Players / Characters'}
+              {name === 'npcs' && 'NPCs'}
             </button>
           ))}
+          <div className="campaign-tabs">
+            {CAMPAIGNS.map((c) => (
+              <button
+                key={c}
+                className={`tab-btn ${campaign === c ? 'tab-btn--active' : ''}`}
+                type="button"
+                onClick={() => setCampaign(c)}
+              >
+                {c} Campaign
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {error && <p className="account-error">{error}</p>}
+        {error && <p className="account-error">{error}</p>}
 
         <div className="view-grid">
           {orderedList.map((item, idx) => (

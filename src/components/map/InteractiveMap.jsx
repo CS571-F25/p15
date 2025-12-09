@@ -447,7 +447,7 @@ function LocationMarker({
   );
 }
 
-function InteractiveMap({ isEditorMode = false }) {
+function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFilters }) {
   const { role, token } = useAuth();
   const { cloudsEnabled, fogEnabled, vignetteEnabled, heatmapMode, intensities, setIntensity } =
     useMapEffects();
@@ -1574,6 +1574,8 @@ function InteractiveMap({ isEditorMode = false }) {
         />
       )}
       <FilterHoverPanel
+        isOpen={filtersOpen}
+        onToggleOpen={onToggleFilters}
         showMarkers={showMarkers}
         markerFilters={markerFilters}
         onToggleMarkers={() => setShowMarkers((prev) => !prev)}

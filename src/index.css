@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @layer utilities {
@@ -14,7 +15,17 @@
 }
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --azterra-bg: #0d0b09;
+  --azterra-bg-2: #120f0d;
+  --azterra-ink: #f5e5c9;
+  --azterra-ink-dim: rgba(245, 229, 201, 0.74);
+  --azterra-gold: #cfaa68;
+  --azterra-gold-soft: rgba(207, 170, 104, 0.2);
+  --azterra-border: rgba(255, 255, 255, 0.08);
+  --azterra-surface: rgba(255, 255, 255, 0.03);
+  --azterra-card: rgba(18, 15, 13, 0.9);
+  --azterra-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
+  font-family: 'Inter', 'Cinzel', 'Georgia', serif;
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
@@ -38,17 +49,40 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #0b0f1b;
-  color: #f5e5c9;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(207, 170, 104, 0.1), transparent 40%),
+    radial-gradient(circle at 78% 6%, rgba(255, 215, 120, 0.12), transparent 36%),
+    linear-gradient(140deg, var(--azterra-bg-2) 0%, #080605 65%, #0b0f1b 100%);
+  color: var(--azterra-ink);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 70px 70px, 110px 110px;
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 0;
 }
 
 #root {
   width: 100%;
   height: 100%;
   display: flex;
+  position: relative;
+  z-index: 1;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+h1, h2, h3 {
+  font-family: 'Cinzel', 'Georgia', serif;
+  letter-spacing: 0.06em;
 }

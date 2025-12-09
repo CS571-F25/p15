@@ -108,6 +108,34 @@ export default function AboutPage() {
           <div className="about-highlight__cta">Lorem ipsum sit amet</div>
         </div>
       </section>
+
+      <section className="about-section" id="map">
+        <div className="about-section__header">
+          <p className="about-eyebrow">Cartography</p>
+          <h2 className="about-title">How the map and editor work</h2>
+          <p className="about-subtitle">
+            The Map tab opens directly to the canvas — drag to explore, shift-scroll to zoom, and click pins to read
+            lore. Switch the Editor toggle to drop regions, rename landmarks, and sync them to your Atlas entries.
+          </p>
+        </div>
+        <div className="about-grid">
+          <article className="about-card">
+            <div className="about-card__shine" aria-hidden="true" />
+            <h3>Player-safe view</h3>
+            <p>Keep spoilers hidden while players browse. Editor off means only public notes show.</p>
+          </article>
+          <article className="about-card">
+            <div className="about-card__shine" aria-hidden="true" />
+            <h3>Live region overlays</h3>
+            <p>Regions you add on the map populate the Atlas so you can reference them in character sheets or sessions.</p>
+          </article>
+          <article className="about-card">
+            <div className="about-card__shine" aria-hidden="true" />
+            <h3>Session flow</h3>
+            <p>Prep ahead by bookmarking coordinates and moving between hotspots as the party travels.</p>
+          </article>
+        </div>
+      </section>
     </div>
   );
 }

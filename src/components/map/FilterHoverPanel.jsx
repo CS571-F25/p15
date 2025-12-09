@@ -39,6 +39,8 @@ function FilterToggle({ label, checked, onChange }) {
 }
 
 function FilterHoverPanel({
+  isOpen = false,
+  onToggleOpen = () => {},
   showMarkers,
   markerFilters = {},
   onToggleMarkers,
@@ -66,9 +68,8 @@ function FilterHoverPanel({
   };
 
   return (
-    <div className="filter-hover-tab" aria-label="Map filters">
-      <div className="filter-hover-tab__handle">Filters</div>
-      <div className="filter-hover-tab__panel">
+    <div className={`filter-hover-tab ${isOpen ? 'filter-hover-tab--open' : ''}`} aria-label="Map filters">
+      <div className="filter-hover-tab__panel" role="region" aria-hidden={!isOpen}>
         <FilterSection title="Markers">
           <FilterToggle label="Show all markers" checked={showMarkers} onChange={onToggleMarkers} />
           {MARKER_FILTERS.map((entry) => (
