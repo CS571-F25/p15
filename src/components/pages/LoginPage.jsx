@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { user, login, googleLogin } = useAuth();
+  const { user, login, googleLogin, loginGuest } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -33,6 +33,11 @@ function LoginPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleGuestLogin = () => {
+    loginGuest();
+    navigate('/', { replace: true });
   };
 
   const handleGoogleSignIn = async () => {
@@ -78,6 +83,14 @@ function LoginPage() {
             disabled={submitting || googleSubmitting}
           >
             {submitting ? 'Signing in...' : 'Sign in with Email'}
+          </button>
+          <button
+            type="button"
+            className="auth-modal__google auth-modal__google--alt"
+            onClick={handleGuestLogin}
+            disabled={submitting}
+          >
+            Continue as Guest
           </button>
           <p className="auth-modal__note">or continue with Google</p>
           <button

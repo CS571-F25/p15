@@ -100,6 +100,26 @@
   margin-bottom: 1.5rem;
 }
 
+.about-story {
+  overflow: hidden;
+}
+
+.about-story__narrative {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.about-story__narrative p {
+  margin: 0;
+  color: rgba(245, 229, 201, 0.82);
+  line-height: 1.65;
+}
+
+.about-story__narrative p:last-child {
+  margin-bottom: 0;
+}
+
 .about-section__header--inline {
   display: flex;
   justify-content: space-between;

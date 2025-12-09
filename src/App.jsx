@@ -38,8 +38,11 @@ function HashApp() {
   return (
     <HashRouter>
       <div className="app-shell">
+        <a className="skip-link" href="#main-content">
+          Skip to main content
+        </a>
         <Header />
-        <main className="app-content">
+        <main id="main-content" className="app-content" role="main">
           <Routes>
             {/* 1. Map (Default Home) */}
             <Route path="/" element={<MapPage />} />

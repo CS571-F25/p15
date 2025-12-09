@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './CampaignPage.css';
@@ -6,11 +6,12 @@ import './CampaignPage.css';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export default function CampaignPage() {
-  const { user, token } = useAuth();
+  const { token, role } = useAuth();
   const navigate = useNavigate();
+  const isGuest = !token || role === 'guest';
   
   const [campaigns, setCampaigns] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !isGuest);
   const [error, setError] = useState('');
   
   // Selection state
@@ -24,9 +25,41 @@ export default function CampaignPage() {
   const [deleteType, setDeleteType] = useState(null); // 'campaign' or 'character'
   const [deleting, setDeleting] = useState(false);
 
+  // Guest preview data
+  const guestCampaigns = useMemo(() => ([
+    {
+      id: 'guest-c1',
+      name: 'Dormfall Arc',
+      ownerName: 'Guest Preview',
+      lastUsed: Date.now(),
+      characters: [
+        { id: 'g-1', name: 'Valen Arctis', class: 'Wayfarer', race: 'Human', level: 7, lastUsed: Date.now() },
+        { id: 'g-2', name: 'Isolde Kelm', class: 'Battlemage', race: 'Elf', level: 6, lastUsed: Date.now() - 20000 },
+      ],
+    },
+    {
+      id: 'guest-c2',
+      name: 'Sunspire Detour',
+      ownerName: 'Guest Preview',
+      lastUsed: Date.now() - 600000,
+      characters: [
+        { id: 'g-3', name: 'Merrick Thorne', class: 'Rogue', race: 'Halfling', level: 5, lastUsed: Date.now() - 600000 },
+      ],
+    },
+  ]), []);
+
   // Fetch campaigns
   const fetchCampaigns = useCallback(async () => {
-    if (!token) return;
+    if (isGuest) {
+      setCampaigns(guestCampaigns);
+      setLoading(false);
+      setError('');
+      return;
+    }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -41,7 +74,7 @@ export default function CampaignPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [guestCampaigns, isGuest, token]);
 
   useEffect(() => {
     fetchCampaigns();
@@ -126,21 +159,16 @@ export default function CampaignPage() {
     }
   };
 
-  // Not logged in
-  if (!user) {
-    return (
-      <div className="campaigns-page">
-        <div className="campaigns-login-required">
-          <h2>Campaigns</h2>
-          <p>Please log in to view your campaigns and characters.</p>
-        </div>
-      </div>
-    );
-  }
+  const canEdit = !isGuest;
 
   return (
     <div className="campaigns-page custom-scrollbar">
       <h1 className="campaigns-title">Your Campaigns</h1>
+      {isGuest && (
+        <p className="campaigns-subtitle">
+          Guest preview: browse sample campaigns and characters. Log in to create, edit, or delete your own.
+        </p>
+      )}
       
       {error && <p className="campaigns-error">{error}</p>}
       
@@ -162,6 +190,8 @@ export default function CampaignPage() {
                 </button>
                 <button
                   className={`campaigns-btn ${campaignSelectMode ? 'campaigns-btn--active' : ''}`}
+                  disabled={!canEdit}
+                  title={canEdit ? undefined : 'Log in to select campaigns'}
                   onClick={() => {
                     setCampaignSelectMode(!campaignSelectMode);
                     setSelectedCampaigns(new Set());
@@ -169,7 +199,7 @@ export default function CampaignPage() {
                 >
                   {campaignSelectMode ? 'Cancel' : 'Select'}
                 </button>
-                {campaignSelectMode && selectedCampaigns.size > 0 && (
+                {canEdit && campaignSelectMode && selectedCampaigns.size > 0 && (
                   <button
                     className="campaigns-btn campaigns-btn--delete"
                     onClick={() => handleDeleteClick('campaign')}
@@ -222,6 +252,8 @@ export default function CampaignPage() {
                 </button>
                 <button
                   className={`campaigns-btn ${characterSelectMode ? 'campaigns-btn--active' : ''}`}
+                  disabled={!canEdit}
+                  title={canEdit ? undefined : 'Log in to select characters'}
                   onClick={() => {
                     setCharacterSelectMode(!characterSelectMode);
                     setSelectedCharacters(new Set());
@@ -229,7 +261,7 @@ export default function CampaignPage() {
                 >
                   {characterSelectMode ? 'Cancel' : 'Select'}
                 </button>
-                {characterSelectMode && selectedCharacters.size > 0 && (
+                {canEdit && characterSelectMode && selectedCharacters.size > 0 && (
                   <button
                     className="campaigns-btn campaigns-btn--delete"
                     onClick={() => handleDeleteClick('character')}

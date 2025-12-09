@@ -118,8 +118,10 @@ const baseNavLinks = [
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, role, logout } = useAuth();
+  const { user, role, logout, loginGuest } = useAuth();
   const [compendiumOpen, setCompendiumOpen] = useState(false);
+  const isGuest = role === 'guest';
+  const logoutLabel = isGuest ? 'Exit Guest' : 'Logout';
   const brandIcon = useMemo(() => {
     const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
     return `${base}/icon.svg`;
@@ -249,6 +251,17 @@ export default function Header() {
                 </span>
                 <span className="azterra-nav__label">Sign Up</span>
               </Link>
+              <button
+                type="button"
+                className="azterra-nav__link azterra-nav__link--muted"
+                onClick={() => { loginGuest(); navigate('/'); }}
+                title="Browse as guest"
+              >
+                <span className="azterra-nav__icon text-[#ffd700]">
+                  {NAV_ICONS.login}
+                </span>
+                <span className="azterra-nav__label">Login as Guest</span>
+              </button>
             </div>
           )}
 
@@ -284,7 +297,7 @@ export default function Header() {
                 <span className="azterra-nav__icon">
                   {NAV_ICONS.logout}
                 </span>
-                <span className="azterra-nav__label">Logout</span>
+                <span className="azterra-nav__label">{logoutLabel}</span>
               </button>
             </div>
           )}

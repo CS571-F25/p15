@@ -189,11 +189,10 @@ const MAP_PIXEL_WIDTH = TILE_SIZE * 160;
 const MAP_PIXEL_HEIGHT = TILE_SIZE * 160;
 const BASE_TILE_COLS = MAP_PIXEL_WIDTH / TILE_SIZE;
 const BASE_TILE_ROWS = MAP_PIXEL_HEIGHT / TILE_SIZE;
-const MAP_CENTER = [MAP_PIXEL_HEIGHT / 2, MAP_PIXEL_WIDTH / 2];
-const PAN_STEP = 200;
-const ZOOM_SNAP = 0.25;
-const ZOOM_DELTA = 0.5;
-const WHEEL_PX_PER_ZOOM_LEVEL = 100;
+const MAP_CENTER = [MAP_PIXEL_HEIGHT / 2, MAP_PIXEL_WIDTH / 2];`r`nconst PAN_STEP = 200;`r`nconst MAP_PADDING = TILE_SIZE * 0.75; // allow slight drift before bounce`r`nconst MAP_BOUNDS = L.latLngBounds(`r`n  [-MAP_PADDING, -MAP_PADDING],`r`n  [MAP_PIXEL_HEIGHT + MAP_PADDING, MAP_PIXEL_WIDTH + MAP_PADDING]`r`n);`r`nconst BOUNDS_VISCOSITY = 0.35; // gentle resistance for a boomerang effect
+const ZOOM_SNAP = 1;
+const ZOOM_DELTA = 1;
+const WHEEL_PX_PER_ZOOM_LEVEL = 120;
 const MAX_SCALE = Math.pow(2, TILE_MAX_ZOOM_LEVEL);
 const TILESET_CRS = L.extend({}, L.CRS.Simple, {
   scale: (zoom) => Math.pow(2, zoom) / MAX_SCALE,
@@ -222,14 +221,17 @@ function InvertedYTileLayer({
   keepBuffer,
 }) {
   const map = useMap();
+  const EMPTY_TILE = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
   useEffect(() => {
     const LayerClass = L.TileLayer.extend({
       getTileUrl(coords) {
         const counts = getTileCountForZoom(coords.z);
+        if (coords.x < 0 || coords.y < 0 || coords.x >= counts.x || coords.y >= counts.y) {
+          return EMPTY_TILE;
+        }
         const invertedY = counts.y - 1 - coords.y;
-        const safeY = Math.max(0, invertedY);
-        return `${ASSET_BASE_URL}tiles/${coords.z}/${coords.x}/${safeY}.jpg`;
+        return `${ASSET_BASE_URL}tiles/${coords.z}/${coords.x}/${invertedY}.jpg`;
       },
     });
 
@@ -1439,12 +1441,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     };
   }, [isIntroVisible]);
 
-  const handleIntroFinish = () => {
-    introShownThisSession = true;
-    setIsIntroVisible(false);
-  };
-
-  return (
+  const handleIntroFinish = () => {\r\n    introShownThisSession = true;\r\n    setIsIntroVisible(false);\r\n  };\r\n\r\n  useEffect(() => {\r\n    if (!mapInstance) return;\r\n    mapInstance.setMaxBounds(MAP_BOUNDS);\r\n    mapInstance.options.maxBoundsViscosity = BOUNDS_VISCOSITY;\r\n    mapInstance.panInsideBounds(MAP_BOUNDS, { animate: true, duration: 0.35 });\r\n  }, [mapInstance]);\r\n\r\n  return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
       <div className="map-layout">
         {isEditorMode && (
@@ -1481,8 +1478,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
               center={center}
               zoom={zoom}
               minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
-              maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
-              crs={TILESET_CRS}
+              maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}\r\n              maxBounds={MAP_BOUNDS}\r\n              maxBoundsViscosity={BOUNDS_VISCOSITY}\r\n              crs={TILESET_CRS}
               className="leaflet-map"
               scrollWheelZoom={true}
               dragging={true}
@@ -1500,7 +1496,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                 maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
                 maxNativeZoom={TILE_MAX_ZOOM_LEVEL}
                 minNativeZoom={TILE_MIN_ZOOM_LEVEL}
-                keepBuffer={4}
+                keepBuffer={6}
               />
               <EditorPlacementHandler
                 isEnabled={
@@ -1611,3 +1607,15 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 }
 
 export default InteractiveMap;
+
+
+
+
+
+
+
+
+
+
+
+

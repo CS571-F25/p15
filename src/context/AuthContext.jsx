@@ -8,6 +8,7 @@ const AuthContext = createContext({
   token: null,
   loading: false,
   login: async () => {},
+  loginGuest: () => {},
   updateAccount: async () => {},
   googleLogin: async () => {},
   signup: async () => {},
@@ -74,6 +75,31 @@ const normalizeUser = (incoming) => {
     viewFavorites: Array.isArray(incoming.profile?.viewFavorites) ? incoming.profile.viewFavorites : [],
   };
   return { ...incoming, unlockedSecrets: unlocked, favorites, featuredCharacter, profile, friends, friendRequests };
+};
+
+const GUEST_USER = {
+  id: 'guest-visitor',
+  role: 'guest',
+  name: 'Guest Explorer',
+  email: 'guest@example.com',
+  profilePicture: '',
+  unlockedSecrets: ['aurora-ember', 'silent-archive', 'gilded-horizon'],
+  favorites: ['character:ember', 'location:regalis', 'region:sunspire'],
+  featuredCharacter: {
+    id: 'guest-champion',
+    name: 'Valen Arctis',
+    class: 'Wayfarer',
+    level: 7,
+  },
+  profile: {
+    bio: 'Guest mode preview. Explore the map, characters, and a handful of secrets.',
+    labelOne: 'Explorer',
+    labelTwo: 'Guest',
+    documents: [],
+    viewFavorites: [],
+  },
+  friends: [],
+  friendRequests: { incoming: [], outgoing: [] },
 };
 
 async function request({ path, method = 'GET', body, headers = {}, token }) {
@@ -306,6 +332,14 @@ export function AuthProvider({ children }) {
     setToken(null);
   };
 
+  const loginGuest = () => {
+    supabase?.auth.signOut();
+    setError(null);
+    setToken(null);
+    setUser(normalizeUser(GUEST_USER));
+    setLoading(false);
+  };
+
   const refreshUser = async () => {
     if (!token) return null;
     const data = await request({ path: '/auth/me', token });
@@ -325,6 +359,7 @@ export function AuthProvider({ children }) {
       googleLogin: startGoogleLogin,
       signup,
       logout,
+      loginGuest,
       refreshUser,
       isSecretUnlocked: (secretId) =>
         Array.isArray(normalizedUser?.unlockedSecrets) && normalizedUser.unlockedSecrets.includes(secretId),
