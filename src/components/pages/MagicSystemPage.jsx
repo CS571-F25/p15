@@ -21,8 +21,23 @@ function AzterraEffects() {
     []
   );
 
+  const leaves = useMemo(
+    () =>
+      Array.from({ length: 28 }, (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: 10 + Math.random() * 14,
+        rot: Math.random() * 180,
+        delay: Math.random() * 10,
+        dur: 12 + Math.random() * 12,
+      })),
+    []
+  );
+
   return (
     <div className="azterra-effects" aria-hidden="true">
+      <div className="azterra-veins" />
       <div className="azterra-vignette" />
       {spores.map((s) => (
         <span
@@ -36,6 +51,95 @@ function AzterraEffects() {
             animationDuration: `${s.dur}s`,
             animationDelay: `${s.delay}s`,
             '--drift': `${s.drift}px`,
+          }}
+        />
+      ))}
+      {leaves.map((leaf) => (
+        <span
+          key={leaf.id}
+          className="azterra-leaf"
+          style={{
+            left: `${leaf.x}%`,
+            top: `${leaf.y}%`,
+            width: `${leaf.size}px`,
+            height: `${leaf.size * 0.6}px`,
+            transform: `rotate(${leaf.rot}deg)`,
+            animationDuration: `${leaf.dur}s`,
+            animationDelay: `${leaf.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function KayaEffects() {
+  const embers = useMemo(
+    () =>
+      Array.from({ length: 36 }, (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: 4 + Math.random() * 8,
+        dur: 6 + Math.random() * 8,
+        delay: Math.random() * 8,
+      })),
+    []
+  );
+
+  return (
+    <div className="kaya-effects" aria-hidden="true">
+      <div className="kaya-beams" />
+      {embers.map((e) => (
+        <span
+          key={e.id}
+          className="kaya-ember"
+          style={{
+            left: `${e.x}%`,
+            top: `${e.y}%`,
+            width: `${e.size}px`,
+            height: `${e.size}px`,
+            animationDuration: `${e.dur}s`,
+            animationDelay: `${e.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function KroviEffects() {
+  const stars = useMemo(
+    () =>
+      Array.from({ length: 32 }, (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: 3 + Math.random() * 3,
+        delay: Math.random() * 10,
+        dur: 9 + Math.random() * 6,
+        hue: Math.random() * 10 + 205, // tight hue range
+        hero: Math.random() > 0.92,
+      })),
+    []
+  );
+
+  return (
+    <div className="krovi-effects" aria-hidden="true">
+      {stars.map((s) => (
+        <span
+          key={s.id}
+          className="krovi-star krovi-star--pulse"
+          style={{
+            left: `${s.x}%`,
+            top: `${s.y}%`,
+            width: `${s.size}px`,
+            height: `${s.size}px`,
+            '--k-dur': `${s.dur}s`,
+            '--k-delay': `${s.delay}s`,
+            '--k-hue': `${s.hue}deg`,
+            '--k-alpha': s.hero ? 0.9 : 0.7,
+            '--k-glow': s.hero ? 6 : 4,
           }}
         />
       ))}
@@ -395,15 +499,28 @@ function InteractiveDukeTree({ god, color }) {
 }
 
 function NatureVines() {
+  const leftPaths = [
+    'M10 480 C 40 410, 60 360, 30 300 S 20 220, 70 180 S 90 120, 60 70 S 100 30, 140 10',
+    'M110 520 C 140 450, 160 380, 130 330 S 110 260, 150 220 S 170 150, 140 110 S 180 70, 210 40',
+    'M60 520 C 50 430, 70 350, 90 300 S 120 240, 100 200 S 80 140, 120 90 S 90 40, 150 20',
+  ];
+  const rightPaths = [
+    'M310 480 C 280 410, 260 360, 290 300 S 300 220, 250 180 S 230 120, 260 70 S 220 30, 180 10',
+    'M200 520 C 170 450, 150 380, 180 330 S 200 260, 160 220 S 140 150, 170 110 S 130 70, 100 40',
+    'M250 520 C 270 430, 240 350, 220 300 S 200 240, 230 200 S 260 140, 230 90 S 260 50, 200 20',
+  ];
+
   return (
     <div className="nature-vines" aria-hidden="true">
       <svg className="nature-vines__svg nature-vines__svg--left" viewBox="0 0 320 520" preserveAspectRatio="none">
-        <path d="M10 480 C 40 410, 60 360, 30 300 S 20 220, 70 180 S 90 120, 60 70 S 100 30, 140 10" />
-        <path d="M110 520 C 140 450, 160 380, 130 330 S 110 260, 150 220 S 170 150, 140 110 S 180 70, 210 40" />
+        {leftPaths.map((d, idx) => (
+          <path key={d} d={d} className={`nature-vine nature-vine--${idx}`} />
+        ))}
       </svg>
       <svg className="nature-vines__svg nature-vines__svg--right" viewBox="0 0 320 520" preserveAspectRatio="none">
-        <path d="M310 480 C 280 410, 260 360, 290 300 S 300 220, 250 180 S 230 120, 260 70 S 220 30, 180 10" />
-        <path d="M200 520 C 170 450, 150 380, 180 330 S 200 260, 160 220 S 140 150, 170 110 S 130 70, 100 40" />
+        {rightPaths.map((d, idx) => (
+          <path key={d} d={d} className={`nature-vine nature-vine--${idx}`} />
+        ))}
       </svg>
     </div>
   );
@@ -424,9 +541,9 @@ export default function MagicSystemPage() {
           primary: system.dukes.kaya.color,
           accent: '#d97706',
           secondary: '#fef8eb',
-          background: 'linear-gradient(135deg, #fff7eb 0%, #ffe9c7 45%, #ffdca3 100%)',
-          pageBackground: 'radial-gradient(circle at 18% 22%, rgba(255, 205, 120, 0.25) 0, transparent 35%), radial-gradient(circle at 82% 10%, rgba(255, 163, 64, 0.25) 0, transparent 40%), linear-gradient(140deg, #fff7eb 0%, #ffefd5 50%, #ffe3b8 100%)',
-          card: 'rgba(255, 255, 255, 0.82)',
+          background: 'linear-gradient(135deg, #f8e5c0 0%, #f6d59f 45%, #f3c680 100%)',
+          pageBackground: 'radial-gradient(circle at 18% 22%, rgba(255, 205, 120, 0.25) 0, transparent 35%), radial-gradient(circle at 82% 10%, rgba(255, 163, 64, 0.25) 0, transparent 40%), linear-gradient(140deg, #f5deba 0%, #f2d099 50%, #e8b86f 100%)',
+          card: 'rgba(255, 255, 255, 0.9)',
           text: '#1f1305',
           muted: '#3b2410',
           playground: 'linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.55))',
@@ -465,6 +582,7 @@ export default function MagicSystemPage() {
   return (
     <div className={`magic-page magic-page--layered ${isGods ? `magic-page--${selectedGod}` : ''}`} style={themeStyle}>
       {system.id === 'wild' && <WildEffects />}
+      {isGods && <div className="magic-fade-layer" aria-hidden="true" />}
       {isGods && selectedGod === 'kaya' && (
         <div className="magic-feature magic-feature--sun">
           <div className="magic-feature__sun-glow" />
@@ -473,10 +591,12 @@ export default function MagicSystemPage() {
           <div className="magic-feature__label">Kaya's Radiance</div>
         </div>
       )}
+      {isGods && selectedGod === 'kaya' && <KayaEffects />}
+      {isGods && selectedGod === 'krovi' && <KroviEffects />}
       <div className="magic-hero" style={{ background: isGods ? godTheme.background : system.colors.background }}>
         <div className="magic-hero__eyebrow">Magic System</div>
         <h1 className="magic-hero__title">{system.name}</h1>
-        <p className="magic-hero__lead">{locked ? 'Glyphs shimmer, but the page will not open.' : (isGods ? activeGod?.aura || system.tagline : system.tagline)}</p>
+        <p className="magic-hero__lead">{locked ? 'Glyphs shimmer, but the page will not open.' : system.summary}</p>
         {isGods && !locked && (
           <div className="magic-god-toggle" role="tablist" aria-label="Select god">
             <button
@@ -546,80 +666,80 @@ export default function MagicSystemPage() {
         <section className="magic-section">
           <div className="magic-section__header">
             <p className="magic-eyebrow">Gods & Dukes</p>
-            <h2 className="magic-title">Trees of Kaya and Krovi</h2>
+            <h2 className="magic-title">Divine power after Year 0</h2>
             <p className="magic-subtitle">
-              Twin dragon gods shattered at Year 0, leaving dukes who channel their domains. Kaya rules light and control;
-              Krovi guards darkness and freedom. Each duke offers a feat-like boon to those who swear a pact.
+              Kaya and Krovi were mountain-sized dragons. Their death scream at Year 0 reset the calendar; their hill-sized dukes remain as lieutenants, temples, and fragments of power.
             </p>
           </div>
-          {selectedGod === 'kaya' && (
-            <div className="mt-4 mb-8 space-y-4">
-              <div className="rounded-3xl border border-amber-200/70 bg-gradient-to-br from-white/95 via-amber-50/70 to-amber-100/60 p-6 shadow-xl shadow-amber-400/25 text-amber-950">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-500">Lightbound highlights</p>
-                    <h4 className="text-2xl font-semibold text-amber-700">Kaya's warmth rewards order</h4>
-                    <p className="text-sm text-amber-900/80 max-w-3xl">
-                      Sun-steeped boons spike against shaken foes, rewarding decisive calls, formations, and steady leadership.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-amber-700 shadow-inner shadow-amber-200">
-                      Light · Control
-                    </span>
-                    <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-amber-700 shadow-inner shadow-amber-200">
-                      Sunset hue
-                    </span>
-                    <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-amber-700 shadow-inner shadow-amber-200">
-                      Feat-like pacts
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4 grid gap-3 md:grid-cols-3">
-                  <div className="flex gap-3 rounded-2xl bg-white/85 p-3 shadow-inner shadow-amber-200/80">
-                    <div className="mt-2 h-2 w-2 rounded-full bg-amber-500" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-amber-800">Radiant aura</p>
-                      <p className="text-sm text-amber-900/80">Sunlight steadies allies and keeps the duke lattice humming.</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 rounded-2xl bg-white/85 p-3 shadow-inner shadow-amber-200/80">
-                    <div className="mt-2 h-2 w-2 rounded-full bg-amber-500" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-amber-800">Command focus</p>
-                      <p className="text-sm text-amber-900/80">Control grows as enemies falter—judgment, restraint, and authority stack.</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 rounded-2xl bg-white/85 p-3 shadow-inner shadow-amber-200/80">
-                    <div className="mt-2 h-2 w-2 rounded-full bg-amber-500" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-amber-800">Radiant palette</p>
-                      <p className="text-sm text-amber-900/80">Amber light, bright cards, and a sun core anchor the entire page theme.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div className="god-lore-grid">
+            <div className="god-lore-card">
+              <p className="gods-kicker">Ancient titans</p>
+              <h4>Dragons the size of mountains</h4>
+              <p>Two great dragon gods—Kaya and Krovi—once spanned mountain ranges. Their dukes, dragon lieutenants the size of hills, interpreted and enforced their power.</p>
             </div>
-          )}
+            <div className="god-lore-card">
+              <p className="gods-kicker">Year 0</p>
+              <h4>The fall resets the calendar</h4>
+              <p>Their final clash killed them both. Year 0 marks their death; divine power shattered and scattered across Azterra.</p>
+            </div>
+            <div className="god-lore-card">
+              <p className="gods-kicker">Lingering relics</p>
+              <h4>Dukes as temples</h4>
+              <p>Duke bodies remain—some entombed, some weaponized, some turned into temples. Oaths to a duke channel fragments of the dead gods.</p>
+            </div>
+          </div>
+
+          <div className="gods-overview">
+            <div className="gods-overview__col">
+              <p className="gods-kicker">Kaya — Light, Order, Control</p>
+              <h3 className="gods-overview__title">Radiant authority</h3>
+              <p className="magic-subtitle">
+                Amber radiance rewards formation, discipline, and domination. Peace through structure; strength against the faltering.
+              </p>
+              <div className="gods-chips">
+                <span className="gods-chip">Light</span>
+                <span className="gods-chip">Control</span>
+                <span className="gods-chip">Law</span>
+              </div>
+              <ul className="gods-list">
+                <li>Restraint: Hold position; steady allies; reduce damage.</li>
+                <li>Judgment: Mark the weak; strikes grow as foes falter.</li>
+                <li>Authority: Aura that disrupts fear and disorder.</li>
+              </ul>
+            </div>
+            <div className="gods-overview__col">
+              <p className="gods-kicker">Krovi — Darkness, Freedom, Defiance</p>
+              <h3 className="gods-overview__title">Shadowed rebellion</h3>
+              <p className="magic-subtitle">
+                Midnight power blooms when you refuse restraint. Strength through choice, escape, and breaking cages.
+              </p>
+              <div className="gods-chips">
+                <span className="gods-chip">Darkness</span>
+                <span className="gods-chip">Freedom</span>
+                <span className="gods-chip">Defiance</span>
+              </div>
+              <ul className="gods-list">
+                <li>Unbound: Break restraints; punish those who try to control you.</li>
+                <li>Ruin: Hit harder when wounded or cornered.</li>
+                <li>Nightcall: Amplify abilities in darkness or secrecy.</li>
+              </ul>
+            </div>
+          </div>
+
           <div className="magic-god-panel">
             <div className="magic-section__header magic-section__header--tight">
               <p className="magic-eyebrow">{selectedGod === 'kaya' ? 'Kaya' : 'Krovi'}</p>
               <h3 className="magic-title">{activeGod?.name}</h3>
               <p className="magic-subtitle">{activeGod?.description}</p>
             </div>
-            <div className="magic-grid magic-grid--highlights">
-              <div className="magic-card" style={{ background: system.colors.card }}>
-                <div className="magic-card__header">
-                  <h2>{selectedGod === 'kaya' ? 'Light & Control' : 'Darkness & Freedom'}</h2>
-                </div>
-                <p className="magic-card__tagline">Aura: {activeGod?.aura}</p>
-              </div>
+            <div className="gods-grid">
               {(activeGod?.entries || []).map((entry) => (
-                <div key={entry.name} className="magic-card" style={{ background: system.colors.card }}>
-                  <div className="magic-card__header">
-                    <h2>{entry.name}</h2>
+                <div key={entry.name} className="gods-card">
+                  <div className="gods-card__dot" style={{ background: activeGod?.color || system.colors.primary }} />
+                  <div>
+                    <h4>{entry.name}</h4>
+                    <p>{entry.effect}</p>
                   </div>
-                  <p className="magic-card__tagline">{entry.effect}</p>
                 </div>
               ))}
             </div>
@@ -835,12 +955,6 @@ export default function MagicSystemPage() {
                   <li>Origin is unknown; patterns collapse on observation.</li>
                   <li>Best treated as narrative spice, not a tool.</li>
                 </ul>
-              </div>
-
-              <div className="wild-card wild-card--summary">
-                <p className="wild-kicker">Focus</p>
-                <h3 className="wild-card__title">Volatility that defies study</h3>
-                <p className="wild-body">{system.focus}</p>
               </div>
             </div>
           </section>

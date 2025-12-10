@@ -128,6 +128,32 @@ const getTypeConfig = (type) => {
 const resolveIconKey = (location) => location.iconKey || getDefaultIconKey(location.type);
 const buildIconSrc = (iconKey) => `${ICON_BASE_URL}${iconKey}.png`;
 
+const MARKER_PLACEHOLDER_COLORS = {
+  city: '#facc15',
+  town: '#93c5fd',
+  dungeon: '#c084fc',
+  landmark: '#fb923c',
+  generic: '#e5e7eb',
+};
+
+const buildNavStyleMarker = (color, letter) => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40"><path d="M16 3C9.4 3 4 8.4 4 15c0 8.7 12 20 12 20s12-11.3 12-20C28 8.4 22.6 3 16 3Z" fill="white" stroke="${color}" stroke-width="2" /><circle cx="16" cy="15" r="7" fill="${color}" stroke="#0f172a" stroke-width="2"/><text x="16" y="19" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="9" font-weight="700" fill="#0f172a">${letter}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+
+const PLACEHOLDER_MARKER_SRC = {
+  city: buildNavStyleMarker(MARKER_PLACEHOLDER_COLORS.city, 'C'),
+  town: buildNavStyleMarker(MARKER_PLACEHOLDER_COLORS.town, 'T'),
+  dungeon: buildNavStyleMarker(MARKER_PLACEHOLDER_COLORS.dungeon, 'D'),
+  landmark: buildNavStyleMarker(MARKER_PLACEHOLDER_COLORS.landmark, 'L'),
+  generic: buildNavStyleMarker(MARKER_PLACEHOLDER_COLORS.generic, 'M'),
+};
+
+const getPlaceholderMarkerSrc = (type) => {
+  const typeConfig = getTypeConfig(type);
+  return PLACEHOLDER_MARKER_SRC[typeConfig.id] || PLACEHOLDER_MARKER_SRC.generic;
+};
+
 const normalizeLocationEntry = (location) => {
   const typeConfig = getTypeConfig(location.type);
   const iconKey = location.iconKey || getDefaultIconKey(typeConfig.id);
@@ -446,6 +472,24 @@ function LabelPlacementHandler({ isActive, onPlace }) {
   return null;
 }
 
+function ZoomWatcher({ onZoomChange }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map || !onZoomChange) return;
+    const sync = () => onZoomChange(map.getZoom());
+    sync();
+    map.on('zoom', sync);
+    map.on('zoomend', sync);
+    map.on('zoomlevelschange', sync);
+    return () => {
+      map.off('zoom', sync);
+      map.off('zoomend', sync);
+      map.off('zoomlevelschange', sync);
+    };
+  }, [map, onZoomChange]);
+  return null;
+}
+
 // LocationMarker handles its own hover/selection state
 function LocationMarker({
   location,
@@ -464,9 +508,9 @@ function LocationMarker({
     return clamp(base * scale, 20, 64);
   })();
 
-  const fallbackSrc = buildIconSrc(DEFAULT_TYPE_ICON.generic);
   const resolvedIcon = resolveIcon ? resolveIcon(location) : { src: buildIconSrc(resolveIconKey(location)) };
-  const iconSrc = resolvedIcon?.src || fallbackSrc;
+  const placeholderSrc = resolvedIcon?.placeholder || getPlaceholderMarkerSrc(location?.type);
+  const iconSrc = resolvedIcon?.src || placeholderSrc;
   const safeName = (location.name || '').replace(/"/g, '&quot;');
 
   return (
@@ -482,7 +526,7 @@ function LocationMarker({
             <img src="${iconSrc}" alt="${safeName}"
               class="custom-marker__image" loading="lazy"
               style="width:${iconSize}px;height:${iconSize}px;"
-              onerror="this.onerror=null;this.dataset.missing='1';this.src='${fallbackSrc}'" />
+              onerror="this.onerror=null;this.dataset.missing='1';this.src='${placeholderSrc}'" />
           </div>
         `,
         iconSize: [iconSize, iconSize],
@@ -529,7 +573,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
   const [importError, setImportError] = useState('');
   const [isIntroVisible, setIsIntroVisible] = useState(() => !introShownThisSession);
   const [mapInstance, setMapInstance] = useState(null);
-  const [mapZoom, setMapZoom] = useState(2);
+  const [mapZoom, setMapZoom] = useState(INTERACTIVE_MIN_ZOOM_LEVEL);
   const [isRegionMode, setIsRegionMode] = useState(false);
   const [regionDraftPoints, setRegionDraftPoints] = useState([]);
   const [regionDraftTargetId, setRegionDraftTargetId] = useState(null);
@@ -570,7 +614,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
   const [iconStatuses, setIconStatuses] = useState({});
   const isAdmin = role === 'admin';
   const center = MAP_CENTER;
-  const zoom = 2;
+  const zoom = INTERACTIVE_MIN_ZOOM_LEVEL;
   const activeMarkerType = MARKER_TYPES.find((type) => type.id === activePlacementTypeId) || null;
   const serializedLocations = useMemo(() => JSON.stringify(locations), [locations]);
   const serializedRegions = useMemo(() => JSON.stringify(regions), [regions]);
@@ -599,6 +643,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     [regions, regionFilters, isRegionMode, activeRegionId, showRegionsLayer]
   );
   const regionLabelsEnabled = filteredRegions.some((region) => region.labelEnabled !== false);
+  const zoomProgress = clamp((mapZoom - INTERACTIVE_MIN_ZOOM_LEVEL) / (INTERACTIVE_MAX_ZOOM_LEVEL - INTERACTIVE_MIN_ZOOM_LEVEL), 0, 1);
   const reportDiagnostics = useCallback((key, entry) => {
     setDiagnostics((prev) => {
       const current = prev[key] || {};
@@ -623,13 +668,11 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     (location) => {
       const iconKey = resolveIconKey(location);
       const status = iconStatuses[iconKey];
+      const placeholderSrc = getPlaceholderMarkerSrc(location?.type);
       if (status?.status === 'ok') {
-        return { key: iconKey, src: status.src };
+        return { key: iconKey, src: status.src, placeholder: placeholderSrc };
       }
-      if (status?.status === 'error') {
-        return { key: iconKey, src: buildIconSrc(DEFAULT_TYPE_ICON.generic), fallback: true };
-      }
-      return { key: iconKey, src: buildIconSrc(iconKey) };
+      return { key: iconKey, src: placeholderSrc, placeholder: placeholderSrc, fallback: true };
     },
     [iconStatuses]
   );
@@ -952,7 +995,8 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
       return next;
     });
   };
-  const handleStartLabelPlacement = () => {
+
+  const handleStartLabelPlacement = () => {
     setIsPlacingLabel(true);
     setIsRegionMode(false);
     setSelectedPaletteItem(null);
@@ -996,8 +1040,27 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
           const parsed = Number(value);
           nextValue = Number.isFinite(parsed) ? parsed : 0;
         } else if (booleanFields.includes(field)) {
-          nextValue = Boolean(value);
+          nextValue = value === false || value === 'false' ? false : Boolean(value);
         }
+
+        if (field === 'fadeInStart' || field === 'fadeInEnd') {
+          const epsilon = 0.05;
+          const currentStart = field === 'fadeInStart' ? nextValue : label.fadeInStart ?? 2.8;
+          let currentEnd = field === 'fadeInEnd' ? nextValue : label.fadeInEnd ?? currentStart + 1.2;
+          if (currentEnd <= currentStart + epsilon) {
+            currentEnd = currentStart + epsilon;
+            if (field === 'fadeInEnd') nextValue = currentEnd;
+          }
+          if (field === 'fadeInStart' && nextValue >= currentEnd - epsilon) {
+            nextValue = currentEnd - epsilon;
+          }
+          return {
+            ...label,
+            fadeInStart: field === 'fadeInStart' ? nextValue : currentStart,
+            fadeInEnd: field === 'fadeInEnd' ? nextValue : currentEnd,
+          };
+        }
+
         return { ...label, [field]: nextValue };
       })
     );
@@ -1219,7 +1282,8 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     } else {
       setEditorSelection(null);
       setActivePlacementTypeId(null);
-      setIsRegionMode(false);      setIsPlacingLabel(false);
+      setIsRegionMode(false);
+      setIsPlacingLabel(false);
       selectRegion(null);
     }
   }, [isEditorMode, selectLocation, selectRegion]);
@@ -1227,7 +1291,8 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
   useEffect(() => {
     if (!isEditorMode) return;
     return () => {
-      setIsRegionMode(false);      setIsPlacingLabel(false);
+      setIsRegionMode(false);
+      setIsPlacingLabel(false);
     };
   }, [isEditorMode]);
 
@@ -1403,12 +1468,14 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
   ) : null;
   useEffect(() => {
     if (!mapInstance) return;
-    setMapZoom(mapInstance.getZoom());
-    const handleZoomLevel = () => {
-      setMapZoom(mapInstance.getZoom());
+    const syncZoom = () => setMapZoom(mapInstance.getZoom());
+    syncZoom();
+    mapInstance.on('zoom', syncZoom);
+    mapInstance.on('zoomend', syncZoom);
+    return () => {
+      mapInstance.off('zoom', syncZoom);
+      mapInstance.off('zoomend', syncZoom);
     };
-    mapInstance.on('zoomend', handleZoomLevel);
-    return () => mapInstance.off('zoomend', handleZoomLevel);
   }, [mapInstance]);
 
   useEffect(() => {
@@ -1456,7 +1523,8 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
   useEffect(() => {
     if (!isRegionMode) return undefined;
     const handleKey = (event) => {
-      if (event.key === 'Escape') {        setIsPlacingLabel(false);
+      if (event.key === 'Escape') {
+        setIsPlacingLabel(false);
       }
     };
     window.addEventListener('keydown', handleKey);
@@ -1571,6 +1639,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                 }
                 onPlaceMarker={handlePlaceMarker}
               />
+              <ZoomWatcher onZoomChange={setMapZoom} />
               <RegionDrawingHandler
                 isActive={isEditorMode && isRegionMode}
                 onAddPoint={handleRegionPointAdd}
@@ -1595,9 +1664,10 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                 />
               ))}
               <LabelLayer
-                labels={showMapLabels ? mapLabels : []}
+                labels={isEditorMode ? mapLabels : showMapLabels ? mapLabels : []}
                 zoomLevel={mapZoom}
                 isEditable={isEditorMode}
+                isEditorMode={isEditorMode}
                 onDragLabel={handleLabelDrag}
               />
               <RegionLayer
@@ -1610,6 +1680,14 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                 zoomLevel={mapZoom}
               />
             </MapContainer>
+            {isEditorMode && (
+              <div className="editor-zoom-bar" aria-hidden="true">
+                <div className="editor-zoom-bar__track">
+                  <div className="editor-zoom-bar__fill" style={{ width: `${Math.round(zoomProgress * 100)}%` }} />
+                </div>
+                <span className="editor-zoom-bar__value">Zoom {mapZoom.toFixed(1)}</span>
+              </div>
+            )}
             <VignetteLayer
               enabled={vignetteEnabled}
               intensity={intensities.vignette}
@@ -1679,15 +1757,15 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                 onDeleteLabel={handleDeleteLabel}
                 mapZoom={mapZoom}
               />
+              <button
+                type="button"
+                className="editor-panel-shell__toggle-tab"
+                aria-expanded={isEditorPanelOpen}
+                onClick={() => setIsEditorPanelOpen((prev) => !prev)}
+              >
+                Tools
+              </button>
             </div>
-            <button
-              type="button"
-              className="editor-panel-shell__handle"
-              aria-expanded={isEditorPanelOpen}
-              onClick={() => setIsEditorPanelOpen((prev) => !prev)}
-            >
-              Tools
-            </button>
           </div>
         )}
       </div>
@@ -1730,6 +1808,16 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 }
 
 export default InteractiveMap;
+
+
+
+
+
+
+
+
+
+
 
 
 
