@@ -1,43 +1,72 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
-export default function PageLayout({ title, tabs }) {
-    return (
-        <div className="min-h-screen text-[#f5e5c9] p-8">
-            <div className="max-w-7xl mx-auto">
-                {/* Page Title */}
-                <h1 className="text-center text-[#d4af37] text-4xl md:text-5xl font-serif tracking-widest mb-8 drop-shadow-[0_0_8px_rgba(212,175,55,0.6)] font-[Cinzel]">
-                    {title}
-                </h1>
+export default function PageLayout({ title, tabs, renderBottomTabs = false }) {
+    const location = useLocation();
 
-                {/* Contextual Tabs */}
-                {tabs && tabs.length > 0 && (
-                    <div className="flex justify-center mb-8 border-b border-[#d4af3766]">
-                        <nav className="flex gap-8">
+    const { activeIndex, prevTab, nextTab } = useMemo(() => {
+        if (!tabs || tabs.length === 0) return { activeIndex: -1, prevTab: null, nextTab: null };
+        const idx = tabs.findIndex((tab) => {
+            const target = tab.to || '';
+            if (tab.end) {
+                return location.pathname === (target.startsWith('/') ? target : `/${target}`) || location.pathname === target;
+            }
+            return location.pathname.startsWith(target.startsWith('/') ? target : `/${target}`) || location.pathname.startsWith(target);
+        });
+        if (idx === -1) return { activeIndex: -1, prevTab: null, nextTab: null };
+        const prev = tabs[(idx - 1 + tabs.length) % tabs.length];
+        const next = tabs[(idx + 1) % tabs.length];
+        return { activeIndex: idx, prevTab: prev, nextTab: next };
+    }, [location.pathname, tabs]);
+
+    return (
+        <div className="page-fullscreen">
+            <div className="page-content-full">
+                <Outlet />
+            </div>
+
+            {renderBottomTabs && tabs && tabs.length > 0 && (
+                <div className="compendium-tabbar-wrapper">
+                    <nav className="compendium-tabbar" aria-label={`${title} pages`}>
+                        {prevTab && (
+                            <NavLink
+                                to={prevTab.to}
+                                end={prevTab.end}
+                                className={({ isActive }) =>
+                                    `compendium-tab compendium-tab__arrow ${isActive ? 'compendium-tab--active' : ''}`
+                                }
+                            >
+                                ‹ {prevTab.label}
+                            </NavLink>
+                        )}
+                        <div className="compendium-tabbar__list">
                             {tabs.map((tab) => (
                                 <NavLink
                                     key={tab.to}
                                     to={tab.to}
                                     end={tab.end}
                                     className={({ isActive }) =>
-                                        `pb-4 text-lg tracking-widest uppercase transition-colors duration-200 border-b-2 ${isActive
-                                            ? 'text-[#d4af37] border-[#d4af37]'
-                                            : 'text-[#f5e5c999] border-transparent hover:text-[#f5e5c9] hover:border-[#f5e5c966]'
-                                        }`
+                                        `compendium-tab ${isActive ? 'compendium-tab--active' : ''}`
                                     }
                                 >
                                     {tab.label}
                                 </NavLink>
                             ))}
-                        </nav>
-                    </div>
-                )}
-
-                {/* Content Area */}
-                <div className="relative z-10">
-                    <Outlet />
+                        </div>
+                        {nextTab && (
+                            <NavLink
+                                to={nextTab.to}
+                                end={nextTab.end}
+                                className={({ isActive }) =>
+                                    `compendium-tab compendium-tab__arrow ${isActive ? 'compendium-tab--active' : ''}`
+                                }
+                            >
+                                {nextTab.label} ›
+                            </NavLink>
+                        )}
+                    </nav>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

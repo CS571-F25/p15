@@ -5,7 +5,7 @@ function SidePanel({ location, onClose }) {
   if (!location) return null;
 
   return (
-    <div className="side-panel">
+    <div className="side-panel custom-scrollbar">
       <div className="side-panel-header">
         <h2>{location.name}</h2>
         <button className="close-button" onClick={onClose}>×</button>

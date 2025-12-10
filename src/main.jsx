@@ -6,13 +6,16 @@ import { AuthProvider } from './context/AuthContext';
 import { MapEffectsProvider } from './context/MapEffectsContext';
 import { LocationDataProvider } from './context/LocationDataContext';
 import { RegionDataProvider } from './context/RegionDataContext';
+import { ContentProvider } from './context/ContentContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <AuthProvider>
     <MapEffectsProvider>
       <LocationDataProvider>
         <RegionDataProvider>
-          <App />
+          <ContentProvider>
+            <App />
+          </ContentProvider>
         </RegionDataProvider>
       </LocationDataProvider>
     </MapEffectsProvider>

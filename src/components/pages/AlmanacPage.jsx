@@ -25,7 +25,7 @@ const featuredLocations = [
 
 export default function AlmanacPage() {
   return (
-    <div className="characters-page almanac-layout">
+    <div className="characters-page almanac-layout custom-scrollbar">
       <ShaderBackground />
       <div className="sun-overlay" aria-hidden="true" />
       <h1 className="page-title">Almanac of Azterra</h1>

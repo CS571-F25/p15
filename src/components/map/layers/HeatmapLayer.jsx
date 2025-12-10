@@ -1,7 +1,12 @@
 import L from 'leaflet';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const computeVisibility = (zoom = 0) => {
+  if (zoom <= 3.5) return 0;
+  if (zoom >= 5.5) return 1;
+  return clamp((zoom - 3.5) / 2, 0, 1);
+};
 
 const getLocationIntensity = (location, mode) => {
   const heatField = location.heat || {};
@@ -53,9 +58,20 @@ const computeRadius = (map, base = 60) => {
   return clamp(radius, 15, 140);
 };
 
-function HeatmapLayer({ enabled = true, map, locations = [], heatmapMode = 'none' }) {
+function HeatmapLayer({ enabled = true, map, locations = [], heatmapMode = 'none', onDiagnostics }) {
   const canvasRef = useRef(null);
   const frameRef = useRef(null);
+  const [visibility, setVisibility] = useState(() => computeVisibility(map?.getZoom?.() ?? 0));
+  const visibilityRef = useRef(visibility);
+  const propsRef = useRef({ enabled, heatmapMode, locations });
+
+  useEffect(() => {
+    visibilityRef.current = visibility;
+  }, [visibility]);
+
+  useEffect(() => {
+    propsRef.current = { enabled, heatmapMode, locations };
+  }, [enabled, heatmapMode, locations]);
 
   const scheduleRedraw = () => {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
@@ -79,12 +95,15 @@ function HeatmapLayer({ enabled = true, map, locations = [], heatmapMode = 'none
     }
 
     ctx.clearRect(0, 0, size.x, size.y);
-    if (!enabled || heatmapMode === 'none' || !locations.length) return;
+    const { enabled: layerEnabled, heatmapMode: currentMode, locations: currentLocations } =
+      propsRef.current;
+    const visible = layerEnabled && currentMode !== 'none' && visibilityRef.current > 0;
+    if (!visible || !currentLocations.length) return;
 
     const radius = computeRadius(map);
 
-    locations.forEach((location) => {
-      const intensity = getLocationIntensity(location, heatmapMode);
+    currentLocations.forEach((location) => {
+      const intensity = getLocationIntensity(location, currentMode);
       if (intensity <= 0) return;
       const latLng = L.latLng(location.lat, location.lng);
       const point = map.latLngToContainerPoint(latLng);
@@ -109,6 +128,22 @@ function HeatmapLayer({ enabled = true, map, locations = [], heatmapMode = 'none
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
 
+    const handleVisibility = () => {
+      const zoomLevel = map.getZoom();
+      const next = computeVisibility(zoomLevel);
+      setVisibility(next);
+      const heatmapDisabled = !enabled || heatmapMode === 'none';
+      const active = !heatmapDisabled && next > 0;
+      onDiagnostics?.('heatmap', {
+        status: heatmapDisabled ? 'off' : active ? 'ok' : 'warn',
+        message: heatmapDisabled
+          ? 'Heatmap disabled'
+          : active
+            ? `Heatmap (${heatmapMode}) active @ zoom ${zoomLevel.toFixed(2)} (opacity ${next.toFixed(2)})`
+            : `Heatmap (${heatmapMode}) ready, awaiting closer zoom`,
+      });
+    };
+
     const resize = () => {
       if (!map) return;
       const size = map.getSize();
@@ -126,24 +161,47 @@ function HeatmapLayer({ enabled = true, map, locations = [], heatmapMode = 'none
     };
 
     resize();
+    handleVisibility();
     window.addEventListener('resize', resize);
-    map.on('moveend', scheduleRedraw);
-    map.on('zoomend', scheduleRedraw);
+    const handleMove = () => scheduleRedraw();
+    const handleZoom = () => {
+      handleVisibility();
+      scheduleRedraw();
+    };
+
+    map.on('moveend', handleMove);
+    map.on('zoomend', handleZoom);
 
     return () => {
       window.removeEventListener('resize', resize);
-      map.off('moveend', scheduleRedraw);
-      map.off('zoomend', scheduleRedraw);
+      map.off('moveend', handleMove);
+      map.off('zoomend', handleZoom);
     };
-  }, [map]);
+  }, [map, enabled, heatmapMode, onDiagnostics]);
 
   useEffect(() => {
     scheduleRedraw();
-  }, [enabled, locations, heatmapMode]);
+  }, [enabled, locations, heatmapMode, visibility]);
+
+  useEffect(
+    () => () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    },
+    []
+  );
 
   if (!map) return null;
 
-  return <canvas ref={canvasRef} className="map-layer map-layer--heatmap" aria-hidden="true" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className="map-layer map-layer--heatmap"
+      style={{ opacity: enabled && heatmapMode !== 'none' ? visibility : 0 }}
+      aria-hidden="true"
+    />
+  );
 }
 
 export default HeatmapLayer;

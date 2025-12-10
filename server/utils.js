@@ -10,15 +10,96 @@ const __dirname = path.dirname(__filename);
 
 const USERS_FILE_PATH = path.join(__dirname, 'users.json');
 const BACKUP_DIR = path.join(__dirname, 'backups');
+const CHARACTER_VISIBILITY_PATH = path.join(__dirname, 'characters-visibility.json');
+const LOCATION_VISIBILITY_PATH = path.join(__dirname, 'locations-visibility.json');
+const NPC_VISIBILITY_PATH = path.join(__dirname, 'npcs-visibility.json');
+const SECRETS_FILE_PATH = path.join(__dirname, 'data', 'secrets.json');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const JWT_SECRET = process.env.JWT_SECRET || 'azterra_dev_secret_change_me';
+const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'token';
+const getSupabaseJwtSecret = () => process.env.SUPABASE_JWT_SECRET || '';
 const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@azterra.com';
 const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || 'admin12345';
 const DEFAULT_ADMIN_NAME = process.env.DEFAULT_ADMIN_NAME || 'Azterra Admin';
 const ALLOWED_ROLES = ['pending', 'editor', 'admin'];
+const DEFAULT_SECRETS = [
+  {
+    id: 'aurora-ember',
+    title: 'Aurora Ember',
+    description: 'A faint ember reveals a hidden stanza in the night sky.',
+    keyword: 'light the northern flame',
+  },
+  {
+    id: 'silent-archive',
+    title: 'Silent Archive',
+    description: "You have located a sealed folio in the Archivists' stacks.",
+    keyword: 'quiet books speak',
+  },
+  {
+    id: 'gilded-horizon',
+    title: 'Gilded Horizon',
+    description: 'A map pin now glows faint gold at the edge of the world.',
+    keyword: 'beyond the western gold',
+  },
+  {
+    id: 'amber-archive',
+    title: 'Amber Archive',
+    description: 'An amber seal cracks to reveal forgotten correspondence.',
+    keyword: 'amber light endures',
+  },
+  {
+    id: 'shadow-court',
+    title: 'Shadow Court',
+    description: 'Whispers from the Shadow Court mark a new allegiance.',
+    keyword: 'the court waits in dusk',
+  },
+];
 
 async function ensureUsersFile() {
   if (!existsSync(USERS_FILE_PATH)) {
     await fs.writeFile(USERS_FILE_PATH, JSON.stringify([], null, 2));
+  }
+}
+
+async function ensureVisibilityFile() {
+  if (!existsSync(CHARACTER_VISIBILITY_PATH)) {
+    // Default: allow all sample character IDs 1-12 (adjust as the roster grows)
+    const defaultVisible = Array.from({ length: 12 }, (_, i) => i + 1);
+    await fs.writeFile(CHARACTER_VISIBILITY_PATH, JSON.stringify(defaultVisible, null, 2));
+  }
+}
+
+async function ensureLocationVisibilityFile() {
+  if (!existsSync(LOCATION_VISIBILITY_PATH)) {
+    try {
+      const raw = await fs.readFile(path.join(__dirname, 'data', 'locations.json'), 'utf-8');
+      const parsed = JSON.parse(raw);
+      const ids = Array.isArray(parsed.locations) ? parsed.locations.map((loc) => loc.id).filter(Boolean) : [];
+      await fs.writeFile(LOCATION_VISIBILITY_PATH, JSON.stringify(ids, null, 2));
+    } catch {
+      await fs.writeFile(LOCATION_VISIBILITY_PATH, JSON.stringify([], null, 2));
+    }
+  }
+}
+
+async function ensureNpcVisibilityFile() {
+  if (!existsSync(NPC_VISIBILITY_PATH)) {
+    // placeholder default NPC IDs 1-10
+    const defaultVisible = Array.from({ length: 10 }, (_, i) => i + 1);
+    await fs.writeFile(NPC_VISIBILITY_PATH, JSON.stringify(defaultVisible, null, 2));
+  }
+}
+
+async function ensureSecretsFile() {
+  if (!existsSync(SECRETS_FILE_PATH)) {
+    await fs.mkdir(path.dirname(SECRETS_FILE_PATH), { recursive: true });
+    await fs.writeFile(SECRETS_FILE_PATH, JSON.stringify(DEFAULT_SECRETS, null, 2));
+  }
+}
+
+async function ensureUploadsDir() {
+  if (!existsSync(UPLOADS_DIR)) {
+    await fs.mkdir(UPLOADS_DIR, { recursive: true });
   }
 }
 
@@ -62,26 +143,102 @@ export async function writeUsers(users) {
   await fs.writeFile(USERS_FILE_PATH, JSON.stringify(users, null, 2));
 }
 
+export async function readCharacterVisibility() {
+  await ensureVisibilityFile();
+  const raw = await fs.readFile(CHARACTER_VISIBILITY_PATH, 'utf-8');
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export async function writeCharacterVisibility(list) {
+  await ensureVisibilityFile();
+  await fs.writeFile(CHARACTER_VISIBILITY_PATH, JSON.stringify(list, null, 2));
+}
+
+export async function getUploadsDir() {
+  await ensureUploadsDir();
+  return UPLOADS_DIR;
+}
+
+export async function readLocationVisibility() {
+  await ensureLocationVisibilityFile();
+  const raw = await fs.readFile(LOCATION_VISIBILITY_PATH, 'utf-8');
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export async function writeLocationVisibility(list) {
+  await ensureLocationVisibilityFile();
+  await fs.writeFile(LOCATION_VISIBILITY_PATH, JSON.stringify(list, null, 2));
+}
+
+export async function readNpcVisibility() {
+  await ensureNpcVisibilityFile();
+  const raw = await fs.readFile(NPC_VISIBILITY_PATH, 'utf-8');
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export async function writeNpcVisibility(list) {
+  await ensureNpcVisibilityFile();
+  await fs.writeFile(NPC_VISIBILITY_PATH, JSON.stringify(list, null, 2));
+}
+
+export async function readSecrets() {
+  await ensureSecretsFile();
+  const raw = await fs.readFile(SECRETS_FILE_PATH, 'utf-8');
+  if (!raw) return [...DEFAULT_SECRETS];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [...DEFAULT_SECRETS];
+  } catch {
+    return [...DEFAULT_SECRETS];
+  }
+}
+
+export async function writeSecrets(secrets) {
+  await ensureSecretsFile();
+  await fs.writeFile(SECRETS_FILE_PATH, JSON.stringify(secrets, null, 2));
+}
+
 export async function ensureDefaultAdmin() {
   const users = await readUsers();
   const hasAdmin = users.some((user) => user.role === 'admin');
   if (hasAdmin) return;
 
   const passwordHash = await hashPassword(DEFAULT_ADMIN_PASSWORD);
-  const adminUser = {
+  const adminUser = applyFriendState({
     id: 1,
     email: DEFAULT_ADMIN_EMAIL.toLowerCase(),
     passwordHash,
     name: DEFAULT_ADMIN_NAME,
+    username: 'admin',
+    favorites: [],
+    featuredCharacter: null,
+    profilePicture: '',
+    profile: { bio: '', labelOne: '', labelTwo: '', documents: [], viewFavorites: [] },
+    unlockedSecrets: [],
     role: 'admin',
     createdAt: new Date().toISOString(),
-  };
+  });
   await writeUsers([adminUser, ...users]);
 }
 
 export function sanitizeUser(user) {
   if (!user) return null;
-  const { passwordHash, ...rest } = user;
+  const { passwordHash, ...rest } = applyFriendState(user);
   return rest;
 }
 
@@ -106,13 +263,49 @@ export function verifyToken(token) {
   return jwt.verify(token, JWT_SECRET);
 }
 
+export function verifySupabaseToken(token) {
+  const secret = getSupabaseJwtSecret();
+  if (!secret) {
+    throw new Error('Supabase JWT secret is not configured.');
+  }
+  return jwt.verify(token, secret);
+}
+
 function extractToken(req) {
+  if (req?.cookies && req.cookies[COOKIE_NAME]) {
+    return req.cookies[COOKIE_NAME];
+  }
   const header = req.headers.authorization || '';
   if (header.startsWith('Bearer ')) {
     return header.slice(7);
   }
   return null;
 }
+
+const normalizeNumberList = (list) => {
+  if (!Array.isArray(list)) return [];
+  return Array.from(
+    new Set(
+      list
+        .map((val) => Number(val))
+        .filter((val) => Number.isFinite(val) && val >= 0)
+    )
+  );
+};
+
+const applyFriendState = (user) => {
+  const friends = normalizeNumberList(user?.friends);
+  const incoming = normalizeNumberList(user?.friendRequests?.incoming);
+  const outgoing = normalizeNumberList(user?.friendRequests?.outgoing);
+  return {
+    ...user,
+    friends,
+    friendRequests: {
+      incoming,
+      outgoing,
+    },
+  };
+};
 
 export const authRequired = async (req, res, next) => {
   try {
@@ -126,7 +319,25 @@ export const authRequired = async (req, res, next) => {
     if (!currentUser) {
       return res.status(401).json({ error: 'Invalid user.' });
     }
-    req.user = currentUser;
+    const friendState = applyFriendState(currentUser);
+    const safeUser = sanitizeUser(currentUser);
+    req.user = {
+      ...safeUser,
+      favorites: Array.isArray(currentUser.favorites) ? currentUser.favorites : [],
+      featuredCharacter: currentUser.featuredCharacter ?? null,
+      profile: {
+        bio: currentUser.profile?.bio || '',
+        labelOne: currentUser.profile?.labelOne || '',
+        labelTwo: currentUser.profile?.labelTwo || '',
+        documents: Array.isArray(currentUser.profile?.documents) ? currentUser.profile.documents : [],
+        viewFavorites: Array.isArray(currentUser.profile?.viewFavorites)
+          ? currentUser.profile.viewFavorites
+          : [],
+      },
+      unlockedSecrets: Array.isArray(currentUser.unlockedSecrets) ? currentUser.unlockedSecrets : [],
+      friends: friendState.friends,
+      friendRequests: friendState.friendRequests,
+    };
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Invalid or expired token.' });
@@ -150,7 +361,7 @@ export const editorRequired = (req, res, next) => {
 export async function addUser(userData) {
   const users = await readUsers();
   const nextId = getNextUserId(users);
-  const newUser = { ...userData, id: nextId };
+  const newUser = applyFriendState({ ...userData, id: nextId });
   await writeUsers([...users, newUser]);
   return newUser;
 }
@@ -162,4 +373,4 @@ export async function updateUsers(updater) {
   return updatedUsers;
 }
 
-export { ALLOWED_ROLES };
+export { ALLOWED_ROLES, applyFriendState, COOKIE_NAME };

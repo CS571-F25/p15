@@ -1,29 +1,35 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import characters from '../../data/characters';
+import characters from '../../data/characters_heroes';
 import '../UI/PageUI.css';
 import ShaderBackgroundDualCrossfade from '../visuals/ShaderBackgroundDualCrossfade';
+import CardShader from '../visuals/CardShader';
 import CharacterCard from '../cards/CharacterCard';
-
-// Clamp utility
-const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+import CharacterDetailView from './CharacterDetailView';
 
 // Card class for carousel
-const getCardClass = (index, activeIndex) => {
+const getCardClass = (index, activeIndex, total) => {
   if (index === activeIndex) return 'card card-active';
-  if (index === activeIndex - 1) return 'card card-left';
-  if (index === activeIndex + 1) return 'card card-right';
+
+  // Calculate circular indices
+  const prevIndex = (activeIndex - 1 + total) % total;
+  const nextIndex = (activeIndex + 1) % total;
+
+  if (index === prevIndex) return 'card card-left';
+  if (index === nextIndex) return 'card card-right';
+
   return 'card card-hidden';
 };
 
 export default function CharactersPage() {
-  const [vanished, setVanished] = useState(false);
-
   const [currentColor, setCurrentColor] = useState(characters[0].color);
   const [targetColor, setTargetColor] = useState(characters[0].color);
   const [fade, setFade] = useState(0);
   const animationRef = useRef();
 
+  const [expandedIndex, setExpandedIndex] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const isExpanded = expandedIndex !== null;
+  const expandedCharacter = isExpanded ? characters[expandedIndex] : null;
 
   // Utility to start fade to new color, always from visual color AT THAT MOMENT
   function startColorFade(newColor) {
@@ -66,82 +72,100 @@ export default function CharactersPage() {
 
   // Navigation handlers use callback to ensure correct activeIndex
   const goPrev = useCallback(() => {
-    setActiveIndex(prev => clamp(prev - 1, 0, characters.length - 1));
+    setActiveIndex(prev => (prev - 1 + characters.length) % characters.length);
   }, []);
 
   const goNext = useCallback(() => {
-    setActiveIndex(prev => clamp(prev + 1, 0, characters.length - 1));
+    setActiveIndex(prev => (prev + 1) % characters.length);
   }, []);
 
-  
+  const handleCardClick = useCallback((index) => {
+    setActiveIndex(index);
+    if (index === activeIndex) {
+      setExpandedIndex(index);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [activeIndex]);
 
-  // Arrow keys navigation
-  useEffect(() => {
-    const handleKey = (event) => {
-      if (event.key === 'ArrowLeft') {
-        goPrev();
-      } else if (event.key === 'ArrowRight') {
-        goNext();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [goNext, goPrev]);
-
-  // Vanish tool: press 'v' to toggle
-  useEffect(() => {
-    const onKey = (event) => {
-      if (event.key === 'v' || event.key === 'V') {
-        setVanished((v) => !v);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+  const handleBackToCarousel = useCallback(() => {
+    setExpandedIndex(null);
   }, []);
 
   return (
-    <div className="characters-page">
+    <div className={`characters-page custom-scrollbar ${isExpanded ? 'is-expanded' : ''}`}>
       <ShaderBackgroundDualCrossfade
         modA={currentColor}
         modB={targetColor}
         fade={fade}
       />
-      {!vanished && (
-        <>
-          <h1 className="page-title">Stars of Azterra</h1>
-          <div className="characters-wrapper">
-            <p className="nav-hint">Use the arrow keys or buttons to browse the codex</p>
-            <div className="carousel-controls">
-              <button
-                className="arrow-btn arrow-left"
-                onClick={goPrev}
-                aria-label="Previous character"
-                disabled={activeIndex === 0}
-              >
-                ‹
-              </button>
-              <div className="carousel-frame" role="region" aria-live="polite">
-                <div className="sun-overlay" aria-hidden="true" />
-                <div className="carousel-track">
-                  {characters.map((char, index) => (
-                    <div key={char.id} className={getCardClass(index, activeIndex)}>
-                      <CharacterCard character={char} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <button
-                className="arrow-btn arrow-right"
-                onClick={goNext}
-                aria-label="Next character"
-                disabled={activeIndex === characters.length - 1}
-              >
-                ›
-              </button>
-            </div>
+
+      <>
+          <div className={`carousel-section ${isExpanded ? 'fade-out' : ''}`}>
+             <h1 className="page-title">Stars of Azterra</h1>
+             <div className="characters-wrapper">
+               <p className="nav-hint">Use the on-screen controls to view our Heroes</p>
+               <div className="carousel-controls">
+                 <button
+                   className="arrow-btn arrow-left"
+                   onClick={goPrev}
+                   aria-label="Previous character"
+                   disabled={isExpanded}
+                 >
+                   ‹
+                 </button>
+                 <div className="carousel-frame" role="region" aria-live="polite">
+                   <div className="sun-overlay" aria-hidden="true" />
+                   <div className="carousel-track">
+                     {characters.map((char, index) => {
+                       const isActive = index === activeIndex;
+                       return (
+                         <div
+                           key={char.id}
+                           className={getCardClass(index, activeIndex, characters.length)}
+                           onClick={() => handleCardClick(index)}
+                         >
+                           {isActive && (
+                             <CardShader
+                               modA={currentColor}
+                               modB={targetColor}
+                               fade={fade}
+                             />
+                           )}
+                           <CharacterCard character={char} />
+                         </div>
+                       );
+                     })}
+                   </div>
+                 </div>
+                 <button
+                   className="arrow-btn arrow-right"
+                   onClick={goNext}
+                   aria-label="Next character"
+                   disabled={isExpanded}
+                 >
+                   ›
+                 </button>
+               </div>
+             </div>
           </div>
+
+          {isExpanded && (
+            <CharacterDetailView 
+              character={expandedCharacter} 
+              onClose={handleBackToCarousel}
+              onNext={() => {
+                goNext();
+                setExpandedIndex((prev) => (prev + 1) % characters.length);
+              }}
+              onPrev={() => {
+                goPrev();
+                setExpandedIndex((prev) => (prev - 1 + characters.length) % characters.length);
+              }}
+              nextName={characters[(expandedIndex + 1) % characters.length].name}
+              prevName={characters[(expandedIndex - 1 + characters.length) % characters.length].name}
+            />
+          )}
         </>
-      )}
-    </div>
+      </div>
   );
 }

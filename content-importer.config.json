@@ -1,0 +1,8 @@
+{
+  "rootFolder": "AZTERRA",
+  "include": ["*"],
+  "exclude": [".obsidian", "Stories", "SECRETS - NO LOOKINGGGG"],
+  "excludeFiles": ["template.md"],
+  "extensions": [".md"],
+  "recursive": true
+}

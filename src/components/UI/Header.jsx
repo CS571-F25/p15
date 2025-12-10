@@ -1,16 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './UI.css';
-import LoginModal from '../auth/LoginModal';
-import SignupModal from '../auth/SignupModal';
 import { useAuth } from '../../context/AuthContext';
 
 // Icons for the new top-level categories
 const NAV_ICONS = {
-  // Using a stylized globe/cosmology icon for Azterra (The World)
-  azterra: (
+  // Compendium (Merged Azterra/People/Magic) - Using Globe
+  compendium: (
     <svg viewBox="0 0 24 24" role="presentation">
       <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  // Atlas - Using Map Pin
+  atlas: (
+    <svg viewBox="0 0 24 24" role="presentation">
+      <path d="M12 21s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 7.2c0 7.3-8 11.8-8 11.8z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   // Map/Scroll icon
@@ -18,28 +23,6 @@ const NAV_ICONS = {
     <svg viewBox="0 0 24 24" role="presentation">
       <path d="M9 4 3.5 6.5v13L9 17l6 2.5 5.5-2.5v-13L15 6.5 9 4z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
       <path d="M9 4v13M15 6.5V20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  ),
-  // Locations icon
-  locations: (
-    <svg viewBox="0 0 24 24" role="presentation">
-      <path d="M12 21s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 7.2c0 7.3-8 11.8-8 11.8z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  // Group of Figures icon for People (Races, Factions, etc.)
-  people: (
-    <svg viewBox="0 0 24 24" role="presentation">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="9" cy="7" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  // Star/Magic icon for Magic & Lore
-  magic: (
-    <svg viewBox="0 0 24 24" role="presentation">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   // Document/Scroll icon for Campaign (Log, PCs, Inventory)
@@ -50,6 +33,12 @@ const NAV_ICONS = {
       <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       <line x1="10" y1="9" x2="8" y2="9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  viewing: (
+    <svg viewBox="0 0 24 24" role="presentation">
+      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   ),
   // Admin (Shield/Security)
@@ -73,132 +62,269 @@ const NAV_ICONS = {
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
+  ),
+  account: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="7" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+      <path d="M16 5.5a4 4 0 0 1 0 7" />
+    </svg>
+  ),
+  players: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="7" r="3" />
+      <circle cx="17" cy="7" r="3" />
+      <path d="M2 21a6 6 0 0 1 12 0" />
+      <path d="M12 21a6 6 0 0 1 10 0" />
+    </svg>
+  ),
+  progress: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M10 14 14 10" />
+      <path d="m12.5 7.5-1 5-5 1 10-3.5z" />
+    </svg>
+  ),
+  about: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="16" x2="12" y2="12" />
+      <circle cx="12" cy="8" r="0.8" />
+    </svg>
+  ),
+  magic: (
+    <svg viewBox="0 0 24 24" role="presentation">
+      <path d="M5 19 19 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M6 9v2M6 10h2M14 15v2M14 16h2M10 5v2M10 6h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="m9 20 2-2 2 2-2 2-2-2z" fill="none" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
   )
 };
 
 const baseNavLinks = [
-  { to: "/azterra", label: "Azterra", icon: NAV_ICONS.azterra },
   { to: "/", label: "Map", icon: NAV_ICONS.map },
-  { to: "/locations", label: "Locations", icon: NAV_ICONS.locations },
-  { to: "/people", label: "People", icon: NAV_ICONS.people },
-  { to: "/magic", label: "Magic & Lore", icon: NAV_ICONS.magic },
   { to: "/campaign", label: "Campaign", icon: NAV_ICONS.campaign },
+  { to: "/atlas", label: "Atlas", icon: NAV_ICONS.atlas },
+  {
+    to: "/magic",
+    label: "Magic",
+    icon: NAV_ICONS.magic,
+    children: [
+      { to: "/magic", label: "Overview" },
+      { to: "/magic/gods", label: "Gods & Dukes" },
+      { to: "/magic/azterra", label: "Magic of Azterra" },
+      { to: "/magic/math", label: "Magic of Math" },
+      { to: "/magic/spirits", label: "Magic of Spirits" },
+      { to: "/magic/wild", label: "Wild Magic" },
+    ]
+  },
+  { 
+    to: "/compendium",
+    label: "Compendium",
+    icon: NAV_ICONS.compendium,
+    children: [
+      { to: "/compendium", label: "Almanac" },
+      { to: "/compendium/societies", label: "Societies" },
+      { to: "/compendium/heroes", label: "Heroes" },
+    ]
+  },
+  { to: "/people", label: "People", icon: NAV_ICONS.viewing },
+  { to: "/players", label: "Players", icon: NAV_ICONS.players },
+  { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
+  { to: "/about", label: "About", icon: NAV_ICONS.about },
 ];
 
 export default function Header() {
   const location = useLocation();
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const { user, role, login, logout } = useAuth();
+  const navigate = useNavigate();
+  const { user, role, logout, loginGuest } = useAuth();
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const isGuest = role === 'guest';
+  const logoutLabel = isGuest ? 'Exit Guest' : 'Logout';
+  const brandIcon = useMemo(() => {
+    const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+    return `${base}/icon.svg`;
+  }, []);
+
+  const toggleDropdown = (label) => (event) => {
+    event.preventDefault();
+    setOpenDropdown((prev) => (prev === label ? null : label));
+  };
+
+  const handleNavLeave = () => setOpenDropdown(null);
+
+  useEffect(() => {
+    setOpenDropdown((prev) => {
+      if (prev === 'Compendium' && !location.pathname.startsWith('/compendium')) return null;
+      if (prev === 'Magic' && !location.pathname.startsWith('/magic')) return null;
+      return prev;
+    });
+  }, [location.pathname]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   const navLinks = role === 'admin'
     ? [...baseNavLinks, { to: '/admin', label: 'Admin', icon: NAV_ICONS.admin }]
     : baseNavLinks;
 
-  useEffect(() => {
-    document.body.classList.add('has-azterra-sidebar');
-    return () => document.body.classList.remove('has-azterra-sidebar');
-  }, []);
-
-  const handleLogin = (formData) => login(formData);
-
   return (
     <>
       <aside
-        className="group fixed top-0 left-0 h-screen w-[60px] hover:w-[200px] bg-gradient-to-b from-[#18120cfa] to-[#221a15f2] text-[#f7ecda] flex flex-col shadow-[4px_0_20px_rgba(0,0,0,0.55)] z-[1500] border-r border-[#ffd6af33] transition-all duration-300 overflow-visible"
+        className="azterra-sidebar"
         aria-label="Azterra navigation"
+        onMouseLeave={handleNavLeave}
       >
-        {/* Brand / Logo Area */}
-        <div className="flex items-center h-[70px] px-[10px] shrink-0 whitespace-nowrap relative group">
-          <div className="w-[40px] h-[40px] rounded-[10px] border border-[#ffdc9673] flex items-center justify-center font-serif text-[1.2rem] bg-[radial-gradient(circle_at_30%_30%,rgba(255,226,185,0.3),rgba(27,20,15,0.8))] font-[Cinzel] shrink-0 text-[#ffd700] relative z-20">
-            A
+        <div className="azterra-sidebar__brand">
+          <div className="azterra-sidebar__brand-mark">
+            <img
+              src={brandIcon}
+              alt="Azterra icon"
+              className="azterra-sidebar__brand-image"
+            />
           </div>
-          <div className="flex flex-col ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-            <span className="font-[Cinzel] text-[1.2rem] tracking-[0.2rem] uppercase text-[#ffd700]">Azterra</span>
+          <div className="azterra-sidebar__brand-text">
+            <span>Azterra</span>
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex flex-col gap-2 mt-4 px-2">
-          {navLinks.map(({ to, label, icon }) => {
+        <nav className="azterra-nav">
+          {navLinks.map(({ to, label, icon, children, isDisabled }) => {
             const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
+            const hasChildren = Array.isArray(children) && children.length > 0;
+            const isOpen = openDropdown === label;
+            const linkIsActive = hasChildren ? (isOpen || isActive) : isActive;
+            const itemClass = `azterra-nav__item ${hasChildren ? 'azterra-nav__item--parent' : ''} ${isOpen ? 'azterra-nav__item--open' : ''}`;
+            const toggleHandler = hasChildren ? toggleDropdown(label) : (isDisabled ? (e) => e.preventDefault() : undefined);
             return (
-              <Link
+              <div
                 key={to}
-                to={to}
-                className={`group flex items-center h-[44px] rounded-lg px-[10px] text-[#faeacd] no-underline tracking-[0.04rem] font-semibold transition-all duration-200 hover:bg-[#ffd7001f] hover:text-[#ffe5ba] whitespace-nowrap relative ${isActive ? 'bg-[#ffd70040] text-[#ffe5ba] shadow-[inset_0_0_0_1px_rgba(255,215,0,0.4)]' : ''
-                  }`}
-                aria-current={isActive ? 'page' : undefined}
+                className={itemClass}
               >
-                {/* Icon */}
-                <span className="w-6 h-6 shrink-0 flex items-center justify-center relative z-20" aria-hidden="true">
-                  {icon}
-                </span>
-                {/* Text Label (Opacity transition) */}
-                <span className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-                  {label}
-                </span>
-                {/* Active Indicator (Accent Line) */}
-                {isActive && (
-                  <div className="absolute left-0 w-[3px] h-full bg-[#ffd700] rounded-r-sm" />
+                <Link
+                  to={to}
+                  className={`azterra-nav__link ${linkIsActive ? 'azterra-nav__link--active' : ''} ${isDisabled ? 'azterra-nav__link--disabled' : ''}`}
+                  aria-current={linkIsActive ? 'page' : undefined}
+                  aria-haspopup={hasChildren ? 'true' : undefined}
+                  aria-expanded={hasChildren ? isOpen : undefined}
+                  aria-disabled={isDisabled ? 'true' : undefined}
+                  onClick={toggleHandler}
+                >
+                  <span className="azterra-nav__icon" aria-hidden="true">
+                    {icon}
+                  </span>
+                  <span className="azterra-nav__label">{label}</span>
+                  {hasChildren && (
+                    <span className={`azterra-nav__chevron ${isOpen ? 'azterra-nav__chevron--open' : ''}`} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" role="presentation">
+                        <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  )}
+                  {linkIsActive && <div className="azterra-nav__indicator" />}
+                </Link>
+
+                {hasChildren && (
+                  <div className={`azterra-nav__submenu ${isOpen ? 'azterra-nav__submenu--open' : ''}`} role="menu" aria-label={`${label} shortcuts`}>
+                    {children.map((child) => {
+                      const isChildActive = location.pathname === child.to;
+                      return (
+                        <Link
+                          key={child.to}
+                          to={child.to}
+                          className={`azterra-nav__sublink ${isChildActive ? 'azterra-nav__sublink--active' : ''}`}
+                          role="menuitem"
+                          onClick={handleNavLeave}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 )}
-              </Link>
+              </div>
             );
           })}
         </nav>
 
-        {/* Footer / Account Area */}
-        <div className="mt-auto p-2 border-t border-[#ffd7aa33]">
+        <div className="azterra-sidebar__footer">
           {!user && (
-            <button
-              type="button"
-              className="group flex items-center w-full h-[44px] rounded-lg px-[10px] text-[#fff4dc] bg-transparent hover:bg-[#ffffff15] transition-all duration-200 whitespace-nowrap"
-              onClick={() => setIsLoginOpen(true)}
-              title="Login"
-            >
-              {/* Login Icon */}
-              <span className="w-6 h-6 shrink-0 flex items-center justify-center text-[#ffd700]">
-                {NAV_ICONS.login}
-              </span>
-              {/* Login Label */}
-              <span className="ml-4 font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-                Login
-              </span>
-            </button>
+            <div className="azterra-sidebar__guest">
+              <Link
+                to="/login"
+                className="azterra-nav__link"
+                title="Login"
+              >
+                <span className="azterra-nav__icon text-[#ffd700]">
+                  {NAV_ICONS.login}
+                </span>
+                <span className="azterra-nav__label">Login</span>
+              </Link>
+              <Link
+                to="/signup"
+                className="azterra-nav__link"
+                title="Sign Up"
+              >
+                <span className="azterra-nav__icon text-[#ffd700]">
+                  {NAV_ICONS.account}
+                </span>
+                <span className="azterra-nav__label">Sign Up</span>
+              </Link>
+              <button
+                type="button"
+                className="azterra-nav__link azterra-nav__link--muted"
+                onClick={() => { loginGuest(); navigate('/'); }}
+                title="Browse as guest"
+              >
+                <span className="azterra-nav__icon text-[#ffd700]">
+                  {NAV_ICONS.login}
+                </span>
+                <span className="azterra-nav__label">Login as Guest</span>
+              </button>
+            </div>
           )}
 
           {user && (
-            <div className="flex flex-col gap-1">
-              {/* User Info Display */}
-              <div className="flex items-center h-[44px] px-[10px] whitespace-nowrap group">
-                <span className="w-6 h-6 shrink-0 flex items-center justify-center text-[#ffd700]">
+            <div className="azterra-sidebar__account">
+              <div className="azterra-sidebar__account-row">
+                <span className="azterra-nav__icon text-[#ffd700]">
                   {NAV_ICONS.login}
                 </span>
-                {/* User details (Name and Role) */}
-                <div className="ml-4 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-                  <span className="text-sm font-semibold text-[#ffe5ba]">{user.name || 'User'}</span>
-                  <span className="text-xs text-[#ffffff80] capitalize">{role}</span>
+                <div className="azterra-sidebar__account-text">
+                  <span className="azterra-sidebar__account-name">{user.name || 'User'}</span>
+                  <span className="azterra-sidebar__account-role">{role}</span>
                 </div>
               </div>
-              {/* Logout Button */}
+              <Link
+                to="/account"
+                className="azterra-nav__link"
+                title="Account settings"
+                data-label="Account"
+              >
+                <span className="azterra-nav__icon text-[#ffd700]">
+                  {NAV_ICONS.account}
+                </span>
+                <span className="azterra-nav__label">Account</span>
+              </Link>
               <button
                 type="button"
-                className="group flex items-center w-full h-[36px] rounded-lg px-[10px] text-[#ffa38c] hover:bg-[#ffa38c1a] transition-all duration-200 whitespace-nowrap"
-                onClick={logout}
+                className="azterra-nav__link azterra-nav__link--muted"
+                onClick={handleLogout}
+                data-label="Logout"
                 title="Logout"
               >
-                <span className="w-6 h-6 shrink-0 flex items-center justify-center">
+                <span className="azterra-nav__icon">
                   {NAV_ICONS.logout}
                 </span>
-                <span className="ml-4 text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-75 relative z-50">
-                  Logout
-                </span>
+                <span className="azterra-nav__label">{logoutLabel}</span>
               </button>
             </div>
           )}
         </div>
       </aside>
 
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onSubmit={handleLogin} />
     </>
   );
 }

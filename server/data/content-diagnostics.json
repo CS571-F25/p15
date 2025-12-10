@@ -1,0 +1,1011 @@
+{
+  "rootDir": "C:\\Users\\nickm\\Desktop\\Coding\\CS 571\\Web-Project\\AZTERRA",
+  "configPath": "C:\\Users\\nickm\\Desktop\\Coding\\CS 571\\Web-Project\\p15\\content-importer.config.json",
+  "timestamp": "2025-12-02T21:25:23.621Z",
+  "filesDiscovered": 305,
+  "entriesGenerated": 305,
+  "missingIds": [
+    "DM NOTES/Campaign Kaya/Session plans/Future plans.md",
+    "DM NOTES/Stories/1-Liners.md",
+    "DM NOTES/Stories/A Girl's Skeleton.md",
+    "DM NOTES/Stories/An Old lady in the woods.md",
+    "DM NOTES/Stories/Dibbins/Dibbins 1.md",
+    "DM NOTES/Stories/Dibbins/Dibbins 2.md",
+    "DM NOTES/Stories/Dibbins/Dibbins Feats.md",
+    "DM NOTES/Stories/Dibbins/DIBBINS LORE.md",
+    "DM NOTES/Stories/Dibbins/Dibbins Pets.md",
+    "DM NOTES/Stories/Dibbins/Dibbins spell tables.md",
+    "DM NOTES/Stories/Dibbins/Dibbins Weapons.md",
+    "DM NOTES/Stories/Drim.md",
+    "DM NOTES/Stories/DUG The Monster Hunter.md",
+    "DM NOTES/Stories/Lone Swordsman.md",
+    "DM NOTES/Stories/Moon-Shattered Family/Moon-Shattered Family.md",
+    "DM NOTES/Stories/Moon-Shattered Family/Werewolfs in the city CONCEPT.md",
+    "DM NOTES/Stories/Orran The Hollow Carver.md",
+    "DM NOTES/Stories/The Elkin.md",
+    "DM NOTES/Stories/The Grand Manor.md",
+    "DM NOTES/Stories/The research institute.md",
+    "DM NOTES/Stories/The Rive Syndicate/Rive Syndicate.md",
+    "DM NOTES/Stories/The Sword in the Stone (Vroskael).md",
+    "DM NOTES/Stories/The Traveling Circus/Avesh.md",
+    "DM NOTES/Stories/The Traveling Circus/Gramps.md",
+    "DM NOTES/Stories/The Traveling Circus/Ruby's Father.md",
+    "DM NOTES/Stories/The Traveling Circus/Ruby.md",
+    "DM NOTES/Stories/The Traveling Circus/Saheda.md",
+    "DM NOTES/Stories/The Traveling Circus/Secret of the circus.md",
+    "DM NOTES/Stories/The Traveling Circus/The Amazing Traveling Circus.md",
+    "DM NOTES/Stories/The Traveling Circus/The Ringmaster (Tonny).md",
+    "DM NOTES/Stories/The Whale Watcher.md",
+    "DM NOTES/Stories/Valtr Theater.md",
+    "DM NOTES/Stories/🐉 The Essence Collector.md"
+  ],
+  "duplicateIds": [
+    "eriously_no_looking_ndgame_verview",
+    "eriously_no_looking_ndgame_layer_verview"
+  ],
+  "invalidTypes": [
+    {
+      "id": "ivory_tower",
+      "type": "faction"
+    },
+    {
+      "id": "historical_legends",
+      "type": "event"
+    },
+    {
+      "id": "knights_of_the_order",
+      "type": "faction"
+    },
+    {
+      "id": "lightbringer_trials",
+      "type": "event"
+    },
+    {
+      "id": "pilgrimage_of_the_sun",
+      "type": "event"
+    },
+    {
+      "id": "code_of_radiance",
+      "type": "misc"
+    },
+    {
+      "id": "dawn_vigil",
+      "type": "event"
+    },
+    {
+      "id": "oath_of_illumination",
+      "type": "event"
+    },
+    {
+      "id": "orders_ladder_of_power",
+      "type": "faction"
+    },
+    {
+      "id": "silvanders_lot",
+      "type": "region-lore"
+    },
+    {
+      "id": "elverdeen_shit",
+      "type": "misc"
+    },
+    {
+      "id": "black_market",
+      "type": "faction"
+    },
+    {
+      "id": "the_warrens",
+      "type": "region-lore"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_brady_clod",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_clod_s_timeline_brady",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_endgame_visions_and_secrets",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_legend_of_the_underdark",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_the_egg_ant_food_and_energy_levels",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_the_egg_ant_species_level_5",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_the_egg_ant_species",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_the_egg_egg_stages",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_the_egg_growth_and_food",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_the_egg_the_egg_s_voices",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_the_egg_the_egg",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_brady_clod_folder_the_egg_the_queen",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_isaac_apple_pie_folder_unleashed_spell",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_isaac_apple_pie_folder_applepie_lore_isaac",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_isaac_apple_pie_folder_circle_of_the_shrine_abilities_isaac",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_isaac_apple_pie_folder_grazkul_isaac_s_childhood_friend",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_isaac_apple_pie_folder_isaac_apple",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_isaac_apple_pie_folder_legend_of_the_time_shrine",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_isaac_apple_pie_folder_the_paradox_shrine_of_azterra",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_isaac_apple_pie_folder_unlockable_shrine_spells",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_isaac_apple_pie_folder_voices_of_the_shrine",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ivan_cordo_tympazi_folder_cordo_abilities",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ivan_cordo_tympazi_folder_cordo_backstory_ivan",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ivan_cordo_tympazi_folder_cordo_s_hitlist",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ivan_cordo_tympazi_folder_ivan_cordo_tympazi",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ivan_cordo_tympazi_folder_opta_cordo_s_mentor",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ivan_cordo_tympazi_folder_the_charge_goat",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ivan_cordo_tympazi_folder_unlock_subclass",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ivan_cordo_tympazi_folder_way_of_the_balance_keeper",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_jonah_mulek_sorrengail_folder_combustion_hammer",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_jonah_mulek_sorrengail_folder_jonah_mulek_sorrengail",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_jonah_mulek_sorrengail_folder_plot_progression_jonah",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_jonah_mulek_sorrengail_folder_the_pocketwatch",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_jonah_mulek_sorrengail_folder_the_secrets_of_the_castle",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_marco_folder_marco_penis_dickchese_shibar_fuck",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_miki_eldrin_folder_bunny_abilities",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_miki_eldrin_folder_eldrin_s_past",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_miki_eldrin_folder_kki_the_bunny_of_regrowth",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_miki_eldrin_folder_legend_of_the_sanctuary",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_miki_eldrin_folder_miki_eldrin",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_miki_eldrin_folder_swarm_of_rabbits",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_miki_eldrin_folder_the_sanctuary",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_miki_eldrin_folder_toe_the_bunny_of_fire_and_destruction",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ryan_esil_dei_krovi_folder_esil_s_mother_ryan",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ryan_esil_dei_krovi_folder_endgame_esil_esil_s_pendent",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ryan_esil_dei_krovi_folder_paladin_abilities_ryan",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ryan_esil_dei_krovi_folder_paladin_system",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ryan_esil_dei_krovi_folder_ryan_esil_dei_krovi",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ryan_esil_dei_krovi_folder_strahd_esil_s_dad_ryan",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ryan_esil_dei_krovi_folder_the_tome_ryan_first_page",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ryan_esil_dei_krovi_folder_tome_cursed",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_ryan_esil_dei_krovi_folder_tome",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_tristan_silver_folder_expanded_genie_spell_list",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_tristan_silver_folder_krovi_s_blessing",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_tristan_silver_folder_mira_quickfang_tristan",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_tristan_silver_folder_the_chaos_genie_tristan_s_patron",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_tristan_silver_folder_the_void_of_krovi",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_players_tristan_silver_folder_tristan_silver",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_actions_exploring_and_npcs",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_actions_forging",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_actions_player_artifacts",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_actions",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_guild_quests_adventure_s_guildboard",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_guild_quests_forgotten_loot",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_guild_quests_general_monsters",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_guild_quests_guild_board_details_bronze",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_guild_quests_guild_board_details_silver",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_guild_quests_possible_quest_ideas",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_guild_quests_random_funny_loot",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_random_event",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_1_dungeon",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_1_enemy_stats",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_1_loot",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_1_monsters",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_1_session_1",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_10_cave",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_10_consumeables",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_10_loot_tables",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_10_pots",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_11_sess_11",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_12_pumpkin_brassmere",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_12_pumpkin_loot_diverocketlauncher",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_13_paradise_orthic_graves_boss",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_13_paradise_session_paradise",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_13_paradise_the_chapel",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_13_paradise_the_forgotten_chapel",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_13_paradise_the_fruit",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_13_paradise_the_mayor_s_harvest",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_13_paradise_the_village_in_the_mountains",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_2_bottoms_up",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_2_enemy_stats",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_2_free_time_activities",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_2_hat_list",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_2_loot",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_2_session_2_summary",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_2_session_2",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_2_the_merchant_s_quest",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_2_the_tavern_brawl",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_3_session_3",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_3_voicelines",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_4_session_4",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_5_guild_quest_kill_goblins",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_6_8_library_enemy_stats_mlibrary",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_6_8_library_loot_library_old",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_6_8_library_revised_sess_library",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_6_8_library_the_hidden_mimic_library",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_6_8_library_the_sheriff",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_6_8_library_things_that_happened",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_6_8_library_to_do_before_sess_8",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_6_8_library_trinkets",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_1_session_9_session_9",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_2_session_14_dungeon",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_2_session_14_enemy_stats",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_season_2_session_14_session_14",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_kaya_session_plans_arc_the_stars_in_their_eyes",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_loot_loot",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_players_adam_lexius",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_players_adam_secrets",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_players_adam_the_sibling",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_players_gabe_shrine_voicelines_gabe",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_players_gabe_unlockable_time_shrine_gabe",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_players_nate_fish_secrets",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_players_zach_secrets",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_guild_quests_krovi_adventure_s_guildboard_krovi",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_guild_quests_krovi_guild_board_details_bronze_krovi",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_guild_quests_krovi_guild_board_details_silver_krovi",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_1_dungeon",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_1_session_1",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_1_enemy_stats_abilities",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_2_session_2",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_3_bottoms_up_sess_2_k",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_3_enemy_stats_sess_2_k",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_3_loot_sess_2_k",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_3_session_3",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_3_the_merchant_s_quest_sess_2_k",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_3_the_tavern_brawl_sess_2_k",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_4_session_4",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_firelight_enemies",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_firelight_session_firelight",
+      "type": "misc"
+    },
+    {
+      "id": "campaign_krovi_session_plans_session_firelight_location_marrow_hollow",
+      "type": "misc"
+    },
+    {
+      "id": "d_d_character_profile_template",
+      "type": "misc"
+    },
+    {
+      "id": "dm_cheat_sheet",
+      "type": "misc"
+    },
+    {
+      "id": "encounters_guillotine",
+      "type": "event"
+    },
+    {
+      "id": "gods_and_magic_orgins_kaya_the_knight_of_kaya",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_kaya_kaya",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_kaya_seraphite",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_krovi_krovi",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_krovi_the_knight_of_krovi",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_krovi_rive",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_rive_alchemy_alchemy_0",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_rive_alchemy_alchemy_1",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_rive_alchemy_alchemy_2",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_rive_alchemy_alchemy_3",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_rive_alchemy_alchemy_4",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_rive_alchemy_alchemy_5",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_rive_alchemy_alchemy_6",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_rive_alchemy_alchemy_7",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_rive_alchemy_alchemy",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_rive_alchemy_relations",
+      "type": "god"
+    },
+    {
+      "id": "gods_and_magic_orgins_sentari",
+      "type": "god"
+    },
+    {
+      "id": "uture_plot_points",
+      "type": "misc"
+    },
+    {
+      "id": "uzzle_ideas",
+      "type": "misc"
+    },
+    {
+      "id": "eriously_no_looking_ndgame_je_zur_efaram_he_timekeeper",
+      "type": "misc"
+    },
+    {
+      "id": "eriously_no_looking_ndgame_theria",
+      "type": "misc"
+    },
+    {
+      "id": "eriously_no_looking_ndgame_verview",
+      "type": "misc"
+    },
+    {
+      "id": "eriously_no_looking_ndgame_layer_verview",
+      "type": "misc"
+    },
+    {
+      "id": "eriously_no_looking_ndgame_verview",
+      "type": "misc"
+    },
+    {
+      "id": "eriously_no_looking_ndgame_layer_verview",
+      "type": "misc"
+    },
+    {
+      "id": "eriously_no_looking_ndgame_he_ther_imeline",
+      "type": "misc"
+    },
+    {
+      "id": "eriously_no_looking_ndgame_he_rue_eros",
+      "type": "misc"
+    },
+    {
+      "id": "stores_shops",
+      "type": "faction"
+    },
+    {
+      "id": "stores_widdershins_wonders_potion_shop",
+      "type": "faction"
+    },
+    {
+      "id": "stores_black_market",
+      "type": "faction"
+    },
+    {
+      "id": "stores_the_sun_chapel_divine_blessings_holy_relics",
+      "type": "faction"
+    },
+    {
+      "id": "stores_the_street_gambler_games_bets",
+      "type": "faction"
+    },
+    {
+      "id": "stores_the_curious_collector_oddities_ancient_artifacts",
+      "type": "faction"
+    },
+    {
+      "id": "stores_ironmane_s_trunk_tack",
+      "type": "faction"
+    },
+    {
+      "id": "stores_the_grinning_goblin_general_store",
+      "type": "faction"
+    },
+    {
+      "id": "stores_the_gilded_page_magic_trinkets_scrolls",
+      "type": "faction"
+    },
+    {
+      "id": "stores_the_widow_s_web_poison_smuggling",
+      "type": "faction"
+    },
+    {
+      "id": "stores_the_iron_curtain_blacksmith_weapons_dealer",
+      "type": "faction"
+    },
+    {
+      "id": "stores_the_velvet_vial_potions_herbs",
+      "type": "faction"
+    },
+    {
+      "id": "stores_the_ember_shroud",
+      "type": "faction"
+    },
+    {
+      "id": "to_do",
+      "type": "misc"
+    },
+    {
+      "id": "wildlife_and_animals_forest_aurora_fox",
+      "type": "misc"
+    },
+    {
+      "id": "wildlife_and_animals_forest_deer_fox",
+      "type": "misc"
+    },
+    {
+      "id": "wildlife_and_animals_forest_fowl",
+      "type": "misc"
+    },
+    {
+      "id": "wildlife_and_animals_forest_forest_creatures",
+      "type": "misc"
+    },
+    {
+      "id": "wildlife_and_animals_mountains_rock_trolls",
+      "type": "misc"
+    },
+    {
+      "id": "wildlife_and_animals_mountains_mountain_creatures",
+      "type": "misc"
+    },
+    {
+      "id": "wildlife_and_animals_sky_flying_whale",
+      "type": "misc"
+    },
+    {
+      "id": "wildlife_and_animals_sky_woffs",
+      "type": "misc"
+    },
+    {
+      "id": "wildlife_and_animals_sky_sky_creatures",
+      "type": "misc"
+    },
+    {
+      "id": "wildlife_and_animals_wildlife",
+      "type": "misc"
+    }
+  ],
+  "invalidRegions": [
+    {
+      "id": "archmage_sylvaris",
+      "regionId": "regalia_prime"
+    },
+    {
+      "id": "grand_magister_orvus_pyrelight",
+      "regionId": "ter_dracht"
+    },
+    {
+      "id": "master_alaric_thornweave",
+      "regionId": "serathiel"
+    },
+    {
+      "id": "veylin_astra",
+      "regionId": "kyrathys"
+    },
+    {
+      "id": "ivory_tower",
+      "regionId": "regalia_prime"
+    },
+    {
+      "id": "lucius_grinvera",
+      "regionId": "velarion"
+    },
+    {
+      "id": "aldenthyr",
+      "regionId": "regalia_prime"
+    },
+    {
+      "id": "brighthollow",
+      "regionId": "regalia_prime"
+    },
+    {
+      "id": "regalia_prime",
+      "regionId": "regalia"
+    },
+    {
+      "id": "moonshade",
+      "regionId": "regalia_prime"
+    },
+    {
+      "id": "silvanders_lot",
+      "regionId": "regalia_prime"
+    },
+    {
+      "id": "sylvaran",
+      "regionId": "regalia_prime"
+    },
+    {
+      "id": "velarion",
+      "regionId": "regalia_prime"
+    },
+    {
+      "id": "elverdeen_shit",
+      "regionId": "serathiel"
+    },
+    {
+      "id": "black_market",
+      "regionId": "elverdeen"
+    },
+    {
+      "id": "dawnspire",
+      "regionId": "serathiel"
+    },
+    {
+      "id": "elverdeen",
+      "regionId": "serathiel"
+    },
+    {
+      "id": "krodia",
+      "regionId": "serathiel"
+    },
+    {
+      "id": "briarford",
+      "regionId": "serathiel"
+    },
+    {
+      "id": "halvis",
+      "regionId": "serathiel"
+    },
+    {
+      "id": "oakreach",
+      "regionId": "serathiel"
+    },
+    {
+      "id": "fallowmere",
+      "regionId": "serathiel"
+    },
+    {
+      "id": "glenwood",
+      "regionId": "serathiel"
+    },
+    {
+      "id": "kyrathys",
+      "regionId": "serathiel"
+    },
+    {
+      "id": "serathiel",
+      "regionId": "regalia"
+    },
+    {
+      "id": "taurial_forest",
+      "regionId": "the_warrens"
+    },
+    {
+      "id": "the_warrens",
+      "regionId": "regalia"
+    },
+    {
+      "id": "amdersted",
+      "regionId": "tarragon"
+    },
+    {
+      "id": "drysel",
+      "regionId": "tarragon"
+    },
+    {
+      "id": "enlyon",
+      "regionId": "tarragon"
+    },
+    {
+      "id": "ilidrite",
+      "regionId": "tarragon"
+    },
+    {
+      "id": "ter_dracht",
+      "regionId": "tarragon"
+    }
+  ],
+  "invalidLocations": [],
+  "unreadableFiles": [],
+  "issueCount": 274,
+  "status": "error",
+  "entryCount": 305
+}

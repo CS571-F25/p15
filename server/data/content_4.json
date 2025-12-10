@@ -1,0 +1,36 @@
+{
+  "entries": [
+    {
+      "id": "aurora-ember-primer",
+      "type": "lore",
+      "title": "Aurora Ember Primer",
+      "status": "draft",
+      "tags": ["secret", "aurora"],
+      "summary": "A briefing on the auroral embers rumored beneath the vault.",
+      "body": "Placeholder: the full write-up will be imported from Obsidian once the pipeline is ready.",
+      "obsidianPath": "Lore/Aurora Ember.md",
+      "mapLocationId": 12
+    },
+    {
+      "id": "silent-archive-report",
+      "type": "region",
+      "title": "Silent Archive Annex",
+      "status": "complete",
+      "tags": ["region", "library"],
+      "summary": "Notes on the archive hidden within Silent Stacks.",
+      "body": "Placeholder: import structured write-up from the Obsidian vault.",
+      "obsidianPath": "Regions/Silent Archive.md",
+      "mapLocationId": 13
+    },
+    {
+      "id": "gilded-horizon-teaser",
+      "type": "note",
+      "title": "Gilded Horizon Teaser",
+      "status": "placeholder",
+      "tags": ["teaser", "hook"],
+      "summary": "A placeholder breadcrumb pointing toward the gilded horizon outpost.",
+      "obsidianPath": "Hooks/Gilded Horizon.md",
+      "mapLocationId": 14
+    }
+  ]
+}

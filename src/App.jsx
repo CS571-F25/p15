@@ -1,13 +1,33 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MapPage from './components/pages/MapPage';
 import AlmanacPage from './components/pages/AlmanacPage';
 import CharactersPage from './components/pages/CharactersPage';
 import WorldRaces from './components/pages/WorldRaces';
 import AdminDashboard from './components/pages/AdminDashboard';
-import LocationsPage from './components/pages/LocationsPage';
+import LocationsAtlasPage from './components/pages/LocationsAtlasPage';
+import LocationsEditorPage from './components/pages/LocationsEditorPage';
+import AccountSettingsPage from './components/pages/AccountSettingsPage';
+import ProgressionPage from './components/pages/ProgressionPage';
+import LorePlaceholderPage from './components/pages/lore/LorePlaceholderPage';
+import PlayersPage from './components/pages/PlayersPage';
+import PlayerPublicPage from './components/pages/PlayerPublicPage';
+import DashboardPage from './components/pages/DashboardPage';
+import AboutPage from './components/pages/AboutPage';
+import PeoplePage from './components/pages/ViewingPage';
+import AdminEntitiesPage from './components/pages/AdminEntitiesPage';
+import RegionDetailPage from './components/pages/RegionDetailPage';
+import LocationDetailPage from './components/pages/LocationDetailPage';
+import LoginPage from './components/pages/LoginPage';
+import SignupPage from './components/pages/SignupPage';
 import Header from './components/UI/Header';
 import PageLayout from './components/UI/PageLayout';
 import './components/UI/PageUI.css';
+import AuthCallback from './components/auth/AuthCallback';
+import AuthLandingPage from './components/pages/AuthLandingPage';
+import CharacterSheetPage from './components/pages/CharacterSheetPage';
+import CampaignPage from './components/pages/CampaignPage';
+import MagicHubPage from './components/pages/MagicHubPage';
+import MagicSystemPage from './components/pages/MagicSystemPage';
 
 // Placeholder components for missing tabs
 const Placeholder = ({ title }) => (
@@ -16,68 +36,108 @@ const Placeholder = ({ title }) => (
   </div>
 );
 
-function App() {
+function HashApp() {
   return (
-    <Router basename='/p15/'>
-      <Header />
-      <Routes>
-        {/* 1. Map (Default Home) */}
-        <Route path="/" element={<MapPage />} />
-        <Route path="/map" element={<Navigate to="/" replace />} />
+    <HashRouter>
+      <div className="app-shell">
+        <a className="skip-link" href="#main-content">
+          Skip to main content
+        </a>
+        <Header />
+        <main id="main-content" className="app-content" role="main">
+          <Routes>
+            {/* 1. Map (Default Home) */}
+            <Route path="/" element={<MapPage />} />
+            <Route path="/map" element={<Navigate to="/" replace />} />
 
-        {/* 2. Azterra (Almanac) */}
-        <Route path="/azterra" element={<PageLayout title="Azterra" tabs={[
-          { to: "", label: "Almanac", end: true },
-          { to: "geography", label: "Geography" },
-        ]} />}>
-          <Route index element={<AlmanacPage />} />
-          <Route path="geography" element={<Placeholder title="Geography" />} />
-        </Route>
+            {/* About */}
+            <Route path="/about" element={<AboutPage />} />
 
-        {/* 3. Locations */}
-        <Route path="/locations" element={<PageLayout title="Locations" tabs={[
-          { to: "", label: "Atlas", end: true },
-        ]} />}>
-          <Route index element={<LocationsPage />} />
-        </Route>
+            {/* 2. CAMPAIGN (User's campaigns and characters) */}
+            <Route path="/campaign" element={<CampaignPage />} />
 
-        {/* 4. People */}
-        <Route path="/people" element={<PageLayout title="People of Azterra" tabs={[
-          { to: "", label: "Races", end: true },
-          { to: "factions", label: "Factions" },
-          { to: "cultures", label: "Cultures" },
-        ]} />}>
-          <Route index element={<WorldRaces />} />
-          <Route path="factions" element={<Placeholder title="Factions" />} />
-          <Route path="cultures" element={<Placeholder title="Cultures" />} />
-        </Route>
+            {/* Character Sheet */}
+            <Route path="/character-sheet" element={<CharacterSheetPage />} />
 
-        {/* 5. Magic & Lore */}
-        <Route path="/magic" element={<PageLayout title="Magic & Lore" tabs={[
-          { to: "", label: "Magic System", end: true },
-          { to: "deities", label: "Deities" },
-          { to: "monsters", label: "Monsters" },
-        ]} />}>
-          <Route index element={<Placeholder title="Magic System" />} />
-          <Route path="deities" element={<Placeholder title="Deities" />} />
-          <Route path="monsters" element={<Placeholder title="Monsters" />} />
-        </Route>
+            {/* 3. ATLAS (Promoted to its own top-level view) */}
+            <Route path="/atlas" element={<PageLayout title="World Atlas" tabs={[
+                { to: "", label: "View Map", end: true },
+                { to: "editor", label: "Map Editor" },
+            ]} />}>
+                <Route index element={<LocationsAtlasPage />} />
+                <Route path="editor" element={<LocationsEditorPage />} />
+            </Route>
 
-        {/* 6. Campaign */}
-        <Route path="/campaign" element={<PageLayout title="Campaign" tabs={[
-          { to: "", label: "Characters", end: true },
-          { to: "logbook", label: "Logbook" },
-          { to: "inventory", label: "Inventory" },
-        ]} />}>
-          <Route index element={<CharactersPage />} />
-          <Route path="logbook" element={<Placeholder title="Logbook" />} />
-          <Route path="inventory" element={<Placeholder title="Inventory" />} />
-        </Route>
+            {/* 4. COMPENDIUM (The Big Merge) */}
+            {/* We merge People, Magic, and Almanac here to clean up the Sidebar */}
+            <Route path="/compendium" element={<PageLayout title="Azterra Compendium" renderBottomTabs tabs={[
+                { to: "", label: "Almanac", end: true },
+                { to: "societies", label: "Societies" },
+                { to: "heroes", label: "Heroes" },
+            ]} />}>
+                <Route index element={<AlmanacPage />} />
+                <Route path="societies" element={<WorldRaces />} />
+                <Route path="heroes" element={<CharactersPage />} />
+            </Route>
 
-        {/* Admin */}
-        <Route path="/admin" element={<AdminDashboard />} />
-      </Routes>
-    </Router>
+            {/* Magic Systems */}
+            <Route path="/magic" element={<MagicHubPage />} />
+            <Route path="/magic/:id" element={<MagicSystemPage />} />
+
+            {/* Progression */}
+            <Route path="/progress" element={<ProgressionPage />} />
+
+            {/* Hidden Lore (PLACEHOLDER) */}
+            <Route path="/lore/aurora-ember" element={<LorePlaceholderPage secretId="aurora-ember" />} />
+            <Route path="/lore/silent-archive" element={<LorePlaceholderPage secretId="silent-archive" />} />
+            <Route path="/lore/gilded-horizon" element={<LorePlaceholderPage secretId="gilded-horizon" />} />
+
+            {/* Account & Auth */}
+            <Route path="/account" element={<AccountSettingsPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/auth/callback" element={<AuthLandingPage />} />
+
+            {/* Players */}
+            <Route path="/players" element={<PlayersPage />} />
+            <Route path="/players/:id" element={<PlayerPublicPage />} />
+
+            {/* People (formerly Viewing) */}
+            <Route path="/people" element={<PeoplePage />} />
+            <Route path="/viewing" element={<Navigate to="/people" replace />} />
+
+            {/* Admin Entities */}
+            <Route path="/admin/entities" element={<AdminEntitiesPage />} />
+
+            {/* Detail pages */}
+            <Route path="/region/:id" element={<RegionDetailPage />} />
+            <Route path="/location/:id" element={<LocationDetailPage />} />
+
+            {/* Admin */}
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Routes>
+        </main>
+      </div>
+    </HashRouter>
   );
+}
+
+function App() {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+  const isAuthCallback =
+    typeof window !== 'undefined' && window.location.pathname === `${base}/auth/callback`;
+
+  if (isAuthCallback) {
+    return (
+      <BrowserRouter basename={base || '/'}>
+        <Routes>
+          <Route path="/auth/callback" element={<AuthCallback />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  return <HashApp />;
 }
 export default App;
