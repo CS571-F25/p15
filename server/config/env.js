@@ -32,7 +32,7 @@ function parseAllowedOrigins(value = '') {
 
 export function getConfig() {
   const port = Number.parseInt(process.env.PORT, 10) || 3000;
-  const parsedOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS);
+  const parsedOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGIN);
   const allowedOrigins =
     parsedOrigins.length > 0 ? parsedOrigins : ['http://localhost:5173', 'http://localhost:4173'];
 

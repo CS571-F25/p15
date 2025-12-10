@@ -483,6 +483,10 @@ body,
   transition: opacity 0.3s ease;
 }
 
+.card-active .card-shader-canvas {
+  opacity: 1;
+}
+
 .card:hover .card-shell,
 .card:focus-visible .card-shell,
 .card:focus-within .card-shell {

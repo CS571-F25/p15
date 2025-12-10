@@ -341,6 +341,14 @@
   font-size: 0.85rem;
 }
 
+.auth-callback-page {
+  min-height: 100vh;
+  min-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 
 
 .editor-warning {

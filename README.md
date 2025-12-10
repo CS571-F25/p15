@@ -61,7 +61,6 @@ Create `.env` for the server:
 - `PORT=4000`
 - `ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4173`
 - `JWT_SECRET=` (required for login)
-- `DEFAULT_ADMIN_EMAIL=admin@azterra.com`, `DEFAULT_ADMIN_PASSWORD=admin12345`, `DEFAULT_ADMIN_NAME=Azterra Admin`
 - `GOOGLE_CLIENT_ID=` (optional Google Sign-In)
 - `SUPABASE_JWT_SECRET=` (to verify Supabase access tokens)
 - `SUPABASE_URL=`, `SUPABASE_SERVICE_ROLE=` (for Supabase auth middleware on `/api/hello` and protected routes)

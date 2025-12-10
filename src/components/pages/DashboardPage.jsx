@@ -5,7 +5,7 @@ import characters from '../../data/characters_heroes';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 function DashboardPage() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [progress, setProgress] = useState({ unlocked: [], details: [] });
   const [favorites, setFavorites] = useState([]);
   const [visibleIds, setVisibleIds] = useState([]);
@@ -20,11 +20,9 @@ function DashboardPage() {
 
   useEffect(() => {
     const loadProgress = async () => {
-      if (!token) return;
+      if (!user) return;
       try {
-        const res = await fetch(`${API_BASE_URL}/secrets/progress`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${API_BASE_URL}/secrets/progress`, { credentials: 'include' });
         const data = await res.json();
         if (res.ok) setProgress({ unlocked: data.unlocked || [], details: data.details || [] });
       } catch {
@@ -32,16 +30,14 @@ function DashboardPage() {
       }
     };
     const loadFavorites = async () => {
-      if (!token) return;
+      if (!user) return;
       try {
         const visRes = await fetch(`${API_BASE_URL}/characters/visible`);
         const visData = await visRes.json();
         if (visRes.ok && Array.isArray(visData.visibleIds)) {
           setVisibleIds(visData.visibleIds);
         }
-        const res = await fetch(`${API_BASE_URL}/characters/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${API_BASE_URL}/characters/me`, { credentials: 'include' });
         const data = await res.json();
         if (res.ok) setFavorites(Array.isArray(data.favorites) ? data.favorites : []);
       } catch {
@@ -49,11 +45,9 @@ function DashboardPage() {
       }
     };
     const loadDocs = async () => {
-      if (!token) return;
+      if (!user) return;
       try {
-        const res = await fetch(`${API_BASE_URL}/files/list`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${API_BASE_URL}/files/list`, { credentials: 'include' });
         const data = await res.json();
         if (res.ok) setDocuments(Array.isArray(data.documents) ? data.documents : []);
       } catch {
@@ -63,7 +57,7 @@ function DashboardPage() {
     loadProgress();
     loadFavorites();
     loadDocs();
-  }, [token]);
+  }, [user]);
 
   if (!user) {
     return (

@@ -25,7 +25,7 @@ export function ContentProvider({ children }) {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${API_BASE_URL}/content`);
+      const response = await fetch(`${API_BASE_URL}/content`, { credentials: 'include' });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || 'Failed to load content.');
@@ -52,7 +52,7 @@ export function ContentProvider({ children }) {
   useEffect(() => {
     const fetchPortraitConfig = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/portraits/config`);
+        const res = await fetch(`${API_BASE_URL}/portraits/config`, { credentials: 'include' });
         const data = await res.json();
         if (res.ok) {
           setPortraitConfig({ enabled: Boolean(data.enabled), checked: true });
@@ -94,7 +94,9 @@ export function ContentProvider({ children }) {
   const refreshPortraitStatus = useCallback(async (id) => {
     if (!id) return null;
     try {
-      const res = await fetch(`${API_BASE_URL}/portraits/${encodeURIComponent(id)}/status`);
+      const res = await fetch(`${API_BASE_URL}/portraits/${encodeURIComponent(id)}/status`, {
+        credentials: 'include',
+      });
       const data = await res.json();
       if (res.ok) {
         setPortraitStatus((prev) => ({ ...prev, [id]: data }));
@@ -106,15 +108,15 @@ export function ContentProvider({ children }) {
     }
   }, []);
 
-  const generatePortrait = useCallback(async (id, token) => {
-    if (!id || !token) return { error: 'Auth and id required' };
+  const generatePortrait = useCallback(async (id) => {
+    if (!id) return { error: 'Auth and id required' };
     try {
       const res = await fetch(`${API_BASE_URL}/portraits/${encodeURIComponent(id)}/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
       });
       const data = await res.json();
       if (!res.ok) {

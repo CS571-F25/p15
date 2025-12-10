@@ -16,6 +16,7 @@ const NPC_VISIBILITY_PATH = path.join(__dirname, 'npcs-visibility.json');
 const SECRETS_FILE_PATH = path.join(__dirname, 'data', 'secrets.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const JWT_SECRET = process.env.JWT_SECRET || 'azterra_dev_secret_change_me';
+const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'token';
 const getSupabaseJwtSecret = () => process.env.SUPABASE_JWT_SECRET || '';
 const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@azterra.com';
 const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || 'admin12345';
@@ -271,6 +272,9 @@ export function verifySupabaseToken(token) {
 }
 
 function extractToken(req) {
+  if (req?.cookies && req.cookies[COOKIE_NAME]) {
+    return req.cookies[COOKIE_NAME];
+  }
   const header = req.headers.authorization || '';
   if (header.startsWith('Bearer ')) {
     return header.slice(7);
@@ -316,8 +320,9 @@ export const authRequired = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid user.' });
     }
     const friendState = applyFriendState(currentUser);
+    const safeUser = sanitizeUser(currentUser);
     req.user = {
-      ...currentUser,
+      ...safeUser,
       favorites: Array.isArray(currentUser.favorites) ? currentUser.favorites : [],
       featuredCharacter: currentUser.featuredCharacter ?? null,
       profile: {
@@ -368,4 +373,4 @@ export async function updateUsers(updater) {
   return updatedUsers;
 }
 
-export { ALLOWED_ROLES, applyFriendState };
+export { ALLOWED_ROLES, applyFriendState, COOKIE_NAME };

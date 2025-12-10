@@ -60,7 +60,7 @@ const locationMatchesCategory = (location, tabId) => {
 export default function LocationsEditorPage() {
   const { locations, setLocations, selectLocation, selectedLocationId } = useLocationData();
   const { regions: regionList = [] } = useRegions();
-  const { token, role } = useAuth();
+  const { role, user } = useAuth();
   const [activeTab, setActiveTab] = useState('all');
   const [filters, setFilters] = useState(() => ({ ...INITIAL_FILTERS }));
   const [status, setStatus] = useState('');
@@ -168,7 +168,7 @@ export default function LocationsEditorPage() {
   };
 
   const handleSaveAll = async () => {
-    if (!token || (role !== 'editor' && role !== 'admin')) {
+    if (!user || (role !== 'editor' && role !== 'admin')) {
       setStatus('Only editors/admins can save.');
       setTimeout(() => setStatus(''), 3000);
       return;
@@ -179,8 +179,8 @@ export default function LocationsEditorPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ locations }),
       });
       const data = await response.json();

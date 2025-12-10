@@ -9,7 +9,6 @@ const parseJsonResponse = async (res) => {
   const text = await res.text();
   if (!text) return {};
   try {
-    console.log(text);
     return JSON.parse(text);
   } catch {
     throw new Error('Unexpected response from server. Is the API running?');
@@ -17,7 +16,7 @@ const parseJsonResponse = async (res) => {
 };
 
 function PlayersPage() {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -42,7 +41,7 @@ function PlayersPage() {
 
   useEffect(() => {
     const fetchPlayers = async () => {
-      if (!token) {
+      if (!user) {
         setPlayers([]);
         setLoading(false);
         return;
@@ -50,9 +49,7 @@ function PlayersPage() {
       setLoading(true);
       setError('');
       try {
-        const res = await fetch(`${API_BASE_URL}/characters/player-view`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${API_BASE_URL}/characters/player-view`, { credentials: 'include' });
         const data = await parseJsonResponse(res);
         if (!res.ok) {
           throw new Error(data.error || 'Unable to load players.');
@@ -65,7 +62,7 @@ function PlayersPage() {
       }
     };
     fetchPlayers();
-  }, [token]);
+  }, [user]);
 
   const applyFriendData = useCallback((data) => {
     setFriends({
@@ -76,16 +73,14 @@ function PlayersPage() {
   }, []);
 
   const refreshFriends = useCallback(async () => {
-    if (!token) {
+    if (!user) {
       setFriends({ friends: [], incoming: [], outgoing: [] });
       return;
     }
     setFriendsLoading(true);
     setFriendsError('');
     try {
-      const res = await fetch(`${API_BASE_URL}/users/friends`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`${API_BASE_URL}/users/friends`, { credentials: 'include' });
       const data = await parseJsonResponse(res);
       if (!res.ok) {
         throw new Error(data.error || 'Unable to load friends.');
@@ -96,15 +91,15 @@ function PlayersPage() {
     } finally {
       setFriendsLoading(false);
     }
-  }, [applyFriendData, token]);
+  }, [applyFriendData, user]);
 
   useEffect(() => {
     refreshFriends();
     setInviteSelections({});
-  }, [refreshFriends, token]);
+  }, [refreshFriends, user]);
 
   const sendRequest = async (targetId) => {
-    if (!token || !targetId) return;
+    if (!user || !targetId) return;
     setFriendsLoading(true);
     setFriendsError('');
     try {
@@ -112,8 +107,8 @@ function PlayersPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ targetId }),
       });
       const data = await parseJsonResponse(res);
@@ -129,7 +124,7 @@ function PlayersPage() {
   };
 
   const respondToRequest = async (requesterId, accept) => {
-    if (!token || !requesterId) return;
+    if (!user || !requesterId) return;
     setFriendsLoading(true);
     setFriendsError('');
     try {
@@ -137,8 +132,8 @@ function PlayersPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ requesterId, accept }),
       });
       const data = await parseJsonResponse(res);
@@ -154,7 +149,7 @@ function PlayersPage() {
   };
 
   const removeFriend = async (targetId) => {
-    if (!token || !targetId) return;
+    if (!user || !targetId) return;
     setFriendsLoading(true);
     setFriendsError('');
     try {
@@ -162,8 +157,8 @@ function PlayersPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ targetId }),
       });
       const data = await parseJsonResponse(res);
@@ -199,7 +194,7 @@ function PlayersPage() {
     return ids;
   };
 
-  if (!token) {
+  if (!user) {
     return (
       <div className="page-container">
         <h1>Players</h1>
