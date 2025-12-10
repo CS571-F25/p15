@@ -20,10 +20,6 @@ jobs:
     - name: Install Dependencies
       run: npm install --production
 
-    # OPTIONAL if using TypeScript or a build step
-    # - name: Build
-    #   run: npm run build
-
     - name: Zip Server Contents
       run: zip -r ../deploy.zip . -x "*.git*" "backups/*"
 
