@@ -26,6 +26,8 @@ import AuthCallback from './components/auth/AuthCallback';
 import AuthLandingPage from './components/pages/AuthLandingPage';
 import CharacterSheetPage from './components/pages/CharacterSheetPage';
 import CampaignPage from './components/pages/CampaignPage';
+import MagicHubPage from './components/pages/MagicHubPage';
+import MagicSystemPage from './components/pages/MagicSystemPage';
 
 // Placeholder components for missing tabs
 const Placeholder = ({ title }) => (
@@ -71,14 +73,16 @@ function HashApp() {
             <Route path="/compendium" element={<PageLayout title="Azterra Compendium" renderBottomTabs tabs={[
                 { to: "", label: "Almanac", end: true },
                 { to: "societies", label: "Societies" },
-                { to: "cosmos", label: "Cosmos" },
                 { to: "heroes", label: "Heroes" },
             ]} />}>
                 <Route index element={<AlmanacPage />} />
                 <Route path="societies" element={<WorldRaces />} />
-                <Route path="cosmos" element={<Placeholder title="Magic System" />} />
                 <Route path="heroes" element={<CharactersPage />} />
             </Route>
+
+            {/* Magic Systems */}
+            <Route path="/magic" element={<MagicHubPage />} />
+            <Route path="/magic/:id" element={<MagicSystemPage />} />
 
             {/* Progression */}
             <Route path="/progress" element={<ProgressionPage />} />

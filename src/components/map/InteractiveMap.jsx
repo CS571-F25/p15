@@ -12,6 +12,7 @@ import FogLayer from './layers/FogLayer';
 import CloudLayer from './layers/CloudLayer';
 import HeatmapLayer from './layers/HeatmapLayer';
 import RegionLayer from './layers/RegionLayer';
+import LabelLayer from './layers/LabelLayer';
 import ParallaxLayer from './layers/ParallaxLayer';
 import DiagnosticsPanel from './DiagnosticsPanel';
 import MarkerPalette from './MarkerPalette';
@@ -437,6 +438,14 @@ function RegionDrawingHandler({ isActive, onAddPoint, onFinish }) {
   return null;
 }
 
+function LabelPlacementHandler({ isActive, onPlace }) {
+  useMapEvent('click', (event) => {
+    if (!isActive) return;
+    onPlace(event.latlng);
+  });
+  return null;
+}
+
 // LocationMarker handles its own hover/selection state
 function LocationMarker({
   location,
@@ -544,6 +553,10 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     magic: true,
     weather: true,
   });
+  const [showMapLabels, setShowMapLabels] = useState(true);
+  const [mapLabels, setMapLabels] = useState([]);
+  const [isPlacingLabel, setIsPlacingLabel] = useState(false);
+  const [isEditorPanelOpen, setIsEditorPanelOpen] = useState(true);
   const saveTimeoutRef = useRef(null);
   const lastSavedSnapshotRef = useRef('[]');
   const skipNextAutoSaveRef = useRef(false);
@@ -894,11 +907,13 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 
   const handleRegionDraftReset = () => {
     setRegionDraftPoints([]);
+    setIsPlacingLabel(false);
   };
 
   const handleStartSubregion = (regionId) => {
     if (!regionId || !canAutoSave) return;
     setRegionDraftPoints([]);
+    setIsPlacingLabel(false);
     setRegionDraftTargetId(regionId);
     setIsRegionMode(true);
     selectRegion(regionId);
@@ -906,6 +921,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 
   const handleCancelSubregion = () => {
     setRegionDraftPoints([]);
+    setIsPlacingLabel(false);
     setRegionDraftTargetId(null);
   };
 
@@ -922,6 +938,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
       const next = !prev;
       if (!next) {
         setRegionDraftPoints([]);
+        setIsPlacingLabel(false);
         selectRegion(null);
         setRegionDraftTargetId(null);
       } else {
@@ -929,10 +946,50 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         setActivePlacementTypeId(null);
         setRegionDraftTargetId(null);
         setRegionDraftPoints([]);
+        setIsPlacingLabel(false);
         selectRegion(null);
       }
       return next;
     });
+  };
+  const handleStartLabelPlacement = () => {
+    setIsPlacingLabel(true);
+    setIsRegionMode(false);
+    setSelectedPaletteItem(null);
+    setActivePlacementTypeId(null);
+  };
+
+  const handlePlaceLabel = (latlng) => {
+    const id =
+      typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `label-${Date.now()}`;
+    setMapLabels((prev) => [
+      ...prev,
+      {
+        id,
+        text: 'New Label',
+        color: '#fef3c7',
+        font: 'serif',
+        size: 1,
+        zoomScale: 1,
+        fadeInStart: 3,
+        fadeInEnd: 5,
+        lat: latlng.lat,
+        lng: latlng.lng,
+      },
+    ]);
+    setIsPlacingLabel(false);
+  };
+
+  const handleLabelDrag = (id, coords) => {
+    setMapLabels((prev) => prev.map((label) => (label.id === id ? { ...label, ...coords } : label)));
+  };
+
+  const handleLabelFieldChange = (id, field, value) => {
+    setMapLabels((prev) => prev.map((label) => (label.id === id ? { ...label, [field]: value } : label)));
+  };
+
+  const handleDeleteLabel = (id) => {
+    setMapLabels((prev) => prev.filter((label) => label.id !== id));
   };
 
   const handleRegionFieldChange = (field, value, regionId = activeRegionId) => {
@@ -953,6 +1010,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     if (isEditorMode) {
       selectRegion(regionId);
       setRegionDraftPoints([]);
+      setIsPlacingLabel(false);
     } else {
       const base = import.meta.env.BASE_URL || '/';
       window.location.href = `${base}region/${regionId}`;
@@ -983,6 +1041,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     selectRegion(targetId);
     setRegionDraftTargetId(null);
     setRegionDraftPoints([]);
+    setIsPlacingLabel(false);
   };
 
   const handleAssignLocationToRegion = () => {
@@ -1145,8 +1204,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     } else {
       setEditorSelection(null);
       setActivePlacementTypeId(null);
-      setIsRegionMode(false);
-      setRegionDraftPoints([]);
+      setIsRegionMode(false);      setIsPlacingLabel(false);
       selectRegion(null);
     }
   }, [isEditorMode, selectLocation, selectRegion]);
@@ -1154,8 +1212,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
   useEffect(() => {
     if (!isEditorMode) return;
     return () => {
-      setIsRegionMode(false);
-      setRegionDraftPoints([]);
+      setIsRegionMode(false);      setIsPlacingLabel(false);
     };
   }, [isEditorMode]);
 
@@ -1384,8 +1441,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
   useEffect(() => {
     if (!isRegionMode) return undefined;
     const handleKey = (event) => {
-      if (event.key === 'Escape') {
-        setRegionDraftPoints([]);
+      if (event.key === 'Escape') {        setIsPlacingLabel(false);
       }
     };
     window.addEventListener('keydown', handleKey);
@@ -1461,35 +1517,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 
   return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
-      <div className="map-layout">
-        {isEditorMode && (
-          <EditorSidePanel
-            isEditorMode={isEditorMode}
-            markerPalette={markerPaletteNode}
-            markerToolbox={markerToolboxNode}
-            locationEditor={locationEditorNode}
-            regions={regions}
-            activeRegionId={activeRegionId}
-            onSelectRegion={selectRegion}
-            onFocusRegion={focusRegionOnMap}
-            onDeleteRegion={handleDeleteRegion}
-            canAutoSave={canAutoSave}
-            isRegionMode={isRegionMode}
-            onToggleRegionMode={handleToggleRegionMode}
-            regionDraftPoints={regionDraftPoints}
-            onFinishRegion={handleRegionFinish}
-            onResetRegionDraft={handleRegionDraftReset}
-            canAssignSelection={Boolean(isEditorMode && selectedLocation && activeRegionId)}
-            onAssignSelection={handleAssignLocationToRegion}
-            selectedRegionName={selectedRegion?.name || ''}
-            selectedLocationName={selectedLocation?.name || ''}
-            onRegionFieldChange={handleRegionFieldChange}
-            onMergeRegion={handleMergeRegions}
-            onStartSubregion={handleStartSubregion}
-            onCancelSubregion={handleCancelSubregion}
-            regionDraftTargetId={regionDraftTargetId}
-          />
-        )}
+            <div className="map-layout">
         <div className="map-layout__canvas">
           <div className="map-container-wrapper" ref={mapContainerRef}>
             <MapContainer
@@ -1533,6 +1561,10 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                 onAddPoint={handleRegionPointAdd}
                 onFinish={handleRegionFinish}
               />
+              <LabelPlacementHandler
+                isActive={isEditorMode && isPlacingLabel}
+                onPlace={handlePlaceLabel}
+              />
               <KeyboardControls />
               <ZoomControls />
               {filteredLocations.map((location) => (
@@ -1547,6 +1579,12 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                   resolveIcon={resolveMarkerIcon}
                 />
               ))}
+              <LabelLayer
+                labels={showMapLabels ? mapLabels : []}
+                zoomLevel={mapZoom}
+                isEditable={isEditorMode}
+                onDragLabel={handleLabelDrag}
+              />
               <RegionLayer
                 regions={filteredRegions}
                 draftPoints={regionDraftPoints}
@@ -1589,7 +1627,56 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
             />
           </div>
         </div>
+        {isEditorMode && (
+          <div className={`editor-panel-shell ${isEditorPanelOpen ? 'is-open' : 'is-closed'}`}>
+            <div className="editor-panel-shell__panel">
+              <EditorSidePanel
+                isEditorMode={isEditorMode}
+                markerPalette={markerPaletteNode}
+                markerToolbox={markerToolboxNode}
+                locationEditor={locationEditorNode}
+                regions={regions}
+                activeRegionId={activeRegionId}
+                onSelectRegion={selectRegion}
+                onFocusRegion={focusRegionOnMap}
+                onDeleteRegion={handleDeleteRegion}
+                canAutoSave={canAutoSave}
+                isRegionMode={isRegionMode}
+                onToggleRegionMode={handleToggleRegionMode}
+                regionDraftPoints={regionDraftPoints}
+                onFinishRegion={handleRegionFinish}
+                onResetRegionDraft={handleRegionDraftReset}
+                canAssignSelection={Boolean(isEditorMode && selectedLocation && activeRegionId)}
+                onAssignSelection={handleAssignLocationToRegion}
+                selectedRegionName={selectedRegion?.name || ''}
+                selectedLocationName={selectedLocation?.name || ''}
+                onRegionFieldChange={handleRegionFieldChange}
+                onMergeRegion={handleMergeRegions}
+                onStartSubregion={handleStartSubregion}
+                onCancelSubregion={handleCancelSubregion}
+                regionDraftTargetId={regionDraftTargetId}
+                labels={mapLabels}
+                showMapLabels={showMapLabels}
+                onToggleLabels={setShowMapLabels}
+                onStartPlaceLabel={handleStartLabelPlacement}
+                isPlacingLabel={isPlacingLabel}
+                onLabelFieldChange={handleLabelFieldChange}
+                onDeleteLabel={handleDeleteLabel}
+                mapZoom={mapZoom}
+              />
+            </div>
+            <button
+              type="button"
+              className="editor-panel-shell__handle"
+              aria-expanded={isEditorPanelOpen}
+              onClick={() => setIsEditorPanelOpen((prev) => !prev)}
+            >
+              Tools
+            </button>
+          </div>
+        )}
       </div>
+
       {selectedLocation && (
         <SidePanel
           location={selectedLocation}
@@ -1628,5 +1715,21 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 }
 
 export default InteractiveMap;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

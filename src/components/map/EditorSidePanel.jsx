@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import RegionInfoPanel from './RegionInfoPanel';
 
 const PANEL_VIEWS = {
   HOME: 'home',
   MARKERS: 'markers',
   REGIONS: 'regions',
+  LABELS: 'labels',
 };
 
 function EditorSidePanel({
@@ -32,6 +33,14 @@ function EditorSidePanel({
   onAssignSelection,
   selectedRegionName = '',
   selectedLocationName = '',
+  labels = [],
+  showMapLabels = true,
+  onToggleLabels,
+  onStartPlaceLabel,
+  isPlacingLabel = false,
+  onLabelFieldChange,
+  onDeleteLabel,
+  mapZoom = 0,
 }) {
   const [view, setView] = useState(PANEL_VIEWS.HOME);
   const [markerView, setMarkerView] = useState('palette');
@@ -174,7 +183,6 @@ function EditorSidePanel({
                 type="button"
                 className="toolbox-button"
                 onClick={onToggleRegionMode}
-                disabled={!canAutoSave}
               >
                 {isRegionMode ? 'Exit Region Mode' : 'Start Region Mode'}
               </button>
@@ -328,3 +336,9 @@ function EditorSidePanel({
 }
 
 export default EditorSidePanel;
+
+
+
+
+
+
