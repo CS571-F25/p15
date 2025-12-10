@@ -1,0 +1,39 @@
+name: Deploy Backend to Elastic Beanstalk
+
+on:
+  push:
+    branches:
+      - main    # change if using a different deploy branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: server  # Everything runs inside /server
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: npm install --production
+
+    # OPTIONAL if using TypeScript or a build step
+    # - name: Build
+    #   run: npm run build
+
+    - name: Zip Server Contents
+      run: zip -r ../deploy.zip . -x "*.git*" "backups/*"
+
+    - name: Deploy to Elastic Beanstalk
+      uses: einaregilsson/beanstalk-deploy@v20
+      with:
+        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        application_name: ${{ secrets.EB_APPLICATION_NAME }}
+        environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
+        region: ${{ secrets.AWS_REGION }}
+        version_label: github-${{ github.run_number }}
+        deployment_package: deploy.zip
