@@ -91,6 +91,13 @@ const NAV_ICONS = {
       <line x1="12" y1="16" x2="12" y2="12" />
       <circle cx="12" cy="8" r="0.8" />
     </svg>
+  ),
+  magic: (
+    <svg viewBox="0 0 24 24" role="presentation">
+      <path d="M5 19 19 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M6 9v2M6 10h2M14 15v2M14 16h2M10 5v2M10 6h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="m9 20 2-2 2 2-2 2-2-2z" fill="none" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
   )
 };
 
@@ -98,6 +105,19 @@ const baseNavLinks = [
   { to: "/", label: "Map", icon: NAV_ICONS.map },
   { to: "/campaign", label: "Campaign", icon: NAV_ICONS.campaign },
   { to: "/atlas", label: "Atlas", icon: NAV_ICONS.atlas },
+  {
+    to: "/magic",
+    label: "Magic",
+    icon: NAV_ICONS.magic,
+    children: [
+      { to: "/magic", label: "Overview" },
+      { to: "/magic/gods", label: "Gods & Dukes" },
+      { to: "/magic/azterra", label: "Magic of Azterra" },
+      { to: "/magic/math", label: "Magic of Math" },
+      { to: "/magic/spirits", label: "Magic of Spirits" },
+      { to: "/magic/wild", label: "Wild Magic" },
+    ]
+  },
   { 
     to: "/compendium",
     label: "Compendium",
@@ -105,7 +125,6 @@ const baseNavLinks = [
     children: [
       { to: "/compendium", label: "Almanac" },
       { to: "/compendium/societies", label: "Societies" },
-      { to: "/compendium/cosmos", label: "Cosmos" },
       { to: "/compendium/heroes", label: "Heroes" },
     ]
   },
@@ -119,7 +138,7 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, role, logout, loginGuest } = useAuth();
-  const [compendiumOpen, setCompendiumOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
   const isGuest = role === 'guest';
   const logoutLabel = isGuest ? 'Exit Guest' : 'Logout';
   const brandIcon = useMemo(() => {
@@ -127,19 +146,19 @@ export default function Header() {
     return `${base}/icon.svg`;
   }, []);
 
-  const toggleCompendium = (event) => {
+  const toggleDropdown = (label) => (event) => {
     event.preventDefault();
-    setCompendiumOpen((prev) => !prev);
+    setOpenDropdown((prev) => (prev === label ? null : label));
   };
 
-  const handleCompendiumLeave = () => setCompendiumOpen(false);
-
-  const closeCompendium = () => setCompendiumOpen(false);
+  const handleNavLeave = () => setOpenDropdown(null);
 
   useEffect(() => {
-    if (!location.pathname.startsWith('/compendium')) {
-      setCompendiumOpen(false);
-    }
+    setOpenDropdown((prev) => {
+      if (prev === 'Compendium' && !location.pathname.startsWith('/compendium')) return null;
+      if (prev === 'Magic' && !location.pathname.startsWith('/magic')) return null;
+      return prev;
+    });
   }, [location.pathname]);
 
   const handleLogout = () => {
@@ -156,7 +175,7 @@ export default function Header() {
       <aside
         className="azterra-sidebar"
         aria-label="Azterra navigation"
-        onMouseLeave={handleCompendiumLeave}
+        onMouseLeave={handleNavLeave}
       >
         <div className="azterra-sidebar__brand">
           <div className="azterra-sidebar__brand-mark">
@@ -172,11 +191,13 @@ export default function Header() {
         </div>
 
         <nav className="azterra-nav">
-      {navLinks.map(({ to, label, icon, children, isDisabled }) => {
+          {navLinks.map(({ to, label, icon, children, isDisabled }) => {
             const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
-            const isCompendium = label === 'Compendium';
-            const linkIsActive = isCompendium ? (compendiumOpen || isActive) : isActive;
-            const itemClass = `azterra-nav__item ${children ? 'azterra-nav__item--parent' : ''} ${isCompendium ? 'azterra-nav__item--compendium' : ''} ${isCompendium && compendiumOpen ? 'azterra-nav__item--open' : ''}`;
+            const hasChildren = Array.isArray(children) && children.length > 0;
+            const isOpen = openDropdown === label;
+            const linkIsActive = hasChildren ? (isOpen || isActive) : isActive;
+            const itemClass = `azterra-nav__item ${hasChildren ? 'azterra-nav__item--parent' : ''} ${isOpen ? 'azterra-nav__item--open' : ''}`;
+            const toggleHandler = hasChildren ? toggleDropdown(label) : (isDisabled ? (e) => e.preventDefault() : undefined);
             return (
               <div
                 key={to}
@@ -186,17 +207,17 @@ export default function Header() {
                   to={to}
                   className={`azterra-nav__link ${linkIsActive ? 'azterra-nav__link--active' : ''} ${isDisabled ? 'azterra-nav__link--disabled' : ''}`}
                   aria-current={linkIsActive ? 'page' : undefined}
-                  aria-haspopup={children ? 'true' : undefined}
-                  aria-expanded={isCompendium ? compendiumOpen : undefined}
+                  aria-haspopup={hasChildren ? 'true' : undefined}
+                  aria-expanded={hasChildren ? isOpen : undefined}
                   aria-disabled={isDisabled ? 'true' : undefined}
-                  onClick={isCompendium ? toggleCompendium : (isDisabled ? (e) => e.preventDefault() : undefined)}
+                  onClick={toggleHandler}
                 >
                   <span className="azterra-nav__icon" aria-hidden="true">
                     {icon}
                   </span>
                   <span className="azterra-nav__label">{label}</span>
-                  {isCompendium && (
-                    <span className={`azterra-nav__chevron ${compendiumOpen ? 'azterra-nav__chevron--open' : ''}`} aria-hidden="true">
+                  {hasChildren && (
+                    <span className={`azterra-nav__chevron ${isOpen ? 'azterra-nav__chevron--open' : ''}`} aria-hidden="true">
                       <svg viewBox="0 0 24 24" role="presentation">
                         <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
@@ -205,8 +226,8 @@ export default function Header() {
                   {linkIsActive && <div className="azterra-nav__indicator" />}
                 </Link>
 
-                {children && (
-                  <div className="azterra-nav__submenu" role="menu" aria-label={`${label} shortcuts`}>
+                {hasChildren && (
+                  <div className={`azterra-nav__submenu ${isOpen ? 'azterra-nav__submenu--open' : ''}`} role="menu" aria-label={`${label} shortcuts`}>
                     {children.map((child) => {
                       const isChildActive = location.pathname === child.to;
                       return (
@@ -215,7 +236,7 @@ export default function Header() {
                           to={child.to}
                           className={`azterra-nav__sublink ${isChildActive ? 'azterra-nav__sublink--active' : ''}`}
                           role="menuitem"
-                          onClick={isCompendium ? closeCompendium : undefined}
+                          onClick={handleNavLeave}
                         >
                           {child.label}
                         </Link>

@@ -12,7 +12,6 @@ import FogLayer from './layers/FogLayer';
 import CloudLayer from './layers/CloudLayer';
 import HeatmapLayer from './layers/HeatmapLayer';
 import RegionLayer from './layers/RegionLayer';
-import LabelLayer from './layers/LabelLayer';
 import ParallaxLayer from './layers/ParallaxLayer';
 import DiagnosticsPanel from './DiagnosticsPanel';
 import MarkerPalette from './MarkerPalette';
@@ -438,14 +437,6 @@ function RegionDrawingHandler({ isActive, onAddPoint, onFinish }) {
   return null;
 }
 
-function LabelPlacementHandler({ isActive, onPlace }) {
-  useMapEvent('click', (event) => {
-    if (!isActive) return;
-    onPlace(event.latlng);
-  });
-  return null;
-}
-
 // LocationMarker handles its own hover/selection state
 function LocationMarker({
   location,
@@ -511,7 +502,7 @@ function LocationMarker({
 }
 
 function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFilters }) {
-  const { role, user } = useAuth();
+  const { role, token } = useAuth();
   const { cloudsEnabled, fogEnabled, vignetteEnabled, heatmapMode, intensities, setIntensity } =
     useMapEffects();
   const { locations, setLocations, selectedLocationId, selectLocation } = useLocationData();
@@ -553,10 +544,6 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     magic: true,
     weather: true,
   });
-  const [showMapLabels, setShowMapLabels] = useState(true);
-  const [mapLabels, setMapLabels] = useState([]);
-  const [isPlacingLabel, setIsPlacingLabel] = useState(false);
-  const [isEditorPanelOpen, setIsEditorPanelOpen] = useState(true);
   const saveTimeoutRef = useRef(null);
   const lastSavedSnapshotRef = useRef('[]');
   const skipNextAutoSaveRef = useRef(false);
@@ -907,13 +894,11 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 
   const handleRegionDraftReset = () => {
     setRegionDraftPoints([]);
-    setIsPlacingLabel(false);
   };
 
   const handleStartSubregion = (regionId) => {
     if (!regionId || !canAutoSave) return;
     setRegionDraftPoints([]);
-    setIsPlacingLabel(false);
     setRegionDraftTargetId(regionId);
     setIsRegionMode(true);
     selectRegion(regionId);
@@ -921,7 +906,6 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 
   const handleCancelSubregion = () => {
     setRegionDraftPoints([]);
-    setIsPlacingLabel(false);
     setRegionDraftTargetId(null);
   };
 
@@ -938,7 +922,6 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
       const next = !prev;
       if (!next) {
         setRegionDraftPoints([]);
-        setIsPlacingLabel(false);
         selectRegion(null);
         setRegionDraftTargetId(null);
       } else {
@@ -946,66 +929,10 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         setActivePlacementTypeId(null);
         setRegionDraftTargetId(null);
         setRegionDraftPoints([]);
-        setIsPlacingLabel(false);
         selectRegion(null);
       }
       return next;
     });
-  };
-
-  const handleStartLabelPlacement = () => {
-    setIsPlacingLabel(true);
-    setIsRegionMode(false);
-    setSelectedPaletteItem(null);
-    setActivePlacementTypeId(null);
-  };
-
-  const handlePlaceLabel = (latlng) => {
-    const id =
-      typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `label-${Date.now()}`;
-    setMapLabels((prev) => [
-      ...prev,
-      {
-        id,
-                text: 'New Label',
-        color: '#fef3c7',
-        font: "'Cinzel','Cormorant Garamond',serif",
-        size: 1,
-        zoomScale: 1,
-        scaleWithZoom: true,
-        fadeInStart: 3,
-        fadeInEnd: 5,
-        lat: latlng.lat,
-        lng: latlng.lng,
-      },
-    ]);
-    setIsPlacingLabel(false);
-  };
-
-  const handleLabelDrag = (id, coords) => {
-    setMapLabels((prev) => prev.map((label) => (label.id === id ? { ...label, ...coords } : label)));
-  };
-
-  const handleLabelFieldChange = (id, field, value) => {
-    const numericFields = ['size','zoomScale','fadeInStart','fadeInEnd'];
-    const booleanFields = ['scaleWithZoom'];
-    setMapLabels((prev) =>
-      prev.map((label) => {
-        if (label.id !== id) return label;
-        let nextValue = value;
-        if (numericFields.includes(field)) {
-          const parsed = Number(value);
-          nextValue = Number.isFinite(parsed) ? parsed : 0;
-        } else if (booleanFields.includes(field)) {
-          nextValue = Boolean(value);
-        }
-        return { ...label, [field]: nextValue };
-      })
-    );
-  };
-
-  const handleDeleteLabel = (id) => {
-    setMapLabels((prev) => prev.filter((label) => label.id !== id));
   };
 
   const handleRegionFieldChange = (field, value, regionId = activeRegionId) => {
@@ -1026,7 +953,6 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     if (isEditorMode) {
       selectRegion(regionId);
       setRegionDraftPoints([]);
-      setIsPlacingLabel(false);
     } else {
       const base = import.meta.env.BASE_URL || '/';
       window.location.href = `${base}region/${regionId}`;
@@ -1057,7 +983,6 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     selectRegion(targetId);
     setRegionDraftTargetId(null);
     setRegionDraftPoints([]);
-    setIsPlacingLabel(false);
   };
 
   const handleAssignLocationToRegion = () => {
@@ -1156,7 +1081,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 
   const handleServerSave = useCallback(
     async (nextLocations) => {
-      if (!user) {
+      if (!token) {
         setSaveWarning('Please sign in again to save changes.');
         return;
       }
@@ -1165,8 +1090,8 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
-          credentials: 'include',
           body: JSON.stringify({ locations: nextLocations }),
         });
         const data = await response.json();
@@ -1183,19 +1108,19 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         setSaveWarning(error.message || 'Unable to save locations right now.');
       }
     },
-    [user]
+    [token]
   );
 
   const handleRegionSave = useCallback(
     async (nextRegions) => {
-      if (!user) return;
+      if (!token) return;
       try {
         const response = await fetch(`${API_BASE_URL}/regions/save`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
-          credentials: 'include',
           body: JSON.stringify({ regions: nextRegions }),
         });
         const data = await response.json();
@@ -1211,7 +1136,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         console.error('Unable to save regions', error);
       }
     },
-    [user, setRegions]
+    [token, setRegions]
   );
 
   useEffect(() => {
@@ -1221,7 +1146,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
       setEditorSelection(null);
       setActivePlacementTypeId(null);
       setIsRegionMode(false);
-      setIsPlacingLabel(false);
+      setRegionDraftPoints([]);
       selectRegion(null);
     }
   }, [isEditorMode, selectLocation, selectRegion]);
@@ -1230,7 +1155,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     if (!isEditorMode) return;
     return () => {
       setIsRegionMode(false);
-      setIsPlacingLabel(false);
+      setRegionDraftPoints([]);
     };
   }, [isEditorMode]);
 
@@ -1253,7 +1178,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
       return;
     }
 
-    if (!user) {
+    if (!token) {
       setSaveWarning('Please sign in again to save changes.');
       return;
     }
@@ -1283,10 +1208,10 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         saveTimeoutRef.current = null;
       }
     };
-  }, [serializedLocations, isEditorMode, canAutoSave, handleServerSave, locations, user]);
+  }, [serializedLocations, isEditorMode, canAutoSave, handleServerSave, locations, token]);
 
   useEffect(() => {
-    if (!canAutoSave || !user) return;
+    if (!canAutoSave || !token) return;
     if (serializedRegions === lastRegionSnapshotRef.current) return;
 
     if (regionSaveTimeoutRef.current) {
@@ -1304,7 +1229,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         regionSaveTimeoutRef.current = null;
       }
     };
-  }, [serializedRegions, canAutoSave, handleRegionSave, regions, user]);
+  }, [serializedRegions, canAutoSave, handleRegionSave, regions, token]);
 
   useEffect(() => () => {
     if (saveTimeoutRef.current) {
@@ -1460,7 +1385,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     if (!isRegionMode) return undefined;
     const handleKey = (event) => {
       if (event.key === 'Escape') {
-        setIsPlacingLabel(false);
+        setRegionDraftPoints([]);
       }
     };
     window.addEventListener('keydown', handleKey);
@@ -1536,7 +1461,35 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 
   return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
-            <div className="map-layout">
+      <div className="map-layout">
+        {isEditorMode && (
+          <EditorSidePanel
+            isEditorMode={isEditorMode}
+            markerPalette={markerPaletteNode}
+            markerToolbox={markerToolboxNode}
+            locationEditor={locationEditorNode}
+            regions={regions}
+            activeRegionId={activeRegionId}
+            onSelectRegion={selectRegion}
+            onFocusRegion={focusRegionOnMap}
+            onDeleteRegion={handleDeleteRegion}
+            canAutoSave={canAutoSave}
+            isRegionMode={isRegionMode}
+            onToggleRegionMode={handleToggleRegionMode}
+            regionDraftPoints={regionDraftPoints}
+            onFinishRegion={handleRegionFinish}
+            onResetRegionDraft={handleRegionDraftReset}
+            canAssignSelection={Boolean(isEditorMode && selectedLocation && activeRegionId)}
+            onAssignSelection={handleAssignLocationToRegion}
+            selectedRegionName={selectedRegion?.name || ''}
+            selectedLocationName={selectedLocation?.name || ''}
+            onRegionFieldChange={handleRegionFieldChange}
+            onMergeRegion={handleMergeRegions}
+            onStartSubregion={handleStartSubregion}
+            onCancelSubregion={handleCancelSubregion}
+            regionDraftTargetId={regionDraftTargetId}
+          />
+        )}
         <div className="map-layout__canvas">
           <div className="map-container-wrapper" ref={mapContainerRef}>
             <MapContainer
@@ -1580,10 +1533,6 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                 onAddPoint={handleRegionPointAdd}
                 onFinish={handleRegionFinish}
               />
-              <LabelPlacementHandler
-                isActive={isEditorMode && isPlacingLabel}
-                onPlace={handlePlaceLabel}
-              />
               <KeyboardControls />
               <ZoomControls />
               {filteredLocations.map((location) => (
@@ -1598,12 +1547,6 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                   resolveIcon={resolveMarkerIcon}
                 />
               ))}
-              <LabelLayer
-                labels={showMapLabels ? mapLabels : []}
-                zoomLevel={mapZoom}
-                isEditable={isEditorMode}
-                onDragLabel={handleLabelDrag}
-              />
               <RegionLayer
                 regions={filteredRegions}
                 draftPoints={regionDraftPoints}
@@ -1646,56 +1589,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
             />
           </div>
         </div>
-        {isEditorMode && (
-          <div className={`editor-panel-shell ${isEditorPanelOpen ? 'is-open' : 'is-closed'}`}>
-            <div className="editor-panel-shell__panel">
-              <EditorSidePanel
-                isEditorMode={isEditorMode}
-                markerPalette={markerPaletteNode}
-                markerToolbox={markerToolboxNode}
-                locationEditor={locationEditorNode}
-                regions={regions}
-                activeRegionId={activeRegionId}
-                onSelectRegion={selectRegion}
-                onFocusRegion={focusRegionOnMap}
-                onDeleteRegion={handleDeleteRegion}
-                canAutoSave={canAutoSave}
-                isRegionMode={isRegionMode}
-                onToggleRegionMode={handleToggleRegionMode}
-                regionDraftPoints={regionDraftPoints}
-                onFinishRegion={handleRegionFinish}
-                onResetRegionDraft={handleRegionDraftReset}
-                canAssignSelection={Boolean(isEditorMode && selectedLocation && activeRegionId)}
-                onAssignSelection={handleAssignLocationToRegion}
-                selectedRegionName={selectedRegion?.name || ''}
-                selectedLocationName={selectedLocation?.name || ''}
-                onRegionFieldChange={handleRegionFieldChange}
-                onMergeRegion={handleMergeRegions}
-                onStartSubregion={handleStartSubregion}
-                onCancelSubregion={handleCancelSubregion}
-                regionDraftTargetId={regionDraftTargetId}
-                labels={mapLabels}
-                showMapLabels={showMapLabels}
-                onToggleLabels={setShowMapLabels}
-                onStartPlaceLabel={handleStartLabelPlacement}
-                isPlacingLabel={isPlacingLabel}
-                onLabelFieldChange={handleLabelFieldChange}
-                onDeleteLabel={handleDeleteLabel}
-                mapZoom={mapZoom}
-              />
-            </div>
-            <button
-              type="button"
-              className="editor-panel-shell__handle"
-              aria-expanded={isEditorPanelOpen}
-              onClick={() => setIsEditorPanelOpen((prev) => !prev)}
-            >
-              Tools
-            </button>
-          </div>
-        )}
       </div>
-
       {selectedLocation && (
         <SidePanel
           location={selectedLocation}
@@ -1734,24 +1628,5 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 }
 
 export default InteractiveMap;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

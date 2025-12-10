@@ -5,7 +5,16 @@ const PANEL_VIEWS = {
   HOME: 'home',
   MARKERS: 'markers',
   REGIONS: 'regions',
+  LABELS: 'labels',
 };
+
+const LABEL_COLORS = ['#fef3c7', '#fde68a', '#facc15', '#f97316', '#c084fc', '#93c5fd', '#e5e7eb', '#fca5a5'];
+const LABEL_FONTS = [
+  { id: 'cinzel', label: 'Cinzel', value: "'Cinzel','Cormorant Garamond',serif" },
+  { id: 'playfair', label: 'Playfair Display', value: "'Playfair Display','Times New Roman',serif" },
+  { id: 'inter', label: 'Inter', value: "'Inter','Segoe UI',sans-serif" },
+  { id: 'uncial', label: 'Uncial', value: "'Uncial Antiqua','Georgia',serif" },
+];
 
 function EditorSidePanel({
   isEditorMode,
@@ -32,6 +41,14 @@ function EditorSidePanel({
   onAssignSelection,
   selectedRegionName = '',
   selectedLocationName = '',
+  labels = [],
+  showMapLabels = true,
+  onToggleLabels,
+  onStartPlaceLabel,
+  isPlacingLabel = false,
+  onLabelFieldChange,
+  onDeleteLabel,
+  mapZoom = 0,
 }) {
   const [view, setView] = useState(PANEL_VIEWS.HOME);
   const [markerView, setMarkerView] = useState('palette');
@@ -74,8 +91,7 @@ function EditorSidePanel({
   }, [regions]);
 
   if (!isEditorMode) return null;
-
-  const renderHome = () => (
+  const renderHome = () => (
     <div className="editor-side-panel__home-grid">
       <button
         type="button"
@@ -94,6 +110,15 @@ function EditorSidePanel({
         <span className="editor-side-panel__home-eyebrow">Tools</span>
         <strong>Regions</strong>
         <p>Create areas, adjust colors, and assign markers.</p>
+      </button>
+      <button
+        type="button"
+        className="editor-side-panel__home-card"
+        onClick={() => setView(PANEL_VIEWS.LABELS)}
+      >
+        <span className="editor-side-panel__home-eyebrow">Tools</span>
+        <strong>Labels</strong>
+        <p>Place names and titles anywhere on the map.</p>
       </button>
       <div className="editor-side-panel__home-card editor-side-panel__home-card--disabled">
         <span className="editor-side-panel__home-eyebrow">Coming Soon</span>
@@ -174,7 +199,6 @@ function EditorSidePanel({
                 type="button"
                 className="toolbox-button"
                 onClick={onToggleRegionMode}
-                disabled={!canAutoSave}
               >
                 {isRegionMode ? 'Exit Region Mode' : 'Start Region Mode'}
               </button>
@@ -280,9 +304,192 @@ function EditorSidePanel({
     </>
   );
 
+  const renderLabels = () => {
+    const defaultFont = LABEL_FONTS[0].value;
+    return (
+      <div className="editor-side-panel__section">
+        <div className="editor-side-panel__section-header">
+          <h3>Labels</h3>
+          <p>Place names on the map. Zoom {mapZoom.toFixed(1)}</p>
+        </div>
+        <div className="editor-side-panel__actions-grid">
+          <article className="editor-side-panel__action-card">
+            <header>
+              <h4>Visibility &amp; placement</h4>
+              <p>Toggle labels or drop a new one anywhere.</p>
+            </header>
+            <div className="label-editor__toggle">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showMapLabels}
+                  onChange={(e) => onToggleLabels?.(e.target.checked)}
+                />
+                Show labels on map
+              </label>
+            </div>
+            <button
+              type="button"
+              className={`tool-drawer__action ${isPlacingLabel ? 'is-active' : ''}`}
+              onClick={onStartPlaceLabel}
+            >
+              {isPlacingLabel ? 'Click the map to place' : 'Place label on map'}
+            </button>
+            <p className="editor-side-panel__hint">Drag labels after placing to fine tune their position.</p>
+          </article>
+        </div>
+
+        <div className="tool-drawer__labels-list custom-scrollbar">
+          {labels.length === 0 && <p className="tool-drawer__empty">No labels yet. Add one from the map.</p>}
+          {labels.map((label) => {
+            const safeSize = Number.isFinite(label.size) ? label.size : 1;
+            const safeZoomScale = Number.isFinite(label.zoomScale) ? label.zoomScale : 1;
+            const safeFadeStart = Number.isFinite(label.fadeInStart) ? label.fadeInStart : 3;
+            const safeFadeEnd = Number.isFinite(label.fadeInEnd) ? label.fadeInEnd : 5;
+            const colorValue = label.color || '#fef3c7';
+            const fontValue = label.font || defaultFont;
+            const scaleWithZoom = label.scaleWithZoom !== false;
+            return (
+              <div className="tool-drawer__label-card" key={label.id}>
+                <div className="tool-drawer__label-row">
+                  <label className="editor-side-panel__field">
+                    <span>Text</span>
+                    <input
+                      type="text"
+                      value={label.text || ''}
+                      onChange={(e) => onLabelFieldChange?.(label.id, 'text', e.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="tool-drawer__delete"
+                    onClick={() => onDeleteLabel?.(label.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+
+                <div className="label-editor__field-row">
+                  <label className="editor-side-panel__field">
+                    <span>Font</span>
+                    <select
+                      value={fontValue}
+                      onChange={(e) => onLabelFieldChange?.(label.id, 'font', e.target.value)}
+                    >
+                      {LABEL_FONTS.map((font) => (
+                        <option key={font.id} value={font.value}>
+                          {font.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="editor-side-panel__field">
+                    <span>Color</span>
+                    <div className="label-editor__swatches">
+                      {LABEL_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`label-editor__swatch ${colorValue === color ? 'is-active' : ''}`}
+                          style={{ backgroundColor: color }}
+                          aria-label={`Use ${color} for label`}
+                          onClick={() => onLabelFieldChange?.(label.id, 'color', color)}
+                        />
+                      ))}
+                      <input
+                        type="color"
+                        aria-label="Custom label color"
+                        value={colorValue}
+                        onChange={(e) => onLabelFieldChange?.(label.id, 'color', e.target.value)}
+                      />
+                    </div>
+                  </label>
+                </div>
+
+                <div className="label-editor__field-row">
+                  <div className="tool-drawer__slider">
+                    <label>
+                      <span>Base size</span>
+                      <span className="label-editor__value">{safeSize.toFixed(2)}x</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="3"
+                      step="0.05"
+                      value={safeSize}
+                      onChange={(e) => onLabelFieldChange?.(label.id, 'size', e.target.value)}
+                    />
+                  </div>
+                  <div className="tool-drawer__slider">
+                    <label>
+                      <span>Zoom scale</span>
+                      <span className="label-editor__value">{safeZoomScale.toFixed(2)}x</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.5"
+                      step="0.05"
+                      value={safeZoomScale}
+                      onChange={(e) => onLabelFieldChange?.(label.id, 'zoomScale', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="label-editor__field-row">
+                  <div className="tool-drawer__slider">
+                    <label>
+                      <span>Fade start</span>
+                      <span className="label-editor__value">z{safeFadeStart.toFixed(1)}</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="8"
+                      step="0.1"
+                      value={safeFadeStart}
+                      onChange={(e) => onLabelFieldChange?.(label.id, 'fadeInStart', e.target.value)}
+                    />
+                  </div>
+                  <div className="tool-drawer__slider">
+                    <label>
+                      <span>Fade end</span>
+                      <span className="label-editor__value">z{safeFadeEnd.toFixed(1)}</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="10"
+                      step="0.1"
+                      value={safeFadeEnd}
+                      onChange={(e) => onLabelFieldChange?.(label.id, 'fadeInEnd', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="label-editor__toggle">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={scaleWithZoom}
+                      onChange={(e) => onLabelFieldChange?.(label.id, 'scaleWithZoom', e.target.checked)}
+                    />
+                    Scale with map zoom
+                  </label>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = () => {
     if (view === PANEL_VIEWS.MARKERS) return renderMarkers();
     if (view === PANEL_VIEWS.REGIONS) return renderRegions();
+    if (view === PANEL_VIEWS.LABELS) return renderLabels();
     return renderHome();
   };
 
@@ -320,6 +527,13 @@ function EditorSidePanel({
           >
             Regions
           </button>
+          <button
+            type="button"
+            className={view === PANEL_VIEWS.LABELS ? 'active' : ''}
+            onClick={() => setView(PANEL_VIEWS.LABELS)}
+          >
+            Labels
+          </button>
         </div>
       </header>
       <div className="editor-side-panel__body custom-scrollbar">{renderContent()}</div>
@@ -328,3 +542,16 @@ function EditorSidePanel({
 }
 
 export default EditorSidePanel;
+
+
+
+
+
+
+
+
+
+
+
+
+
