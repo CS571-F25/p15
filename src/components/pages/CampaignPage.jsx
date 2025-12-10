@@ -6,7 +6,7 @@ import './CampaignPage.css';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export default function CampaignPage() {
-  const { token, role } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const isGuest = !token || role === 'guest';
   
@@ -50,22 +50,11 @@ export default function CampaignPage() {
 
   // Fetch campaigns
   const fetchCampaigns = useCallback(async () => {
-    if (isGuest) {
-      setCampaigns(guestCampaigns);
-      setLoading(false);
-      setError('');
-      return;
-    }
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!user) return;
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_BASE_URL}/campaigns/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`${API_BASE_URL}/campaigns/me`, { credentials: 'include' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load campaigns');
       setCampaigns(data.campaigns || []);
@@ -74,7 +63,7 @@ export default function CampaignPage() {
     } finally {
       setLoading(false);
     }
-  }, [guestCampaigns, isGuest, token]);
+  }, [user]);
 
   useEffect(() => {
     fetchCampaigns();
@@ -125,7 +114,7 @@ export default function CampaignPage() {
         for (const campaignId of selectedCampaigns) {
           await fetch(`${API_BASE_URL}/campaigns/${campaignId}`, {
             method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
           });
         }
         setSelectedCampaigns(new Set());
@@ -135,7 +124,7 @@ export default function CampaignPage() {
           const [campaignId, charId] = charKey.split('::');
           await fetch(`${API_BASE_URL}/campaigns/${campaignId}/character/${charId}`, {
             method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
           });
         }
         setSelectedCharacters(new Set());

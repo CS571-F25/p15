@@ -9,7 +9,7 @@ const TYPES = [
 ];
 
 function AdminEntitiesPage() {
-  const { token, role } = useAuth();
+  const { role, user } = useAuth();
   const isAdmin = role === 'admin';
   const [type, setType] = useState('players');
   const [items, setItems] = useState([]);
@@ -31,11 +31,9 @@ function AdminEntitiesPage() {
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    if (!token) return;
+    if (!user) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/entities/${type}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`${API_BASE_URL}/entities/${type}`, { credentials: 'include' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Unable to load.');
       setItems(data.items || []);
@@ -46,11 +44,11 @@ function AdminEntitiesPage() {
 
   useEffect(() => {
     load();
-  }, [type, token]);
+  }, [type, user]);
 
   useEffect(() => {
     const fetchRefs = async () => {
-      if (!token) return;
+      if (!user) return;
       try {
         const resRegions = await fetch(`${API_BASE_URL}/regions`);
         const dataRegions = await resRegions.json();
@@ -64,7 +62,7 @@ function AdminEntitiesPage() {
       }
     };
     fetchRefs();
-  }, [token]);
+  }, [user]);
 
   if (!isAdmin) {
     return (
@@ -84,8 +82,8 @@ function AdminEntitiesPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(form),
       });
       const data = await res.json();
@@ -209,8 +207,8 @@ function AdminEntitiesPage() {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
                       },
+                      credentials: 'include',
                       body: JSON.stringify({ id: item.id, visible: !(item.visible === false) }),
                     });
                     load();

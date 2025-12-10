@@ -502,7 +502,7 @@ function LocationMarker({
 }
 
 function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFilters }) {
-  const { role, token } = useAuth();
+  const { role, user } = useAuth();
   const { cloudsEnabled, fogEnabled, vignetteEnabled, heatmapMode, intensities, setIntensity } =
     useMapEffects();
   const { locations, setLocations, selectedLocationId, selectLocation } = useLocationData();
@@ -1081,7 +1081,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 
   const handleServerSave = useCallback(
     async (nextLocations) => {
-      if (!token) {
+      if (!user) {
         setSaveWarning('Please sign in again to save changes.');
         return;
       }
@@ -1090,8 +1090,8 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
           body: JSON.stringify({ locations: nextLocations }),
         });
         const data = await response.json();
@@ -1108,19 +1108,19 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         setSaveWarning(error.message || 'Unable to save locations right now.');
       }
     },
-    [token]
+    [user]
   );
 
   const handleRegionSave = useCallback(
     async (nextRegions) => {
-      if (!token) return;
+      if (!user) return;
       try {
         const response = await fetch(`${API_BASE_URL}/regions/save`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
           body: JSON.stringify({ regions: nextRegions }),
         });
         const data = await response.json();
@@ -1136,7 +1136,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         console.error('Unable to save regions', error);
       }
     },
-    [token, setRegions]
+    [user, setRegions]
   );
 
   useEffect(() => {
@@ -1178,7 +1178,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
       return;
     }
 
-    if (!token) {
+    if (!user) {
       setSaveWarning('Please sign in again to save changes.');
       return;
     }
@@ -1208,10 +1208,10 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         saveTimeoutRef.current = null;
       }
     };
-  }, [serializedLocations, isEditorMode, canAutoSave, handleServerSave, locations, token]);
+  }, [serializedLocations, isEditorMode, canAutoSave, handleServerSave, locations, user]);
 
   useEffect(() => {
-    if (!canAutoSave || !token) return;
+    if (!canAutoSave || !user) return;
     if (serializedRegions === lastRegionSnapshotRef.current) return;
 
     if (regionSaveTimeoutRef.current) {
@@ -1229,7 +1229,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         regionSaveTimeoutRef.current = null;
       }
     };
-  }, [serializedRegions, canAutoSave, handleRegionSave, regions, token]);
+  }, [serializedRegions, canAutoSave, handleRegionSave, regions, user]);
 
   useEffect(() => () => {
     if (saveTimeoutRef.current) {
