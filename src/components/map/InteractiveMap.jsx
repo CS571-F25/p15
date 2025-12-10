@@ -223,10 +223,11 @@ const MAP_BOUNDS = L.latLngBounds(
   [-MAP_PADDING, -MAP_PADDING],
   [MAP_PIXEL_HEIGHT + MAP_PADDING, MAP_PIXEL_WIDTH + MAP_PADDING]
 );
+const EDITOR_MAX_BOUNDS = null;
 const BOUNDS_VISCOSITY = 0.35; // gentle resistance for a boomerang effect
-const ZOOM_SNAP = 1;
-const ZOOM_DELTA = 1;
-const WHEEL_PX_PER_ZOOM_LEVEL = 120;
+const ZOOM_SNAP = 0.5;
+const ZOOM_DELTA = 0.5;
+const WHEEL_PX_PER_ZOOM_LEVEL = 240;
 const MAX_SCALE = Math.pow(2, TILE_MAX_ZOOM_LEVEL);
 const TILESET_CRS = L.extend({}, L.CRS.Simple, {
   scale: (zoom) => Math.pow(2, zoom) / MAX_SCALE,
@@ -277,6 +278,9 @@ function InvertedYTileLayer({
       tileSize,
       noWrap: true,
       keepBuffer,
+      reuseTiles: true,
+      updateWhenIdle: false,
+      updateWhenZooming: true,
     });
     layer.addTo(map);
 
@@ -1593,10 +1597,50 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 
   useEffect(() => {
     if (!mapInstance) return;
-    mapInstance.setMaxBounds(MAP_BOUNDS);
-    mapInstance.options.maxBoundsViscosity = BOUNDS_VISCOSITY;
-    mapInstance.panInsideBounds(MAP_BOUNDS, { animate: true, duration: 0.35 });
-  }, [mapInstance]);
+
+    if (!mapInstance.__origLimitFns) {
+      mapInstance.__origLimitFns = {
+        limitCenter: mapInstance._limitCenter,
+        limitOffset: mapInstance._limitOffset,
+        limitBounds: mapInstance._limitBounds,
+        enforceMaxBounds: mapInstance._enforceMaxBounds,
+        getBoundsOffset: mapInstance._getBoundsOffset,
+        panInsideBounds: mapInstance.panInsideBounds,
+      };
+    }
+
+    if (isEditorMode) {
+      // Clear bounds and bypass limiters for free panning.
+      mapInstance.setMaxBounds(null);
+      mapInstance.options.maxBounds = null;
+      mapInstance.options.maxBoundsViscosity = 0;
+      mapInstance._bounds = null;
+      if (mapInstance.dragging && mapInstance.dragging._draggable) {
+        mapInstance.dragging._draggable._bounds = null;
+      }
+      mapInstance._limitCenter = (center) => center;
+      mapInstance._limitOffset = (offset) => offset;
+      mapInstance._limitBounds = (bounds) => bounds;
+      mapInstance._enforceMaxBounds = () => mapInstance;
+      mapInstance._getBoundsOffset = () => L.point(0, 0);
+      mapInstance.panInsideBounds = () => mapInstance;
+    } else {
+      // Restore normal limiting behavior.
+      const { limitCenter, limitOffset, limitBounds, enforceMaxBounds, getBoundsOffset, panInsideBounds } = mapInstance.__origLimitFns || {};
+      if (limitCenter) mapInstance._limitCenter = limitCenter;
+      if (limitOffset) mapInstance._limitOffset = limitOffset;
+      if (limitBounds) mapInstance._limitBounds = limitBounds;
+      if (enforceMaxBounds) mapInstance._enforceMaxBounds = enforceMaxBounds;
+      if (getBoundsOffset) mapInstance._getBoundsOffset = getBoundsOffset;
+      if (panInsideBounds) mapInstance.panInsideBounds = panInsideBounds;
+      mapInstance.setMaxBounds(MAP_BOUNDS);
+      mapInstance.options.maxBounds = MAP_BOUNDS;
+      mapInstance.options.maxBoundsViscosity = BOUNDS_VISCOSITY;
+      if (typeof mapInstance.panInsideBounds === 'function') {
+        mapInstance.panInsideBounds(MAP_BOUNDS, { animate: true, duration: 0.35 });
+      }
+    }
+  }, [mapInstance, isEditorMode]);
 
   return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
@@ -1604,12 +1648,13 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         <div className="map-layout__canvas">
           <div className="map-container-wrapper" ref={mapContainerRef}>
             <MapContainer
+              key={`map-${isEditorMode ? 'edit' : 'view'}`}
               center={center}
               zoom={zoom}
               minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
               maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
-              maxBounds={MAP_BOUNDS}
-              maxBoundsViscosity={BOUNDS_VISCOSITY}
+              maxBounds={isEditorMode ? undefined : MAP_BOUNDS}
+              maxBoundsViscosity={isEditorMode ? 0 : BOUNDS_VISCOSITY}
               crs={TILESET_CRS}
               className="leaflet-map"
               scrollWheelZoom={true}
@@ -1619,6 +1664,12 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
               zoomSnap={ZOOM_SNAP}
               zoomDelta={ZOOM_DELTA}
               wheelPxPerZoomLevel={WHEEL_PX_PER_ZOOM_LEVEL}
+              wheelDebounceTime={0}
+              zoomAnimation={true}
+              zoomAnimationThreshold={8}
+              markerZoomAnimation={true}
+              inertia={true}
+              inertiaDeceleration={1800}
               whenCreated={setMapInstance}
               style={{ height: '100%', width: '100%' }}
             >

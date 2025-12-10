@@ -1608,6 +1608,7 @@ html, body, #root {
   white-space: nowrap;
   transform: translateY(-50%) rotateY(180deg);
   will-change: transform, opacity;
+  transition: transform 160ms ease, opacity 160ms ease;
 }
 /* Collapsible editor panel on the right */
 .map-layout {

@@ -17,12 +17,14 @@ function LabelLayer({ labels = [], zoomLevel = 4, isEditable = false, isEditorMo
     () =>
       labels.map((label) => {
         const baseSize = 28 * (label.size || 1);
-        const zoomScale = label.scaleWithZoom === false ? 1 : Math.pow(1.12, zoomLevel - 4);
+        const zoomDelta = clamp(zoomLevel - 4, -4, 4);
+        const zoomScale = label.scaleWithZoom === false ? 1 : 1 + zoomDelta * 0.06;
         const scaledSize = baseSize * (label.zoomScale || 1) * zoomScale;
         const rawStart = Number.isFinite(label.fadeInStart) ? label.fadeInStart : 2.8;
-        const rawEnd = Number.isFinite(label.fadeInEnd) ? label.fadeInEnd : rawStart + 1.2;
+        const rawEnd = Number.isFinite(label.fadeInEnd) ? label.fadeInEnd : rawStart + 1.8;
         const fadeStart = rawStart;
-        const fadeEnd = rawEnd <= fadeStart + 0.05 ? fadeStart + 0.05 : rawEnd;
+        const minGap = 0.2;
+        const fadeEnd = rawEnd <= fadeStart + minGap ? fadeStart + minGap : rawEnd;
         let opacity = fadeEnd > fadeStart
           ? clamp((zoomLevel - fadeStart) / (fadeEnd - fadeStart), 0, 1)
           : 1;
