@@ -4,9 +4,12 @@ import { useAuth } from '../../context/AuthContext';
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { user, login } = useAuth();
+  const { user, loginWithGoogle, loginWithEmail } = useAuth();
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [info, setInfo] = useState('');
+  const [email, setEmail] = useState('');
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
+  const [oauthSubmitting, setOauthSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -14,15 +17,31 @@ function LoginPage() {
     }
   }, [user, navigate]);
 
+  const handleEmailSignIn = async () => {
+    setError('');
+    setInfo('');
+    if (emailSubmitting) return;
+    setEmailSubmitting(true);
+    try {
+      await loginWithEmail({ email });
+      setInfo('Magic link sent. Check your email to finish signing in.');
+    } catch (err) {
+      setError(err?.message || 'Unable to start email login.');
+    } finally {
+      setEmailSubmitting(false);
+    }
+  };
+
   const handleOAuthSignIn = async () => {
     setError('');
-    if (submitting) return;
-    setSubmitting(true);
+    setInfo('');
+    if (oauthSubmitting) return;
+    setOauthSubmitting(true);
     try {
-      await login();
+      await loginWithGoogle();
     } catch (err) {
       setError(err?.message || 'Unable to start login.');
-      setSubmitting(false);
+      setOauthSubmitting(false);
     }
   };
 
@@ -34,16 +53,38 @@ function LoginPage() {
         </header>
         <div className="auth-modal__form">
           <p className="auth-modal__note">
-            You&apos;ll be redirected to Supabase OAuth (e.g. GitHub) to sign in securely.
+            Sign in with a magic link sent to your email or use Google OAuth.
           </p>
+          <label htmlFor="login-email">
+            Email
+            <input
+              id="login-email"
+              type="email"
+              placeholder="adventurer@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={emailSubmitting || oauthSubmitting}
+              required
+            />
+          </label>
+          <button
+            type="button"
+            className="auth-modal__submit"
+            onClick={handleEmailSignIn}
+            disabled={emailSubmitting || oauthSubmitting || !email.trim()}
+          >
+            {emailSubmitting ? 'Sending magic link...' : 'Send magic link'}
+          </button>
+          <div className="auth-modal__divider">or</div>
           <button
             type="button"
             className="auth-modal__google"
             onClick={handleOAuthSignIn}
-            disabled={submitting}
+            disabled={oauthSubmitting}
           >
-            {submitting ? 'Opening sign-in...' : 'Continue with OAuth'}
+            {oauthSubmitting ? 'Opening Google...' : 'Continue with Google'}
           </button>
+          {info && <p className="auth-modal__note">{info}</p>}
           {error && <p className="auth-modal__error">{error}</p>}
         </div>
         <p className="auth-modal__note">

@@ -71,9 +71,14 @@ function normalizeDisplayName(user, fallbackEmail) {
   );
 }
 
+function normalizeUsername(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
 async function upsertSupabaseUser(supabaseUser) {
   const email = (supabaseUser?.email || '').toLowerCase();
   const supabaseId = supabaseUser?.id;
+  const incomingUsername = normalizeUsername(supabaseUser?.user_metadata?.username);
 
   if (!supabaseId || !email) {
     throw new Error('Supabase user is missing required claims.');
@@ -87,7 +92,7 @@ async function upsertSupabaseUser(supabaseUser) {
     existing = await addUser({
       email,
       name: displayName,
-      username: '',
+      username: incomingUsername,
       favorites: [],
       featuredCharacter: null,
       profilePicture: '',
@@ -110,6 +115,9 @@ async function upsertSupabaseUser(supabaseUser) {
       nextUser.email = email;
       if (!nextUser.name) {
         nextUser.name = displayName;
+      }
+      if (!nextUser.username && incomingUsername) {
+        nextUser.username = incomingUsername;
       }
       list[index] = nextUser;
       existing = nextUser;
@@ -135,6 +143,30 @@ router.get('/login', async (req, res) => {
   }
 
   return res.redirect(data.url);
+});
+
+router.post('/login/email', async (req, res) => {
+  if (!requireSupabase(res)) return;
+  const email = normalizeUsername(req.body?.email).toLowerCase();
+  const desiredUsername = normalizeUsername(req.body?.username);
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required.' });
+  }
+
+  const { data, error } = await supabaseAnon.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: OAUTH_REDIRECT_URL,
+      data: desiredUsername ? { username: desiredUsername } : undefined,
+    },
+  });
+
+  if (error || !data) {
+    console.error('Failed to send Supabase email login:', error);
+    return res.status(500).json({ error: 'Unable to start email login.' });
+  }
+
+  return res.json({ message: 'Check your email for a sign-in link.' });
 });
 
 router.get('/callback', async (req, res) => {
