@@ -1,4 +1,4 @@
-﻿import React, { useMemo } from "react";
+import React, { useMemo } from "react";
 import { LayerGroup, Marker } from "react-leaflet";
 import L from "leaflet";
 
@@ -25,8 +25,9 @@ function LabelLayer({ labels = [], zoomLevel = 4, isEditable = false, onDragLabe
           ? clamp((zoomLevel - fadeStart) / (fadeEnd - fadeStart), 0, 1)
           : 1;
         const color = label.color || "#fef3c7";
+        const fontFamily = label.font || "'Cinzel','Cormorant Garamond',serif";
         const text = escapeHtml(label.text || "Label");
-        const html = `<div class="map-label" style="font-size:${scaledSize}px;color:${color};opacity:${opacity};">${text}</div>`;
+        const html = `<div class="map-label" style="font-size:${scaledSize}px;color:${color};opacity:${opacity};font-family:${fontFamily};">${text}</div>`;
         const size = [scaledSize * 4, scaledSize * 1.4];
         return {
           ...label,
@@ -69,5 +70,3 @@ function LabelLayer({ labels = [], zoomLevel = 4, isEditable = false, onDragLabe
 }
 
 export default LabelLayer;
-
-

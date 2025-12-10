@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --header-height: 56px;
 }
 
@@ -1545,6 +1545,54 @@ html, body, #root {
   font-size: 0.9rem;
 }
 
+.label-editor__field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.label-editor__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.label-editor__swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.label-editor__swatch.is-active {
+  outline: 2px solid #facc15;
+  outline-offset: 2px;
+}
+
+.label-editor__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: #e5e7eb;
+}
+
+.label-editor__value {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-left: 0.35rem;
+}
+
+.editor-side-panel__hint {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
 /* Map label visuals */
 .map-label-icon {
   background: transparent;
@@ -1612,6 +1660,7 @@ html, body, #root {
 .editor-panel-shell.is-closed .editor-panel-shell__handle {
   opacity: 0.9;
 }
+
 
 
 

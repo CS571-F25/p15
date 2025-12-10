@@ -5,6 +5,7 @@ import './MagicPage.css';
 import { useAuth } from '../../context/AuthContext';
 import MagicSparkles from './MagicSparkles';
 import ShaderBackground from '../visuals/ShaderBackground';
+import MathEffects from './MathEffects';
 
 function InteractiveDukeTree({ god, color }) {
   const containerRef = useRef(null);
@@ -365,7 +366,7 @@ export default function MagicSystemPage() {
   );
 
   return (
-    <div className={`magic-page custom-scrollbar ${isGods ? `magic-page--${selectedGod}` : ''}`} style={themeStyle}>
+    <div className={`magic-page magic-page--layered ${isGods ? `magic-page--${selectedGod}` : ''}`} style={themeStyle}>
       <MagicSparkles
         className="magic-sparkles--ambient"
         variant={isGods && selectedGod === 'krovi' ? 'stars' : 'twinkle'}
@@ -469,6 +470,80 @@ export default function MagicSystemPage() {
             <InteractiveDukeTree god={activeGod} color={activeGod?.color || system.colors.primary} />
           </div>
         </section>
+      ) : system.id === 'math' ? (
+        <>
+          <section className="magic-section math-layout">
+            <div className="math-panel math-panel--hero" style={{ background: system.colors.card }}>
+              <div className="math-panel__header">
+                <p className="magic-eyebrow">Core concept</p>
+                <h2 className="magic-title">Understanding is Power</h2>
+                <p className="magic-subtitle">
+                  Math Mages calculate magic instead of channeling it; spells are equations solved in motion.
+                </p>
+              </div>
+              <ul className="math-panel__list">
+                {system.concept.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="math-panel" style={{ background: system.colors.card }}>
+              <div className="math-panel__header">
+                <p className="magic-eyebrow">How it works</p>
+                <h3 className="magic-title">Equations in motion</h3>
+              </div>
+              <ul className="math-panel__list">
+                {system.how.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="math-panel math-panel--frames" style={{ background: system.colors.card }}>
+              <div className="math-panel__header">
+                <p className="magic-eyebrow">Frames</p>
+                <h3 className="magic-title">The Math Mage’s Sight</h3>
+                <p className="magic-subtitle">Geometric overlays, vectors, and flows to read, rewrite, and counter magic.</p>
+              </div>
+              <div className="math-panel__chips">
+                {system.frames.map((item) => (
+                  <span key={item} className="math-chip">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="math-panel math-panel--split" style={{ background: system.colors.card }}>
+              <div>
+                <h3>Why humans excel</h3>
+                <ul className="math-panel__list">
+                  {system.humans.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3>Wizards & math magic</h3>
+                <ul className="math-panel__list">
+                  {system.wizards.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="math-panel" style={{ background: system.colors.card }}>
+              <div className="math-panel__header">
+                <p className="magic-eyebrow">Aesthetic</p>
+                <h3 className="magic-title">Cyan geometry</h3>
+              </div>
+              <p className="magic-subtitle">{system.aesthetic}</p>
+            </div>
+          </section>
+          <MathEffects />
+        </>
       ) : (
         <section className="magic-section">
           <div className="magic-section__header">

@@ -966,11 +966,12 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
       ...prev,
       {
         id,
-        text: 'New Label',
+                text: 'New Label',
         color: '#fef3c7',
-        font: 'serif',
+        font: "'Cinzel','Cormorant Garamond',serif",
         size: 1,
         zoomScale: 1,
+        scaleWithZoom: true,
         fadeInStart: 3,
         fadeInEnd: 5,
         lat: latlng.lat,
@@ -985,7 +986,21 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
   };
 
   const handleLabelFieldChange = (id, field, value) => {
-    setMapLabels((prev) => prev.map((label) => (label.id === id ? { ...label, [field]: value } : label)));
+    const numericFields = ['size','zoomScale','fadeInStart','fadeInEnd'];
+    const booleanFields = ['scaleWithZoom'];
+    setMapLabels((prev) =>
+      prev.map((label) => {
+        if (label.id !== id) return label;
+        let nextValue = value;
+        if (numericFields.includes(field)) {
+          const parsed = Number(value);
+          nextValue = Number.isFinite(parsed) ? parsed : 0;
+        } else if (booleanFields.includes(field)) {
+          nextValue = Boolean(value);
+        }
+        return { ...label, [field]: nextValue };
+      })
+    );
   };
 
   const handleDeleteLabel = (id) => {
@@ -1715,6 +1730,9 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 }
 
 export default InteractiveMap;
+
+
+
 
 
 
