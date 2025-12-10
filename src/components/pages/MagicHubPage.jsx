@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MAGIC_SYSTEMS } from '../../data/magicSystems';
 import { useAuth } from '../../context/AuthContext';
-import MagicSparkles from './MagicSparkles';
 import './MagicPage.css';
 
 export default function MagicHubPage() {
@@ -10,7 +9,6 @@ export default function MagicHubPage() {
 
   return (
     <div className="magic-page magic-page--hub custom-scrollbar">
-      <MagicSparkles className="magic-sparkles--ambient" variant="twinkle" count={30} />
       <div className="magic-hero">
         <div className="magic-hero__eyebrow">Compendium</div>
         <h1 className="magic-hero__title">Magic Systems of Azterra</h1>

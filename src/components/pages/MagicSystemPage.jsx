@@ -3,9 +3,91 @@ import { Link, useParams } from 'react-router-dom';
 import { MAGIC_SYSTEMS, getMagicSystem } from '../../data/magicSystems';
 import './MagicPage.css';
 import { useAuth } from '../../context/AuthContext';
-import MagicSparkles from './MagicSparkles';
 import ShaderBackground from '../visuals/ShaderBackground';
 import MathEffects from './MathEffects';
+
+function AzterraEffects() {
+  const spores = useMemo(
+    () =>
+      Array.from({ length: 46 }, (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: 10 + Math.random() * 16,
+        dur: 9 + Math.random() * 14,
+        delay: Math.random() * 6,
+        drift: Math.random() * 8 + 4,
+      })),
+    []
+  );
+
+  return (
+    <div className="azterra-effects" aria-hidden="true">
+      <div className="azterra-vignette" />
+      {spores.map((s) => (
+        <span
+          key={s.id}
+          className="azterra-spore"
+          style={{
+            left: `${s.x}%`,
+            top: `${s.y}%`,
+            width: `${s.size}px`,
+            height: `${s.size}px`,
+            animationDuration: `${s.dur}s`,
+            animationDelay: `${s.delay}s`,
+            '--drift': `${s.drift}px`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SpiritsEffects() {
+  const rings = useMemo(
+    () =>
+      Array.from({ length: 18 }, (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: 80 + Math.random() * 180,
+        delay: Math.random() * 6,
+        duration: 12 + Math.random() * 10,
+      })),
+    []
+  );
+
+  return (
+    <div className="spirits-effects" aria-hidden="true">
+      <div className="spirits-glow" />
+      {rings.map((ring) => (
+        <span
+          key={ring.id}
+          className="spirit-ring"
+          style={{
+            left: `${ring.x}%`,
+            top: `${ring.y}%`,
+            width: `${ring.size}px`,
+            height: `${ring.size}px`,
+            animationDuration: `${ring.duration}s`,
+            animationDelay: `${ring.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function WildEffects() {
+  return (
+    <div className="wild-effects" aria-hidden="true">
+      <div className="wild-storm wild-storm--a" />
+      <div className="wild-storm wild-storm--b" />
+      <div className="wild-rays" />
+      <div className="wild-noise" />
+    </div>
+  );
+}
 
 function InteractiveDukeTree({ god, color }) {
   const containerRef = useRef(null);
@@ -312,6 +394,21 @@ function InteractiveDukeTree({ god, color }) {
   );
 }
 
+function NatureVines() {
+  return (
+    <div className="nature-vines" aria-hidden="true">
+      <svg className="nature-vines__svg nature-vines__svg--left" viewBox="0 0 320 520" preserveAspectRatio="none">
+        <path d="M10 480 C 40 410, 60 360, 30 300 S 20 220, 70 180 S 90 120, 60 70 S 100 30, 140 10" />
+        <path d="M110 520 C 140 450, 160 380, 130 330 S 110 260, 150 220 S 170 150, 140 110 S 180 70, 210 40" />
+      </svg>
+      <svg className="nature-vines__svg nature-vines__svg--right" viewBox="0 0 320 520" preserveAspectRatio="none">
+        <path d="M310 480 C 280 410, 260 360, 290 300 S 300 220, 250 180 S 230 120, 260 70 S 220 30, 180 10" />
+        <path d="M200 520 C 170 450, 150 380, 180 330 S 200 260, 160 220 S 140 150, 170 110 S 130 70, 100 40" />
+      </svg>
+    </div>
+  );
+}
+
 export default function MagicSystemPage() {
   const { id } = useParams();
   const system = getMagicSystem(id) || MAGIC_SYSTEMS[0];
@@ -367,19 +464,13 @@ export default function MagicSystemPage() {
 
   return (
     <div className={`magic-page magic-page--layered ${isGods ? `magic-page--${selectedGod}` : ''}`} style={themeStyle}>
-      <MagicSparkles
-        className="magic-sparkles--ambient"
-        variant={isGods && selectedGod === 'krovi' ? 'stars' : 'twinkle'}
-        count={isGods && selectedGod === 'krovi' ? 30 : 28}
-        color={isGods && selectedGod === 'krovi' ? '#c7e0ff' : undefined}
-        accent={isGods && selectedGod === 'krovi' ? '#7dd3fc' : undefined}
-      />
+      {system.id === 'wild' && <WildEffects />}
       {isGods && selectedGod === 'kaya' && (
         <div className="magic-feature magic-feature--sun">
           <div className="magic-feature__sun-glow" />
           <div className="magic-feature__sun-rays" />
           <ShaderBackground modA={[1.8, 1.2, 0.6, 0.9]} />
-          <div className="magic-feature__label">Kaya’s Radiance</div>
+          <div className="magic-feature__label">Kaya's Radiance</div>
         </div>
       )}
       <div className="magic-hero" style={{ background: isGods ? godTheme.background : system.colors.background }}>
@@ -461,15 +552,299 @@ export default function MagicSystemPage() {
               Krovi guards darkness and freedom. Each duke offers a feat-like boon to those who swear a pact.
             </p>
           </div>
+          {selectedGod === 'kaya' && (
+            <div className="mt-4 mb-8 space-y-4">
+              <div className="rounded-3xl border border-amber-200/70 bg-gradient-to-br from-white/95 via-amber-50/70 to-amber-100/60 p-6 shadow-xl shadow-amber-400/25 text-amber-950">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-500">Lightbound highlights</p>
+                    <h4 className="text-2xl font-semibold text-amber-700">Kaya's warmth rewards order</h4>
+                    <p className="text-sm text-amber-900/80 max-w-3xl">
+                      Sun-steeped boons spike against shaken foes, rewarding decisive calls, formations, and steady leadership.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-amber-700 shadow-inner shadow-amber-200">
+                      Light · Control
+                    </span>
+                    <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-amber-700 shadow-inner shadow-amber-200">
+                      Sunset hue
+                    </span>
+                    <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-amber-700 shadow-inner shadow-amber-200">
+                      Feat-like pacts
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  <div className="flex gap-3 rounded-2xl bg-white/85 p-3 shadow-inner shadow-amber-200/80">
+                    <div className="mt-2 h-2 w-2 rounded-full bg-amber-500" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-amber-800">Radiant aura</p>
+                      <p className="text-sm text-amber-900/80">Sunlight steadies allies and keeps the duke lattice humming.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 rounded-2xl bg-white/85 p-3 shadow-inner shadow-amber-200/80">
+                    <div className="mt-2 h-2 w-2 rounded-full bg-amber-500" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-amber-800">Command focus</p>
+                      <p className="text-sm text-amber-900/80">Control grows as enemies falter—judgment, restraint, and authority stack.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 rounded-2xl bg-white/85 p-3 shadow-inner shadow-amber-200/80">
+                    <div className="mt-2 h-2 w-2 rounded-full bg-amber-500" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-amber-800">Radiant palette</p>
+                      <p className="text-sm text-amber-900/80">Amber light, bright cards, and a sun core anchor the entire page theme.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="magic-god-panel">
             <div className="magic-section__header magic-section__header--tight">
               <p className="magic-eyebrow">{selectedGod === 'kaya' ? 'Kaya' : 'Krovi'}</p>
               <h3 className="magic-title">{activeGod?.name}</h3>
               <p className="magic-subtitle">{activeGod?.description}</p>
             </div>
-            <InteractiveDukeTree god={activeGod} color={activeGod?.color || system.colors.primary} />
+            <div className="magic-grid magic-grid--highlights">
+              <div className="magic-card" style={{ background: system.colors.card }}>
+                <div className="magic-card__header">
+                  <h2>{selectedGod === 'kaya' ? 'Light & Control' : 'Darkness & Freedom'}</h2>
+                </div>
+                <p className="magic-card__tagline">Aura: {activeGod?.aura}</p>
+              </div>
+              {(activeGod?.entries || []).map((entry) => (
+                <div key={entry.name} className="magic-card" style={{ background: system.colors.card }}>
+                  <div className="magic-card__header">
+                    <h2>{entry.name}</h2>
+                  </div>
+                  <p className="magic-card__tagline">{entry.effect}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
+      ) : system.id === 'azterra' ? (
+        <>
+          <section className="magic-section nature-layout">
+            <div className="magic-section__header">
+              <p className="magic-eyebrow">Green Lifeblood</p>
+              <h2 className="magic-title">The world breathes, and life answers</h2>
+              <p className="magic-subtitle">
+                Verdant power courses through every root, storm, and creature born of the land. When it condenses, nature remakes itself.
+              </p>
+            </div>
+            <NatureVines />
+
+            <div className="nature-grid">
+              <div className="nature-card nature-card--hero">
+                <p className="nature-kicker">What it creates</p>
+                <h3 className="nature-card__title">Wild wonders born from concentrated life</h3>
+                <ul className="nature-list">
+                  {[
+                    'Sky whales drifting through cloud seas',
+                    'Colossal worms tunneling like earthquakes',
+                    'Forests that walk',
+                    'Storms that think',
+                    'Beasts that guard the balance',
+                  ].map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <div className="nature-pill-row">
+                  <span className="nature-pill">Life condensed into power</span>
+                  <span className="nature-pill">Balance over vengeance</span>
+                  <span className="nature-pill">Everywhere, always moving</span>
+                </div>
+              </div>
+
+              <div className="nature-card">
+                <p className="nature-kicker">Core concept</p>
+                <h3 className="nature-card__title">Life condensed into power</h3>
+                <ul className="nature-list">
+                  {system.concept?.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="nature-card">
+                <p className="nature-kicker">How it works</p>
+                <h3 className="nature-card__title">When it condenses, nature evolves</h3>
+                <ul className="nature-list">
+                  {system.how?.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="nature-card">
+                <p className="nature-kicker">Druids</p>
+                <h3 className="nature-card__title">Listeners, not controllers</h3>
+                <ul className="nature-list">
+                  {system.druids?.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="nature-card">
+                <p className="nature-kicker">Nature's defense</p>
+                <h3 className="nature-card__title">Balance over wrath</h3>
+                <ul className="nature-list">
+                  {system.defense?.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="nature-card">
+                <p className="nature-kicker">Aesthetic</p>
+                <h3 className="nature-card__title">It feels alive because it is</h3>
+                <ul className="nature-list">
+                  {system.aesthetic?.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+          <AzterraEffects />
+        </>
+      ) : system.id === 'spirits' ? (
+        <>
+          <section className="magic-section spirits-layout">
+            <div className="magic-section__header">
+              <p className="magic-eyebrow">Sigils & echoes</p>
+              <h2 className="magic-title">Golden stories given form</h2>
+              <p className="magic-subtitle">
+                Spirits are timeless emotions and ideas, born outside Azterra's green flow. Their power lives in hidden circular sigils no mortal has fully seen.
+              </p>
+            </div>
+            <SpiritsEffects />
+
+            <div className="spirits-grid">
+              <div className="spirit-card spirit-card--hero">
+                <p className="spirit-kicker">Essence</p>
+                <h3 className="spirit-card__title">Beings of story, emotion, and place</h3>
+                <ul className="spirit-list">
+                  {system.essence?.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <div className="spirit-pill-row">
+                  <span className="spirit-pill">Timeless</span>
+                  <span className="spirit-pill">Story-bound</span>
+                  <span className="spirit-pill">Not of Azterra's green</span>
+                </div>
+              </div>
+
+              <div className="spirit-card">
+                <p className="spirit-kicker">Sigils</p>
+                <h3 className="spirit-card__title">Circles unlock innate power</h3>
+                <ul className="spirit-list">
+                  {system.sigils?.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <div className="spirit-chip-row">
+                  <span className="spirit-chip">Teleport curls</span>
+                  <span className="spirit-chip">Weight shells</span>
+                  <span className="spirit-chip">Ripple forms</span>
+                </div>
+              </div>
+
+              <div className="spirit-card">
+                <p className="spirit-kicker">Scholars</p>
+                <h3 className="spirit-card__title">Research meets mystery</h3>
+                <ul className="spirit-list">
+                  {system.scholars?.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="spirit-card">
+                <p className="spirit-kicker">Manifestations</p>
+                <h3 className="spirit-card__title">Emotions turned to guardians</h3>
+                <ul className="spirit-list">
+                  {system.expressions?.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="spirit-card">
+                <p className="spirit-kicker">Aesthetic</p>
+                <h3 className="spirit-card__title">Golden ripples, dreamlike motion</h3>
+                <ul className="spirit-list">
+                  {system.aesthetic?.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="spirit-card spirit-card--summary">
+                <p className="spirit-kicker">Summary</p>
+                <h3 className="spirit-card__title">Website-ready line</h3>
+                <p className="magic-subtitle">{system.summary}</p>
+              </div>
+            </div>
+          </section>
+        </>
+      ) : system.id === 'wild' ? (
+        <>
+          <section className="magic-section wild-layout">
+            <div className="magic-section__header">
+              <p className="magic-eyebrow">Riftborn chaos</p>
+              <h2 className="magic-title">Wild Magic (Purple)</h2>
+              <p className="magic-subtitle">
+                The rarest current: rule-breaking, unpredictable, and seen only when rifts connect Azterra to elsewhere. Every surge is unique.
+              </p>
+            </div>
+
+            <div className="wild-grid">
+              <div className="wild-card">
+                <p className="wild-kicker">What we see</p>
+                <h3 className="wild-card__title">Manifestations</h3>
+                <ul className="wild-list">
+                  <li>Sudden surges and mutations that vanish as quickly as they appear.</li>
+                  <li>Impossible geometry, warped space, and time hiccups.</li>
+                  <li>Illusions or realities in butterfly-wing palettes of shifting color.</li>
+                  <li>Effects that react to emotion, intention, or nothing at all.</li>
+                </ul>
+              </div>
+
+              <div className="wild-card">
+                <p className="wild-kicker">Known facts</p>
+                <h3 className="wild-card__title">Rift rules</h3>
+                <ul className="wild-list">
+                  {system.highlights?.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="wild-card">
+                <p className="wild-kicker">Study</p>
+                <h3 className="wild-card__title">Why it eludes control</h3>
+                <ul className="wild-list">
+                  <li>No spellcaster has stabilized or contained a surge.</li>
+                  <li>No two manifestations have behaved the same twice.</li>
+                  <li>Origin is unknown; patterns collapse on observation.</li>
+                  <li>Best treated as narrative spice, not a tool.</li>
+                </ul>
+              </div>
+
+              <div className="wild-card wild-card--summary">
+                <p className="wild-kicker">Focus</p>
+                <h3 className="wild-card__title">Volatility that defies study</h3>
+                <p className="wild-body">{system.focus}</p>
+              </div>
+            </div>
+          </section>
+        </>
       ) : system.id === 'math' ? (
         <>
           <section className="magic-section math-layout">
@@ -503,7 +878,7 @@ export default function MagicSystemPage() {
             <div className="math-panel math-panel--frames" style={{ background: system.colors.card }}>
               <div className="math-panel__header">
                 <p className="magic-eyebrow">Frames</p>
-                <h3 className="magic-title">The Math Mage’s Sight</h3>
+                <h3 className="magic-title">The Math Mage's Sight</h3>
                 <p className="magic-subtitle">Geometric overlays, vectors, and flows to read, rewrite, and counter magic.</p>
               </div>
               <div className="math-panel__chips">
