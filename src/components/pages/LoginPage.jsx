@@ -4,12 +4,12 @@ import { useAuth } from '../../context/AuthContext';
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { user, login, googleLogin, loginGuest } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { user, loginWithGoogle, loginWithEmail } = useAuth();
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [googleSubmitting, setGoogleSubmitting] = useState(false);
+  const [info, setInfo] = useState('');
+  const [email, setEmail] = useState('');
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
+  const [oauthSubmitting, setOauthSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -17,38 +17,31 @@ function LoginPage() {
     }
   }, [user, navigate]);
 
-  const handleEmailLogin = async (event) => {
-    event.preventDefault();
+  const handleEmailSignIn = async () => {
     setError('');
-    if (!email.trim() || !password) {
-      setError('Please enter both email and password.');
-      return;
-    }
-    if (submitting) return;
-    setSubmitting(true);
+    setInfo('');
+    if (emailSubmitting) return;
+    setEmailSubmitting(true);
     try {
-      await login({ email: email.trim(), password });
+      await loginWithEmail({ email });
+      setInfo('Magic link sent. Check your email to finish signing in.');
     } catch (err) {
-      setError(err.message || 'Unable to login with email.');
+      setError(err?.message || 'Unable to start email login.');
     } finally {
-      setSubmitting(false);
+      setEmailSubmitting(false);
     }
   };
 
-  const handleGuestLogin = () => {
-    loginGuest();
-    navigate('/', { replace: true });
-  };
-
-  const handleGoogleSignIn = async () => {
+  const handleOAuthSignIn = async () => {
     setError('');
-    if (googleSubmitting || submitting) return;
-    setGoogleSubmitting(true);
+    setInfo('');
+    if (oauthSubmitting) return;
+    setOauthSubmitting(true);
     try {
-      await googleLogin({});
+      await loginWithGoogle();
     } catch (err) {
-      setError(err.message || 'Unable to start Supabase login.');
-      setGoogleSubmitting(false);
+      setError(err?.message || 'Unable to start login.');
+      setOauthSubmitting(false);
     }
   };
 
@@ -58,72 +51,42 @@ function LoginPage() {
         <header className="auth-modal__header">
           <h2>Login</h2>
         </header>
-        <form className="auth-modal__form" onSubmit={handleEmailLogin}>
-          <label>
-            <span>Email</span>
+        <div className="auth-modal__form">
+          <p className="auth-modal__note">
+            Sign in with a magic link sent to your email or use Google OAuth.
+          </p>
+          <label htmlFor="login-email">
+            Email
             <input
+              id="login-email"
               type="email"
+              placeholder="adventurer@example.com"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={emailSubmitting || oauthSubmitting}
+              required
             />
           </label>
-          <label>
-            <span>Password</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
-            />
-          </label>
-          <button
-            type="submit"
-            className="auth-modal__google auth-modal__google--alt"
-            disabled={submitting || googleSubmitting}
-          >
-            {submitting ? 'Signing in...' : 'Sign in with Email'}
-          </button>
           <button
             type="button"
-            className="auth-modal__google auth-modal__google--alt"
-            onClick={handleGuestLogin}
-            disabled={submitting}
+            className="auth-modal__submit"
+            onClick={handleEmailSignIn}
+            disabled={emailSubmitting || oauthSubmitting || !email.trim()}
           >
-            Continue as Guest
+            {emailSubmitting ? 'Sending magic link...' : 'Send magic link'}
           </button>
-          <p className="auth-modal__note">or continue with Google</p>
+          <div className="auth-modal__divider">or</div>
           <button
             type="button"
             className="auth-modal__google"
-            onClick={handleGoogleSignIn}
-            disabled={googleSubmitting || submitting}
+            onClick={handleOAuthSignIn}
+            disabled={oauthSubmitting}
           >
-            <span className="auth-modal__google-icon" aria-hidden="true">
-              <svg viewBox="0 0 48 48" role="presentation">
-                <path
-                  fill="#EA4335"
-                  d="M24 9.5c3.15 0 5.98 1.08 8.2 3.2l6.12-6.12C34.7 3.08 29.87 1 24 1 14.6 1 6.5 6.35 2.7 14l7.68 5.97C12.38 14.02 17.7 9.5 24 9.5z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M46.5 24.5c0-1.57-.15-3.08-.44-4.55H24v9.1h12.7c-.55 2.96-2.2 5.46-4.69 7.13l7.28 5.66C43.9 37.44 46.5 31.42 46.5 24.5z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M10.38 28.03A14.47 14.47 0 0 1 9.5 24c0-1.4.24-2.75.68-4.03l-7.67-5.97A23.9 23.9 0 0 0 0 24c0 3.9.93 7.58 2.56 10.85l7.82-6.82z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M24 47c6.48 0 11.9-2.13 15.86-5.83l-7.28-5.66c-2.03 1.37-4.64 2.19-8.58 2.19-6.3 0-11.62-4.52-13.66-10.47l-7.68 6C6.5 41.65 14.6 47 24 47z"
-                />
-                <path fill="none" d="M0 0h48v48H0z" />
-              </svg>
-            </span>
-            {googleSubmitting ? 'Opening Google...' : 'Sign in with Google'}
+            {oauthSubmitting ? 'Opening Google...' : 'Continue with Google'}
           </button>
+          {info && <p className="auth-modal__note">{info}</p>}
           {error && <p className="auth-modal__error">{error}</p>}
-        </form>
+        </div>
         <p className="auth-modal__note">
           Note: Editors must be approved by an admin before autosave is enabled.
         </p>

@@ -149,7 +149,7 @@ const CARD_THEMES = [
 ];
 
 function PeoplePage() {
-  const { role, token, user } = useAuth();
+  const { role, user } = useAuth();
   const { portraitConfig, portraitStatus, refreshPortraitStatus, generatePortrait } = useContent();
   const isAdmin = role === 'admin';
   const [tab, setTab] = useState('npcs');
@@ -189,16 +189,12 @@ function PeoplePage() {
     const load = async () => {
       setError('');
       try {
-        const visRes = await fetch(`${API_BASE_URL}/view/characters`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const visRes = await fetch(`${API_BASE_URL}/view/characters`, { credentials: 'include' });
         const visData = await visRes.json();
         if (visRes.ok) {
           setVisibleIds(visData.visibleIds || []);
         }
-        const npcRes = await fetch(`${API_BASE_URL}/view/npcs`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const npcRes = await fetch(`${API_BASE_URL}/view/npcs`, { credentials: 'include' });
         const npcData = await npcRes.json();
         if (npcRes.ok) {
           const allNpc = npcData.items || [];
@@ -207,9 +203,7 @@ function PeoplePage() {
           setNpcItems(allNpc);
           setNpcTruesight(npcData.truesightIds || []);
         }
-        const locRes = await fetch(`${API_BASE_URL}/view/locations`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const locRes = await fetch(`${API_BASE_URL}/view/locations`, { credentials: 'include' });
         const locData = await locRes.json();
         if (locRes.ok) {
           const allLoc = locData.items || [];
@@ -219,22 +213,18 @@ function PeoplePage() {
           setLocTruesight(locData.truesightIds || []);
         }
 
-        if (token) {
-          const favRes = await fetch(`${API_BASE_URL}/view/favorites`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+        if (user) {
+          const favRes = await fetch(`${API_BASE_URL}/view/favorites`, { credentials: 'include' });
           const favData = await favRes.json();
           if (favRes.ok) setViewFavorites(favData.viewFavorites || []);
 
-          const playerRes = await fetch(`${API_BASE_URL}/view/players`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const playerRes = await fetch(`${API_BASE_URL}/view/players`, { credentials: 'include' });
           const playerData = await playerRes.json();
           if (playerRes.ok) setPlayers(playerData.users || []);
 
           if (isAdmin) {
             const playerMetaRes = await fetch(`${API_BASE_URL}/entities/players`, {
-              headers: { Authorization: `Bearer ${token}` },
+              credentials: 'include',
             });
             if (playerMetaRes.ok) {
               const metaJson = await playerMetaRes.json();
@@ -251,7 +241,7 @@ function PeoplePage() {
       }
     };
     load();
-  }, [token]);
+  }, [user, isAdmin]);
 
   useEffect(() => {
     setAdminView(isAdmin);
@@ -384,7 +374,7 @@ function PeoplePage() {
   }, [activeCard, currentList.length, palette, colorB]);
 
   const toggleVisible = async (id, type) => {
-    if (!isAdmin || !token) return;
+    if (!isAdmin || !user) return;
     const endpoint = type === 'npc' ? 'npcs/visible' : 'locations/visible';
     const state = type === 'npc' ? new Set(npcVisibility) : new Set(locVisibility);
     if (state.has(id)) state.delete(id);
@@ -395,8 +385,8 @@ function PeoplePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
       if (type === 'npc') {
@@ -412,7 +402,7 @@ function PeoplePage() {
   };
 
   const toggleTruesight = async (id, type) => {
-    if (!isAdmin || !token) return;
+    if (!isAdmin || !user) return;
     const endpoint = type === 'npc' ? 'npcs/truesight' : 'locations/truesight';
     const state = type === 'npc' ? new Set(npcTruesight) : new Set(locTruesight);
     if (state.has(id)) state.delete(id);
@@ -423,8 +413,8 @@ function PeoplePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
       if (type === 'npc') {
@@ -509,11 +499,11 @@ function PeoplePage() {
   };
 
   const handlePortraitGenerate = async (characterId) => {
-    if (!characterId || !isAdmin || !token) return;
+    if (!characterId || !isAdmin || !user) return;
     setPortraitPending((prev) => ({ ...prev, [characterId]: true }));
     setError('');
     try {
-      const result = await generatePortrait(characterId, token);
+      const result = await generatePortrait(characterId);
       if (result.error) {
         throw new Error(result.error);
       }
@@ -563,7 +553,7 @@ function PeoplePage() {
   });
 
   const saveNpc = async (id) => {
-    if (!isAdmin || !token) return;
+    if (!isAdmin || !user) return;
     const original = npcItems.find((n) => n.id === id);
     if (!original) return;
     const draft = mergedNpc(original);
@@ -574,8 +564,8 @@ function PeoplePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           ...draft,
           id: draft.id,
@@ -608,7 +598,7 @@ function PeoplePage() {
   };
 
   const saveLocation = async (id) => {
-    if (!isAdmin || !token) return;
+    if (!isAdmin || !user) return;
     const sanitizeLocation = (loc) => {
       const { visible, truesight, ...rest } = loc;
       return {
@@ -628,8 +618,8 @@ function PeoplePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ locations: merged }),
       });
       const data = await response.json();
@@ -657,7 +647,7 @@ function PeoplePage() {
   };
 
   const savePlayerMeta = async (player) => {
-    if (!isAdmin || !token || !player) return;
+    if (!isAdmin || !user || !player) return;
     const merged = mergedPlayerMeta(player);
     setSavingPlayerId(player.id);
     setError('');
@@ -666,8 +656,8 @@ function PeoplePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           ...merged,
           id: player.id,
@@ -698,7 +688,7 @@ function PeoplePage() {
   };
 
   const toggleFavorite = async (itemId) => {
-    if (!token) return;
+    if (!user) return;
     setFavPending(true);
     try {
       const type =
@@ -707,13 +697,11 @@ function PeoplePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ type, id: itemId, favorite: !viewFavorites.includes(`${type}:${itemId}`) }),
       });
-      const favRes = await fetch(`${API_BASE_URL}/view/favorites`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const favRes = await fetch(`${API_BASE_URL}/view/favorites`, { credentials: 'include' });
       const favData = await favRes.json();
       if (favRes.ok) setViewFavorites(favData.viewFavorites || []);
     } catch {
@@ -885,7 +873,7 @@ function PeoplePage() {
               <h3>{item.name}</h3>
             </div>
             <div className="view-card__actions">
-              {token && (
+              {user && (
                 <button
                   type="button"
                   className={`fav-btn ${viewFavorites.includes(`npc:${item.id}`) ? 'fav-btn--active' : ''}`}
@@ -981,7 +969,7 @@ function PeoplePage() {
             <div className="view-card__title-overlay">
               <div>{titleContent}</div>
               <div className="view-card__media-actions">
-                {(isExpanded || (adminView && isAdmin)) && token && (
+                {(isExpanded || (adminView && isAdmin)) && user && (
                   <button
                     type="button"
                     className={`fav-btn ${viewFavorites.includes(`location:${item.id}`) ? 'fav-btn--active' : ''}`}
@@ -1272,7 +1260,7 @@ function PeoplePage() {
   return (
     <>
       <div className="page-container people-page">
-re         <div className="people-page__scrim" aria-hidden="true" />
+         <div className="people-page__scrim" aria-hidden="true" />
         <header className="characters-header">
           <div>
             <p className="account-card__eyebrow">People</p>

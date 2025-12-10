@@ -9,7 +9,7 @@ const ROLE_OPTIONS = [
 ];
 
 function AdminDashboard() {
-  const { role, token, user } = useAuth();
+  const { role, user } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -17,7 +17,7 @@ function AdminDashboard() {
   const isAdmin = role === 'admin';
 
   useEffect(() => {
-    if (!isAdmin || !token) {
+    if (!isAdmin || !user) {
       setUsers([]);
       setLoading(false);
       return;
@@ -27,11 +27,7 @@ function AdminDashboard() {
       setLoading(true);
       setError('');
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/users`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(`${API_BASE_URL}/admin/users`, { credentials: 'include' });
         const data = await response.json();
         if (!response.ok) {
           throw new Error(data.error || 'Unable to load users.');
@@ -45,17 +41,17 @@ function AdminDashboard() {
     };
 
     fetchUsers();
-  }, [isAdmin, token]);
+  }, [isAdmin, user]);
 
   const updateRole = async (targetUserId, newRole) => {
-    if (!token) return;
+    if (!user) return;
     try {
       const response = await fetch(`${API_BASE_URL}/admin/updateRole`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ userId: targetUserId, newRole }),
       });
       const data = await response.json();

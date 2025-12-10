@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 function ProgressionPage() {
-  const { token, refreshUser, role } = useAuth();
+  const { refreshUser, role, user } = useAuth();
   const isAdmin = role === 'admin';
   const [phrase, setPhrase] = useState('');
   const [unlocking, setUnlocking] = useState(false);
@@ -16,7 +16,7 @@ function ProgressionPage() {
   const [adminEditMode, setAdminEditMode] = useState(false);
 
   const fetchProgress = async () => {
-    if (!token) {
+    if (!user) {
       setUnlockedDetails([]);
       setSecretDrafts({});
       return;
@@ -24,9 +24,7 @@ function ProgressionPage() {
     setProgressLoading(true);
     setProgressError('');
     try {
-      const response = await fetch(`${API_BASE_URL}/secrets/progress`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(`${API_BASE_URL}/secrets/progress`, { credentials: 'include' });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || 'Unable to load progress.');
@@ -52,7 +50,7 @@ function ProgressionPage() {
 
   useEffect(() => {
     fetchProgress();
-  }, [token]);
+  }, [user]);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -62,7 +60,7 @@ function ProgressionPage() {
 
   const handleUnlock = async (event) => {
     event.preventDefault();
-    if (!phrase.trim() || !token) return;
+    if (!phrase.trim() || !user) return;
     setUnlocking(true);
     setProgressError('');
     try {
@@ -70,8 +68,8 @@ function ProgressionPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ phrase }),
       });
       const data = await response.json();
@@ -123,7 +121,7 @@ function ProgressionPage() {
   };
 
   const handleSecretSave = async (secretId) => {
-    if (!token || !secretDrafts[secretId]) return;
+    if (!user || !secretDrafts[secretId]) return;
     setSavingSecretId(secretId);
     setProgressError('');
     try {
@@ -131,8 +129,8 @@ function ProgressionPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(secretDrafts[secretId]),
       });
       const data = await response.json();
@@ -186,13 +184,13 @@ function ProgressionPage() {
           value={phrase}
           onChange={(e) => setPhrase(e.target.value)}
           placeholder="Enter a secret phrase"
-          disabled={!token}
+          disabled={!user}
         />
-        <button type="submit" disabled={!token || unlocking || !phrase.trim()}>
+        <button type="submit" disabled={!user || unlocking || !phrase.trim()}>
           {unlocking ? 'Checking...' : 'Submit'}
         </button>
         {progressError && <p className="progression__error">{progressError}</p>}
-        {!token && <p className="progression__muted">Login to record your progress.</p>}
+        {!user && <p className="progression__muted">Login to record your progress.</p>}
       </form>
 
       {!progressLoading && unlockedDetails.length === 0 && (

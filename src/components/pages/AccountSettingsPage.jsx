@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 function AccountSettingsPage() {
-  const { user, role, token, updateAccount, refreshUser } = useAuth();
+  const { user, role, updateAccount, refreshUser } = useAuth();
   const [username, setUsername] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
   const [bio, setBio] = useState('');
@@ -44,13 +44,11 @@ function AccountSettingsPage() {
   };
 
   const fetchProgress = async () => {
-    if (!token) return;
+    if (!user) return;
     setProgressLoading(true);
     setProgressError('');
     try {
-      const response = await fetch(`${API_BASE_URL}/secrets/progress`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(`${API_BASE_URL}/secrets/progress`, { credentials: 'include' });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || 'Unable to load secret progress.');
@@ -66,7 +64,7 @@ function AccountSettingsPage() {
 
   useEffect(() => {
     fetchProgress();
-  }, [token]);
+  }, [user]);
 
   if (!user) {
     return (
@@ -115,8 +113,8 @@ function AccountSettingsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ phrase }),
       });
       const data = await response.json();
@@ -136,7 +134,7 @@ function AccountSettingsPage() {
 
   const handleUpload = async (event) => {
     const files = Array.from(event.target.files || []);
-    if (!files.length || !token) return;
+    if (!files.length || !user) return;
     setUploading(true);
     setUploadError('');
     try {
@@ -144,9 +142,7 @@ function AccountSettingsPage() {
       files.forEach((file) => formData.append('files', file));
       const res = await fetch(`${API_BASE_URL}/files/upload`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
         body: formData,
       });
       const data = await res.json();
@@ -164,13 +160,13 @@ function AccountSettingsPage() {
   };
 
   const handleDeleteDoc = async (id) => {
-    if (!token) return;
+    if (!user) return;
     setUploading(true);
     setUploadError('');
     try {
       const res = await fetch(`${API_BASE_URL}/files/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       const data = await res.json();
       if (!res.ok) {
@@ -186,10 +182,10 @@ function AccountSettingsPage() {
   };
 
   const handleDownload = async (doc) => {
-    if (!token || !doc?.id) return;
+    if (!user || !doc?.id) return;
     try {
       const res = await fetch(`${API_BASE_URL}/files/download/${doc.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (!res.ok) {
         throw new Error('Unable to download file.');
@@ -300,7 +296,7 @@ function AccountSettingsPage() {
         <section className="account-upload">
           <div className="account-field">
             <span>Upload documents (PDF or text)</span>
-            <input type="file" accept=".pdf,text/plain" multiple onChange={handleUpload} disabled={!token || uploading} />
+            <input type="file" accept=".pdf,text/plain" multiple onChange={handleUpload} disabled={!user || uploading} />
             {uploadError && <p className="account-error">{uploadError}</p>}
             {uploading && <p className="account-muted">Uploading...</p>}
           </div>

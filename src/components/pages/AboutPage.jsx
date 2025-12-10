@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './AboutPage.css';
 
 const originStoryParagraphs = [
@@ -59,6 +60,28 @@ export default function AboutPage() {
             <p>Email: <a href="mailto:ryanpratt16@outlook.com">ryanpratt16@outlook.com</a></p>
             <p>Discord: velere.</p>
           </article>
+        </div>
+      </section>
+
+      <section className="about-section">
+        <div className="about-section__header">
+          <p className="about-eyebrow">Heroes</p>
+          <h2 className="about-title">Meet our characters</h2>
+          <p className="about-subtitle">
+            Peek at the legends shaping Azterra. Each hero card holds their origin, quirks, and the quests that forged them.
+          </p>
+        </div>
+        <div className="about-characters">
+          <div>
+            <h3>Step into their stories</h3>
+            <p>
+              Browse the full roster to see who is sworn to defend the realm, who is chasing secrets, and which allies might
+              join your next session.
+            </p>
+          </div>
+          <Link to="/compendium/heroes" className="about-characters__cta">
+            Explore heroes
+          </Link>
         </div>
       </section>
 

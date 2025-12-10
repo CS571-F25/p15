@@ -4,13 +4,13 @@ import { useAuth } from '../../context/AuthContext';
 
 function SignupPage() {
   const navigate = useNavigate();
-  const { user, signup, googleLogin } = useAuth();
+  const { user, signupWithGoogle, signupWithEmail, setPendingUsername } = useAuth();
+  const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [googleSubmitting, setGoogleSubmitting] = useState(false);
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
+  const [oauthSubmitting, setOauthSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -18,39 +18,44 @@ function SignupPage() {
     }
   }, [user, navigate]);
 
-  const handleEmailSignup = async (event) => {
-    event.preventDefault();
-    setError('');
-    const trimmedName = username.trim();
-    if (!trimmedName || !email.trim() || !password) {
-      setError('Please enter a display username, email, and password.');
-      return;
+  const requireUsername = () => {
+    const trimmed = username.trim();
+    if (!trimmed) {
+      setError('Please choose a username to display in Azterra.');
+      return null;
     }
-    if (submitting || googleSubmitting) return;
-    setSubmitting(true);
+    return trimmed;
+  };
+
+  const handleEmailSignUp = async () => {
+    setError('');
+    setInfo('');
+    const chosenUsername = requireUsername();
+    if (!chosenUsername || emailSubmitting) return;
+    setEmailSubmitting(true);
     try {
-      await signup({ displayName: trimmedName, email: email.trim(), password });
+      setPendingUsername(chosenUsername);
+      await signupWithEmail({ email, username: chosenUsername });
+      setInfo('Magic link sent. Check your email to finish creating your account.');
     } catch (err) {
-      setError(err.message || 'Unable to sign up with email.');
+      setError(err?.message || 'Unable to start signup.');
     } finally {
-      setSubmitting(false);
+      setEmailSubmitting(false);
     }
   };
 
   const handleGoogleSignUp = async () => {
     setError('');
-    const trimmedName = username.trim();
-    if (!trimmedName) {
-      setError('Please choose a display username before continuing.');
-      return;
-    }
-    if (googleSubmitting || submitting) return;
-    setGoogleSubmitting(true);
+    setInfo('');
+    const chosenUsername = requireUsername();
+    if (!chosenUsername || oauthSubmitting) return;
+    setOauthSubmitting(true);
     try {
-      await googleLogin({ displayName: trimmedName });
+      setPendingUsername(chosenUsername);
+      await signupWithGoogle();
     } catch (err) {
-      setError(err.message || 'Unable to start Supabase signup.');
-      setGoogleSubmitting(false);
+      setError(err?.message || 'Unable to start signup.');
+      setOauthSubmitting(false);
     }
   };
 
@@ -60,75 +65,54 @@ function SignupPage() {
         <header className="auth-modal__header">
           <h2>Sign Up</h2>
         </header>
-        <form className="auth-modal__form" onSubmit={handleEmailSignup}>
-          <label>
-            <span>Username (for display)</span>
+        <div className="auth-modal__form">
+          <p className="auth-modal__note">
+            Pick a username, then sign up with a magic link or Google OAuth.
+          </p>
+          <label htmlFor="signup-username">
+            Username
             <input
+              id="signup-username"
               type="text"
+              placeholder="Guildmaster"
               value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="Choose a display name"
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={emailSubmitting || oauthSubmitting}
+              required
             />
           </label>
-          <label>
-            <span>Email</span>
+          <label htmlFor="signup-email">
+            Email
             <input
+              id="signup-email"
               type="email"
+              placeholder="adventurer@example.com"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-            />
-          </label>
-          <label>
-            <span>Password</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Create a password"
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={emailSubmitting || oauthSubmitting}
+              required
             />
           </label>
           <button
-            type="submit"
-            className="auth-modal__google auth-modal__google--alt"
-            disabled={submitting || googleSubmitting}
+            type="button"
+            className="auth-modal__submit"
+            onClick={handleEmailSignUp}
+            disabled={emailSubmitting || oauthSubmitting || !email.trim()}
           >
-            {submitting ? 'Creating account...' : 'Sign up with Email'}
+            {emailSubmitting ? 'Sending magic link...' : 'Send magic link'}
           </button>
-          <p className="auth-modal__note">
-            Accounts are secured with Supabase. Use email + password or continue with Google to finish signup.
-          </p>
+          <div className="auth-modal__divider">or</div>
           <button
             type="button"
             className="auth-modal__google"
             onClick={handleGoogleSignUp}
-            disabled={googleSubmitting || submitting}
+            disabled={oauthSubmitting}
           >
-            <span className="auth-modal__google-icon" aria-hidden="true">
-              <svg viewBox="0 0 48 48" role="presentation">
-                <path
-                  fill="#EA4335"
-                  d="M24 9.5c3.15 0 5.98 1.08 8.2 3.2l6.12-6.12C34.7 3.08 29.87 1 24 1 14.6 1 6.5 6.35 2.7 14l7.68 5.97C12.38 14.02 17.7 9.5 24 9.5z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M46.5 24.5c0-1.57-.15-3.08-.44-4.55H24v9.1h12.7c-.55 2.96-2.2 5.46-4.69 7.13l7.28 5.66C43.9 37.44 46.5 31.42 46.5 24.5z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M10.38 28.03A14.47 14.47 0 0 1 9.5 24c0-1.4.24-2.75.68-4.03l-7.67-5.97A23.9 23.9 0 0 0 0 24c0 3.9.93 7.58 2.56 10.85l7.82-6.82z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M24 47c6.48 0 11.9-2.13 15.86-5.83l-7.28-5.66c-2.03 1.37-4.64 2.19-8.58 2.19-6.3 0-11.62-4.52-13.66-10.47l-7.68 6C6.5 41.65 14.6 47 24 47z"
-                />
-                <path fill="none" d="M0 0h48v48H0z" />
-              </svg>
-            </span>
-            {googleSubmitting ? 'Opening Google...' : 'Continue with Google'}
+            {oauthSubmitting ? 'Opening Google...' : 'Continue with Google'}
           </button>
+          {info && <p className="auth-modal__note">{info}</p>}
           {error && <p className="auth-modal__error">{error}</p>}
-        </form>
+        </div>
         <p className="auth-modal__note">New accounts start as pending until an admin approves them.</p>
         <div className="auth-modal__switch">
           <span>Already have an account?</span>

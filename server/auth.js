@@ -1,190 +1,98 @@
 import { Router } from 'express';
-import { OAuth2Client } from 'google-auth-library';
-import { randomUUID } from 'node:crypto';
+import { createClient } from '@supabase/supabase-js';
 import {
   addUser,
-  comparePassword,
-  ensureDefaultAdmin,
+  applyFriendState,
+  COOKIE_NAME,
   generateToken,
-  hashPassword,
   readUsers,
   sanitizeUser,
-  applyFriendState,
-  verifyToken,
-  writeUsers,
   updateUsers,
-  verifySupabaseToken,
+  verifyToken,
 } from './utils.js';
 
 const router = Router();
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
-const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
-router.post('/signup', async (req, res) => {
-  await ensureDefaultAdmin();
-  const { email = '', name = '', password = '' } = req.body || {};
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE || '';
+const SITE_URL =
+  (process.env.SITE_URL || process.env.FRONTEND_URL || '').replace(/\/$/, '') || '/';
+const API_URL = (process.env.API_URL || '').replace(/\/$/, '');
+const OAUTH_REDIRECT_URL =
+  process.env.OAUTH_REDIRECT_URL || (API_URL ? `${API_URL}/api/auth/callback` : '/api/auth/callback');
+const OAUTH_PROVIDER = process.env.OAUTH_PROVIDER || 'github';
+const isProd = process.env.NODE_ENV === 'production';
 
-  if (!email || !password || !name) {
-    return res.status(400).json({ error: 'Email, name, and password are required.' });
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: isProd ? 'none' : 'lax',
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+  path: '/',
+};
+
+if (process.env.COOKIE_DOMAIN) {
+  cookieOptions.domain = process.env.COOKIE_DOMAIN;
+}
+
+const supabaseAnon =
+  SUPABASE_URL && SUPABASE_ANON_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
+    : null;
+
+const supabaseService =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
+    : null;
+
+function requireSupabase(res) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
+    res.status(500).json({ error: 'Supabase Auth is not configured on the server.' });
+    return false;
   }
+  return true;
+}
 
-  const normalizedEmail = email.trim().toLowerCase();
-
-  const users = await readUsers();
-  const existing = users.find((user) => user.email === normalizedEmail);
-  if (existing) {
-    return res.status(409).json({ error: 'Email already in use.' });
-  }
-
-  const passwordHash = await hashPassword(password);
-  const newUser = await addUser({
-    email: normalizedEmail,
-    passwordHash,
-    name: name.trim(),
-      username: '',
-    favorites: [],
-    featuredCharacter: null,
-    profilePicture: '',
-    profile: { bio: '', labelOne: '', labelTwo: '', documents: [], viewFavorites: [] },
-    unlockedSecrets: [],
-    role: 'pending',
-    createdAt: new Date().toISOString(),
-  });
-
-  return res.status(201).json({ user: sanitizeUser(newUser) });
-});
-
-router.post('/login', async (req, res) => {
-  const { email = '', password = '' } = req.body || {};
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
-  }
-
-  const normalizedEmail = email.trim().toLowerCase();
-  const users = await readUsers();
-  const user = users.find((entry) => entry.email === normalizedEmail);
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid credentials.' });
-  }
-
-  const isValid = await comparePassword(password, user.passwordHash);
-  if (!isValid) {
-    return res.status(401).json({ error: 'Invalid credentials.' });
-  }
-
-  const token = generateToken(user);
-  return res.json({ user: sanitizeUser(user), token });
-});
-
-router.post('/google', async (req, res) => {
-  if (!googleClient || !GOOGLE_CLIENT_ID) {
-    return res.status(500).json({ error: 'Google Sign-In is not configured.' });
-  }
-
-  const { credential = '' } = req.body || {};
-  if (!credential) {
-    return res.status(400).json({ error: 'Google credential is required.' });
-  }
-
-  try {
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    const email = (payload?.email || '').toLowerCase();
-    const googleName = payload?.name || payload?.given_name || '';
-    const googleId = payload?.sub;
-
-    if (!email) {
-      return res.status(400).json({ error: 'Google account email is required.' });
-    }
-
-    const users = await readUsers();
-    const existingUser = users.find((entry) => entry.email === email);
-
-    let userToReturn =
-      existingUser ||
-      applyFriendState({
-        id: randomUUID(),
-        email,
-        googleName,
-        username: '',
-        favorites: [],
-        featuredCharacter: null,
-        characters: [],
-        profile: { bio: '', labelOne: '', labelTwo: '', documents: [], viewFavorites: [] },
-        role: 'pending',
-        provider: 'google',
-        googleId,
-        unlockedSecrets: [],
-        createdAt: new Date().toISOString(),
-      });
-
-    if (!existingUser) {
-      await writeUsers([...users, userToReturn]);
-    } else if (!existingUser.friends || !existingUser.friendRequests) {
-      await updateUsers((list) => {
-        const idx = list.findIndex((entry) => entry.id === existingUser.id);
-        if (idx !== -1) {
-          const updated = applyFriendState(list[idx]);
-          list[idx] = updated;
-          userToReturn = updated;
-        }
-        return list;
-      });
-    }
-
-    const token = generateToken(userToReturn);
-    return res.json({ success: true, token, user: sanitizeUser(userToReturn) });
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid Google credential.' });
-  }
-});
-
-router.post('/supabase', async (req, res) => {
-  if (!process.env.SUPABASE_JWT_SECRET) {
-    return res.status(500).json({ error: 'Supabase Auth is not configured on the server.' });
-  }
-  const header = req.headers.authorization || '';
-  const bearerToken = header.startsWith('Bearer ') ? header.slice(7) : '';
-  const { accessToken = '', displayName = '' } = req.body || {};
-  const token = accessToken || bearerToken;
-  if (!token) {
-    return res.status(400).json({ error: 'Supabase access token is required.' });
-  }
-  let payload;
-  try {
-    payload = verifySupabaseToken(token);
-  } catch (error) {
-    console.error('Failed to verify Supabase token:', error);
-    return res.status(401).json({ error: 'Invalid Supabase token.' });
-  }
-
-  const supabaseId = payload?.sub;
-  const email = (payload?.email || payload?.user?.email || '').toLowerCase();
-  if (!supabaseId || !email) {
-    return res.status(400).json({ error: 'Supabase token is missing required claims.' });
-  }
-  const meta = payload?.user_metadata || {};
-  const normalizedDisplayName =
-    (typeof displayName === 'string' && displayName.trim()) ||
+function normalizeDisplayName(user, fallbackEmail) {
+  const meta = user?.user_metadata || {};
+  return (
     meta.full_name ||
     meta.name ||
     meta.preferred_username ||
-    payload?.name ||
-    email.split('@')[0] ||
-    'Adventurer';
+    meta.user_name ||
+    user?.email?.split('@')[0] ||
+    fallbackEmail?.split('@')[0] ||
+    'Adventurer'
+  );
+}
 
+function normalizeUsername(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+async function upsertSupabaseUser(supabaseUser) {
+  const email = (supabaseUser?.email || '').toLowerCase();
+  const supabaseId = supabaseUser?.id;
+  const incomingUsername = normalizeUsername(supabaseUser?.user_metadata?.username);
+
+  if (!supabaseId || !email) {
+    throw new Error('Supabase user is missing required claims.');
+  }
+
+  const displayName = normalizeDisplayName(supabaseUser, email);
   const users = await readUsers();
   let existing = users.find((entry) => entry.supabaseId === supabaseId || entry.email === email);
 
   if (!existing) {
     existing = await addUser({
       email,
-      name: normalizedDisplayName,
-      username: typeof displayName === 'string' ? displayName.trim() : '',
+      name: displayName,
+      username: incomingUsername,
       favorites: [],
       featuredCharacter: null,
       profilePicture: '',
@@ -206,10 +114,10 @@ router.post('/supabase', async (req, res) => {
       nextUser.supabaseId = supabaseId;
       nextUser.email = email;
       if (!nextUser.name) {
-        nextUser.name = normalizedDisplayName;
+        nextUser.name = displayName;
       }
-      if (typeof displayName === 'string' && displayName.trim()) {
-        nextUser.username = displayName.trim();
+      if (!nextUser.username && incomingUsername) {
+        nextUser.username = incomingUsername;
       }
       list[index] = nextUser;
       existing = nextUser;
@@ -217,17 +125,103 @@ router.post('/supabase', async (req, res) => {
     });
   }
 
-  const tokenResponse = generateToken(existing);
-  return res.json({ success: true, token: tokenResponse, user: sanitizeUser(existing) });
+  return sanitizeUser(existing);
+}
+
+router.get('/login', async (req, res) => {
+  if (!requireSupabase(res)) return;
+  const provider = String(req.query.provider || OAUTH_PROVIDER || 'github');
+  const redirectTo = OAUTH_REDIRECT_URL;
+  const { data, error } = await supabaseAnon.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo },
+  });
+
+  if (error || !data?.url) {
+    console.error('Failed to start Supabase OAuth:', error);
+    return res.status(500).json({ error: 'Unable to start Supabase login.' });
+  }
+
+  return res.redirect(data.url);
+});
+
+router.post('/login/email', async (req, res) => {
+  if (!requireSupabase(res)) return;
+  const email = normalizeUsername(req.body?.email).toLowerCase();
+  const desiredUsername = normalizeUsername(req.body?.username);
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required.' });
+  }
+
+  const { data, error } = await supabaseAnon.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: OAUTH_REDIRECT_URL,
+      data: desiredUsername ? { username: desiredUsername } : undefined,
+    },
+  });
+
+  if (error || !data) {
+    console.error('Failed to send Supabase email login:', error);
+    return res.status(500).json({ error: 'Unable to start email login.' });
+  }
+
+  return res.json({ message: 'Check your email for a sign-in link.' });
+});
+
+router.get('/callback', async (req, res) => {
+  if (!requireSupabase(res)) return;
+  const code = req.query.code;
+
+  if (!code || typeof code !== 'string') {
+    return res.status(400).json({ error: 'Missing OAuth code.' });
+  }
+
+  const { data, error } = await supabaseService.auth.exchangeCodeForSession(code);
+  if (error || !data?.session?.user) {
+    console.error('Failed to exchange code for session:', error);
+    return res.status(401).json({ error: 'Unable to complete OAuth login.' });
+  }
+
+  try {
+    const user = await upsertSupabaseUser(data.session.user);
+    const token = generateToken(user);
+    res.cookie(COOKIE_NAME, token, cookieOptions);
+    return res.redirect(SITE_URL);
+  } catch (err) {
+    console.error('Failed to upsert Supabase user:', err);
+    return res.status(500).json({ error: 'Unable to finalize login.' });
+  }
+});
+
+router.get('/me', async (req, res) => {
+  try {
+    const header = req.headers.authorization || '';
+    const bearer = header.startsWith('Bearer ') ? header.slice(7) : '';
+    const token = req.cookies?.[COOKIE_NAME] || bearer;
+    if (!token) {
+      return res.status(401).json({ error: 'Missing token.' });
+    }
+    const payload = verifyToken(token);
+    const users = await readUsers();
+    const user = users.find((entry) => entry.id === payload.id);
+    if (!user) {
+      return res.status(401).json({ error: 'User not found.' });
+    }
+    return res.json({ user: sanitizeUser(user) });
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid or expired token.' });
+  }
 });
 
 router.put('/me', async (req, res) => {
   try {
     const header = req.headers.authorization || '';
-    if (!header.startsWith('Bearer ')) {
+    const bearer = header.startsWith('Bearer ') ? header.slice(7) : '';
+    const token = req.cookies?.[COOKIE_NAME] || bearer;
+    if (!token) {
       return res.status(401).json({ error: 'Missing token.' });
     }
-    const token = header.slice(7);
     const payload = verifyToken(token);
     const { username, profilePicture, profile } = req.body || {};
 
@@ -249,8 +243,10 @@ router.put('/me', async (req, res) => {
       if (profile && typeof profile === 'object') {
         nextUser.profile = {
           bio: typeof profile.bio === 'string' ? profile.bio.slice(0, 1000) : current.profile?.bio || '',
-          labelOne: typeof profile.labelOne === 'string' ? profile.labelOne.slice(0, 120) : current.profile?.labelOne || '',
-          labelTwo: typeof profile.labelTwo === 'string' ? profile.labelTwo.slice(0, 120) : current.profile?.labelTwo || '',
+          labelOne:
+            typeof profile.labelOne === 'string' ? profile.labelOne.slice(0, 120) : current.profile?.labelOne || '',
+          labelTwo:
+            typeof profile.labelTwo === 'string' ? profile.labelTwo.slice(0, 120) : current.profile?.labelTwo || '',
           documents: Array.isArray(current.profile?.documents) ? current.profile.documents : [],
           viewFavorites: Array.isArray(current.profile?.viewFavorites) ? current.profile.viewFavorites : [],
         };
@@ -277,23 +273,9 @@ router.put('/me', async (req, res) => {
   }
 });
 
-router.get('/me', async (req, res) => {
-  try {
-    const header = req.headers.authorization || '';
-    if (!header.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Missing token.' });
-    }
-    const token = header.slice(7);
-    const payload = verifyToken(token);
-    const users = await readUsers();
-    const user = users.find((entry) => entry.id === payload.id);
-    if (!user) {
-      return res.status(401).json({ error: 'User not found.' });
-    }
-    return res.json({ user: sanitizeUser(user) });
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid or expired token.' });
-  }
+router.post('/logout', (_req, res) => {
+  res.clearCookie(COOKIE_NAME, cookieOptions);
+  return res.status(204).send();
 });
 
 export default router;

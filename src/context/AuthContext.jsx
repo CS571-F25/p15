@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { canView as baseCanView } from '../utils/permissions';
-import { supabase, getSupabaseRedirectUrl } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 
 const AuthContext = createContext({
   user: null,
@@ -8,6 +8,11 @@ const AuthContext = createContext({
   token: null,
   loading: false,
   login: async () => {},
+  loginWithGoogle: async () => {},
+  loginWithEmail: async () => {},
+  signupWithGoogle: async () => {},
+  signupWithEmail: async () => {},
+  setPendingUsername: () => {},
   loginGuest: () => {},
   updateAccount: async () => {},
   googleLogin: async () => {},
@@ -18,44 +23,22 @@ const AuthContext = createContext({
   canView: () => false,
 });
 
-const TOKEN_KEY = 'p15_auth_token';
-const PENDING_PROFILE_KEY = 'p15_supabase_profile';
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+const PENDING_USERNAME_KEY = 'azterra:pending-username';
 
-const isBrowser = () => typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
-
-const getStoredToken = () => {
-  if (!isBrowser()) return null;
-  return window.localStorage.getItem(TOKEN_KEY);
-};
-
-const persistToken = (token) => {
-  if (!isBrowser()) return;
-  if (!token) {
-    window.localStorage.removeItem(TOKEN_KEY);
+function rememberPendingUsername(username) {
+  if (typeof window === 'undefined') return;
+  if (username && username.trim()) {
+    window.sessionStorage.setItem(PENDING_USERNAME_KEY, username.trim());
   } else {
-    window.localStorage.setItem(TOKEN_KEY, token);
+    window.sessionStorage.removeItem(PENDING_USERNAME_KEY);
   }
-};
+}
 
-const getPendingProfile = () => {
-  if (!isBrowser()) return null;
-  try {
-    const raw = window.localStorage.getItem(PENDING_PROFILE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-
-const setPendingProfile = (profile) => {
-  if (!isBrowser()) return;
-  if (!profile) {
-    window.localStorage.removeItem(PENDING_PROFILE_KEY);
-  } else {
-    window.localStorage.setItem(PENDING_PROFILE_KEY, JSON.stringify(profile));
-  }
-};
+function readPendingUsername() {
+  if (typeof window === 'undefined') return '';
+  return window.sessionStorage.getItem(PENDING_USERNAME_KEY) || '';
+}
 
 const normalizeUser = (incoming) => {
   if (!incoming) return null;
@@ -77,47 +60,21 @@ const normalizeUser = (incoming) => {
   return { ...incoming, unlockedSecrets: unlocked, favorites, featuredCharacter, profile, friends, friendRequests };
 };
 
-const GUEST_USER = {
-  id: 'guest-visitor',
-  role: 'guest',
-  name: 'Guest Explorer',
-  email: 'guest@example.com',
-  profilePicture: '',
-  unlockedSecrets: ['aurora-ember', 'silent-archive', 'gilded-horizon'],
-  favorites: ['character:ember', 'location:regalis', 'region:sunspire'],
-  featuredCharacter: {
-    id: 'guest-champion',
-    name: 'Valen Arctis',
-    class: 'Wayfarer',
-    level: 7,
-  },
-  profile: {
-    bio: 'Guest mode preview. Explore the map, characters, and a handful of secrets.',
-    labelOne: 'Explorer',
-    labelTwo: 'Guest',
-    documents: [],
-    viewFavorites: [],
-  },
-  friends: [],
-  friendRequests: { incoming: [], outgoing: [] },
-};
-
-async function request({ path, method = 'GET', body, headers = {}, token }) {
+async function request({ path, method = 'GET', body, headers = {} }) {
   const init = {
     method,
     headers: {
       'Content-Type': 'application/json',
       ...headers,
     },
+    credentials: 'include',
   };
   if (body !== undefined) {
     init.body = typeof body === 'string' ? body : JSON.stringify(body);
   }
-  if (token) {
-    init.headers.Authorization = `Bearer ${token}`;
-  }
   const response = await fetch(`${API_BASE_URL}${path}`, init);
-  const data = await response.json().catch(() => ({}));
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json') ? await response.json().catch(() => ({})) : {};
   if (!response.ok) {
     throw new Error(data.error || 'Request failed.');
   }
@@ -126,83 +83,21 @@ async function request({ path, method = 'GET', body, headers = {}, token }) {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => getStoredToken());
-  const [loading, setLoading] = useState(Boolean(getStoredToken()));
+  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const normalizedUser = normalizeUser(user);
   const role = normalizedUser?.role || 'guest';
 
   useEffect(() => {
-    persistToken(token);
-  }, [token]);
-
-  const syncSupabaseSession = useCallback(
-    async (session) => {
-      if (!session?.access_token) {
-        setUser(null);
-        setToken(null);
-        return;
-      }
-      setError(null);
-      try {
-        setLoading(true);
-        const pendingProfile = getPendingProfile();
-        const data = await request({
-          path: '/auth/supabase',
-          method: 'POST',
-          body: {
-            accessToken: session.access_token,
-            displayName: pendingProfile?.displayName || '',
-          },
-        });
-        if (pendingProfile) {
-          setPendingProfile(null);
-        }
-        setUser(normalizeUser(data.user));
-        setToken(data.token);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
-  useEffect(() => {
-    if (!supabase) return undefined;
-    let isMounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!isMounted) return;
-      if (data?.session) {
-        syncSupabaseSession(data.session);
-      }
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      syncSupabaseSession(session);
-    });
-    return () => {
-      isMounted = false;
-      listener?.subscription?.unsubscribe();
-    };
-  }, [syncSupabaseSession]);
-
-  useEffect(() => {
-    if (!token || token === 'local-admin-token') {
-      setUser(null);
-      setLoading(false);
-      if (token === 'local-admin-token') {
-        setToken(null);
-      }
-      return;
-    }
     let isMounted = true;
     setLoading(true);
-    request({ path: '/auth/me', token })
+    request({ path: '/auth/me' })
       .then((data) => {
         if (isMounted) {
           setUser(normalizeUser(data.user));
+          setToken('session-cookie');
         }
       })
       .catch(() => {
@@ -219,74 +114,20 @@ export function AuthProvider({ children }) {
     return () => {
       isMounted = false;
     };
-  }, [token]);
+  }, []);
 
-  const login = async ({ email, password } = {}) => {
-    if (!supabase) {
-      throw new Error('Supabase is not configured.');
-    }
-    if (!email || !password) {
-      throw new Error('Email and password are required.');
-    }
-    setError(null);
-    try {
-      const { error: supabaseError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (supabaseError) {
-        throw supabaseError;
-      }
-      return true;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    }
-  };
+  const startOAuth = useCallback(({ provider } = {}) => {
+    const query = provider ? `?provider=${encodeURIComponent(provider)}` : '';
+    window.location.href = `${API_BASE_URL}/auth/login${query}`;
+  }, []);
 
-  const startGoogleLogin = async ({ displayName } = {}) => {
-    if (!supabase) {
-      throw new Error('Supabase is not configured.');
-    }
-    if (displayName) {
-      setPendingProfile({ displayName });
-    } else {
-      setPendingProfile(null);
-    }
-    const redirectTo = getSupabaseRedirectUrl();
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo,
-        },
-      });
-      if (error) {
-        throw error;
-      }
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('Supabase did not provide a login URL.');
-      }
-    } catch (err) {
-      setPendingProfile(null);
-      setError(err.message || 'Unable to start Supabase login.');
-      throw err;
-    }
-  };
-
-  const updateAccount = async ({ username, profilePicture, profile }) => {
-    if (!token) {
-      throw new Error('You must be logged in to update your account.');
-    }
+  const updateAccount = useCallback(async ({ username, profilePicture, profile }) => {
     setError(null);
     try {
       const data = await request({
         path: '/auth/me',
         method: 'PUT',
         body: { username, profilePicture, profile },
-        token,
       });
       setUser(normalizeUser(data.user));
       return data.user;
@@ -294,43 +135,41 @@ export function AuthProvider({ children }) {
       setError(err.message);
       throw err;
     }
-  };
+  }, []);
 
-  const signup = async ({ email, password, displayName } = {}) => {
-    if (!supabase) {
-      throw new Error('Supabase is not configured.');
-    }
-    if (!email || !password || !displayName || !displayName.trim()) {
-      throw new Error('Email, password, and display name are required.');
-    }
-    setError(null);
-    const trimmedName = displayName.trim();
-    setPendingProfile({ displayName: trimmedName });
-    try {
-      const { error: supabaseError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: { display_name: trimmedName },
-          emailRedirectTo: getSupabaseRedirectUrl(),
-        },
-      });
-      if (supabaseError) {
-        throw supabaseError;
+  const loginWithEmail = useCallback(
+    async ({ email, username }) => {
+      const trimmedEmail = (email || '').trim();
+      if (!trimmedEmail) {
+        throw new Error('Email is required.');
       }
-      return true;
-    } catch (err) {
-      setPendingProfile(null);
-      setError(err.message);
-      throw err;
-    }
-  };
+      setError(null);
+      return request({
+        path: '/auth/login/email',
+        method: 'POST',
+        body: { email: trimmedEmail, username: username?.trim() },
+      });
+    },
+    []
+  );
 
-  const logout = () => {
-    supabase?.auth.signOut();
-    setUser(null);
-    setToken(null);
-  };
+  const loginWithGoogle = useCallback(() => startOAuth({ provider: 'google' }), [startOAuth]);
+  const signupWithGoogle = loginWithGoogle;
+  const signupWithEmail = loginWithEmail;
+
+  const signup = async () => signupWithGoogle();
+  const login = async () => loginWithGoogle();
+
+  const logout = useCallback(async () => {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch {
+      // ignore network errors on logout
+    } finally {
+      setUser(null);
+      setToken(null);
+    }
+  }, []);
 
   const loginGuest = () => {
     supabase?.auth.signOut();
@@ -341,11 +180,36 @@ export function AuthProvider({ children }) {
   };
 
   const refreshUser = async () => {
-    if (!token) return null;
-    const data = await request({ path: '/auth/me', token });
+    const data = await request({ path: '/auth/me' });
     setUser(normalizeUser(data.user));
+    setToken('session-cookie');
     return data.user;
   };
+
+  useEffect(() => {
+    if (!normalizedUser || !normalizedUser.id) return;
+    const pending = readPendingUsername();
+    if (!pending) return;
+    if (normalizedUser.username && normalizedUser.username.trim()) {
+      if (normalizedUser.username.trim().toLowerCase() === pending.toLowerCase()) {
+        rememberPendingUsername('');
+      }
+      return;
+    }
+    let cancelled = false;
+    updateAccount({ username: pending })
+      .then(() => {
+        if (!cancelled) {
+          rememberPendingUsername('');
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to apply pending username', err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [normalizedUser, updateAccount]);
 
   const value = useMemo(
     () => ({
@@ -355,8 +219,13 @@ export function AuthProvider({ children }) {
       loading,
       error,
       login,
+      loginWithGoogle,
+      loginWithEmail,
+      signupWithGoogle,
+      signupWithEmail,
+      setPendingUsername: rememberPendingUsername,
       updateAccount,
-      googleLogin: startGoogleLogin,
+      googleLogin: startOAuth,
       signup,
       logout,
       loginGuest,
@@ -365,7 +234,21 @@ export function AuthProvider({ children }) {
         Array.isArray(normalizedUser?.unlockedSecrets) && normalizedUser.unlockedSecrets.includes(secretId),
       canView: (config) => baseCanView(normalizedUser, config),
     }),
-    [normalizedUser, role, token, loading, error]
+    [
+      normalizedUser,
+      role,
+      token,
+      loading,
+      error,
+      startOAuth,
+      logout,
+      loginGuest,
+      updateAccount,
+      loginWithEmail,
+      loginWithGoogle,
+      signupWithGoogle,
+      signupWithEmail,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
