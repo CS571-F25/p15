@@ -128,6 +128,7 @@ const baseNavLinks = [
       { to: "/compendium/heroes", label: "Heroes" },
     ]
   },
+<<<<<<< HEAD
   {
     to: "/players",
     label: "Players",
@@ -139,6 +140,12 @@ const baseNavLinks = [
     ]
   },
   { to: "/about", label: "About", icon: NAV_ICONS.about },
+=======
+  { to: "/people", label: "People", icon: NAV_ICONS.viewing },
+  { to: "/players", label: "Players", icon: NAV_ICONS.players },
+  { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
+  
+>>>>>>> temp-branch
 ];
 
 export default function Header() {
@@ -279,7 +286,19 @@ export default function Header() {
                 </span>
                 <span className="azterra-nav__label">Sign Up</span>
               </Link>
-              <button
+              <Link
+                to="/about"
+                className="azterra-nav__link"
+                title="Sign Up"
+              >
+                <span className="azterra-nav__icon text-[#ffd700]">
+                  {NAV_ICONS.about}
+                </span>
+                <span className="azterra-nav__label">About</span>
+              </Link>
+
+
+              {/* <button
                 type="button"
                 className="azterra-nav__link azterra-nav__link--muted"
                 onClick={() => { loginGuest(); navigate('/'); }}
@@ -289,7 +308,7 @@ export default function Header() {
                   {NAV_ICONS.login}
                 </span>
                 <span className="azterra-nav__label">Login as Guest</span>
-              </button>
+              </button> */}
             </div>
           )}
 

@@ -93,7 +93,7 @@ html, body, #root {
 }
 
 .leaflet-map .leaflet-tile-pane {
-  filter: saturate(1.05) contrast(1.05) brightness(0.94);
+  filter: saturate(1.05) contrast(1.05) brightness(1.1);
 }
 
 .map-container-wrapper {

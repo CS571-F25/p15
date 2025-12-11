@@ -70,9 +70,10 @@ function CloudLayer({ enabled = true, map, intensity = 1, onDiagnostics }) {
         inset: 0,
         pointerEvents: 'none',
         opacity: finalOpacity,
-        transition: 'opacity 0.3s ease-out', 
+        transition: 'opacity 0.3s ease-out',
         overflow: 'hidden',
-        filter: 'blur(2px) contrast(1.2) brightness(1.3)',
+        /* DELETED: filter: 'blur(2px) contrast(1.2) brightness(1.3)', */
+        /* Removing the filter here fixes the blending issue */
       }}
     >
       <div 
@@ -81,7 +82,9 @@ function CloudLayer({ enabled = true, map, intensity = 1, onDiagnostics }) {
           ...sharedStyle,
           backgroundImage: `url(${urlPrimary})`,
           backgroundSize: '1600px auto', 
-          opacity: 0.6, 
+          opacity: 0.6,
+          /* MOVED HERE: Apply the filter directly to the image layer */
+          filter: 'blur(2px) contrast(1.2) brightness(1.3)',
         }} 
       />
       <div 
@@ -90,7 +93,9 @@ function CloudLayer({ enabled = true, map, intensity = 1, onDiagnostics }) {
           ...sharedStyle,
           backgroundImage: `url(${urlSecondary})`,
           backgroundSize: '1200px auto',
-          opacity: 0.4, 
+          opacity: 0.4,
+          /* MOVED HERE: Apply the filter directly to the image layer */
+          filter: 'blur(2px) contrast(1.2) brightness(1.3)',
         }} 
       />
     </div>

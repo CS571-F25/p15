@@ -61,6 +61,24 @@ export default function AboutPage() {
             <p>Discord: velere.</p>
           </article>
         </div>
+        <div 
+          style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            marginTop: '2rem', /* Spacing between rows */
+            width: '100%' 
+          }}
+        >
+          <article 
+            className="about-card" 
+            style={{ maxWidth: '350px', }}>
+            <div className="about-card__shine" aria-hidden="true" />
+            <h3>Youngjun Moon</h3>
+            <p>Co-builder</p>
+            <p>Email: <a href="mailto:youngjunmoon05@gmail.com">youngjunmoon05@gmail.com</a></p>
+            <p>Discord: youngjunm</p>
+          </article>
+        </div>
       </section>
 
       <section className="about-section">
