@@ -60,7 +60,18 @@ export default function AboutPage() {
             <p>Email: <a href="mailto:ryanpratt16@outlook.com">ryanpratt16@outlook.com</a></p>
             <p>Discord: velere.</p>
           </article>
-          <article className="about-card">
+        </div>
+        <div 
+          style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            marginTop: '2rem', /* Spacing between rows */
+            width: '100%' 
+          }}
+        >
+          <article 
+            className="about-card" 
+            style={{ maxWidth: '350px', }}>
             <div className="about-card__shine" aria-hidden="true" />
             <h3>Youngjun Moon</h3>
             <p>Co-builder</p>
