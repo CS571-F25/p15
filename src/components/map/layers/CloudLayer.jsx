@@ -1,86 +1,99 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-const CLOUD_TEXTURES = ['clouds/cloud-1.png', 'clouds/cloud-2.png', 'clouds/cloud-3.png'];
+const TEXTURE_PRIMARY = 'cloud-4.png';
+const TEXTURE_SECONDARY = 'cloud-5.png';
+
+// Zoom Configuration
+const ZOOM_FOG_START = 2; 
+const ZOOM_FOG_END = 4;   
+const MAX_OPACITY = 0.45; 
 
 const computeOpacity = (zoom = 0) => {
-  if (zoom >= 6) return 0.05;
-  if (zoom >= 4) return 0.08;
-  return 0.12;
+  if (zoom <= ZOOM_FOG_START) return MAX_OPACITY;
+  if (zoom >= ZOOM_FOG_END) return 0;
+  const progress = (zoom - ZOOM_FOG_START) / (ZOOM_FOG_END - ZOOM_FOG_START);
+  return MAX_OPACITY * (1 - progress);
 };
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 function CloudLayer({ enabled = true, map, intensity = 1, onDiagnostics }) {
-  const layerRef = useRef(null);
-  const [loaded, setLoaded] = useState(false);
-  const [opacity, setOpacity] = useState(() => computeOpacity(map?.getZoom?.() ?? 0));
-  const texture = useMemo(() => {
-    const choice = CLOUD_TEXTURES[Math.floor(Math.random() * CLOUD_TEXTURES.length)];
-    const base = import.meta.env.BASE_URL || '/';
-    return `${base}${choice}`;
-  }, []);
+    const [zoomOpacity, setZoomOpacity] = useState(() => 
+    map ? computeOpacity(map.getZoom()) : MAX_OPACITY
+  );
+  
+  const base = import.meta.env.BASE_URL || '/';
+  const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  const urlPrimary = `${cleanBase}/clouds/${TEXTURE_PRIMARY}`;
+  const urlSecondary = `${cleanBase}/clouds/${TEXTURE_SECONDARY}`;
 
   useEffect(() => {
-    if (!texture) return undefined;
-    const img = new Image();
-    img.onload = () => {
-      setLoaded(true);
-      onDiagnostics?.('clouds', { status: 'ok', message: 'Cloud texture loaded', src: texture });
+    onDiagnostics?.('clouds', { status: 'ok', message: 'Active (Dynamic Zoom)' });
+  }, [onDiagnostics]);
+
+  useEffect(() => {
+    if (!map) return;
+
+    const handleZoom = () => {
+        const currentZoom = map.getZoom();
+        setZoomOpacity(computeOpacity(currentZoom));
     };
-    img.onerror = () => {
-      setLoaded(false);
-      onDiagnostics?.('clouds', { status: 'error', message: 'Cloud texture missing', src: texture });
-    };
-    img.src = texture;
+
+    map.on('zoom', handleZoom);
+    handleZoom();
+
     return () => {
-      img.onload = null;
-      img.onerror = null;
+      map.off('zoom', handleZoom);
     };
-  }, [texture, onDiagnostics]);
+  }, [map]); 
 
-  useEffect(() => {
-    if (!map) return undefined;
-    const handleZoom = () => setOpacity(computeOpacity(map.getZoom()));
-    map.on('zoomend', handleZoom);
-    return () => map.off('zoomend', handleZoom);
-  }, [map]);
+  if (!enabled) return null;
 
-  useEffect(() => {
-    if (!enabled) {
-      onDiagnostics?.('clouds', { status: 'off', message: 'Cloud layer disabled' });
-      return;
-    }
-    if (!map) {
-      onDiagnostics?.('clouds', { status: 'pending', message: 'Cloud layer waiting for map' });
-      return;
-    }
-    if (loaded) {
-      const finalOpacity = clamp(opacity * intensity, 0, 1);
-      onDiagnostics?.('clouds', {
-        status: 'ok',
-        message: `Cloud layer active (opacity ${finalOpacity.toFixed(2)})`,
-      });
-    }
-  }, [enabled, loaded, opacity, intensity, onDiagnostics, map]);
+  const finalOpacity = clamp(zoomOpacity * intensity, 0, 1);
 
-  if (!enabled || !map) return null;
+  
+  if (finalOpacity <= 0.01) return null;
 
-  const finalOpacity = clamp(opacity * intensity, 0, 1);
-  const visibleOpacity = loaded ? finalOpacity : 0;
+  const sharedStyle = {
+    position: 'absolute',
+    inset: -500, 
+    backgroundRepeat: 'repeat',
+    mixBlendMode: 'screen', 
+    pointerEvents: 'none',
+  };
 
   return (
     <div
-      ref={layerRef}
-      className="map-layer map-layer--clouds"
       style={{
-        '--layer-opacity': visibleOpacity,
-        backgroundImage: `url(${texture}), radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.2), transparent 60%)`,
-        backgroundSize: '900px auto, cover',
-        backgroundRepeat: 'repeat, no-repeat',
-        opacity: visibleOpacity,
+        zIndex: 100,
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        opacity: finalOpacity,
+        transition: 'opacity 0.3s ease-out', 
+        overflow: 'hidden',
+        filter: 'blur(2px) contrast(1.2) brightness(1.3)',
       }}
-      aria-hidden="true"
-    />
+    >
+      <div 
+        className="animate-fog-primary"
+        style={{
+          ...sharedStyle,
+          backgroundImage: `url(${urlPrimary})`,
+          backgroundSize: '1600px auto', 
+          opacity: 0.6, 
+        }} 
+      />
+      <div 
+        className="animate-fog-secondary"
+        style={{
+          ...sharedStyle,
+          backgroundImage: `url(${urlSecondary})`,
+          backgroundSize: '1200px auto',
+          opacity: 0.4, 
+        }} 
+      />
+    </div>
   );
 }
 
