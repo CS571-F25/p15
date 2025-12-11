@@ -28,6 +28,7 @@ Status: in progress - we keep shipping updates to the live site and expanding th
 
 - Frontend: Vite, React, React Router, Leaflet, and context-based state for auth, map, content, and regions.
 - Backend: Express with JSON persistence, rotating backups, uploads, and Supabase/Google/local auth.
+- Netlify functions: Set `VITE_API_BASE_URL=/.netlify/functions/api` so the frontend hits the serverless API entry.
 
 ## How it works (frontend)
 
