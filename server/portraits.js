@@ -8,8 +8,10 @@ import { normalizeContentList } from './contentSchema.js';
 
 const router = express.Router();
 
-const currentFile = fileURLToPath(import.meta.url);
-const currentDir = path.dirname(currentFile);
+const currentDir =
+  typeof import.meta !== 'undefined' && import.meta.url
+    ? path.dirname(fileURLToPath(import.meta.url))
+    : path.resolve(process.cwd(), 'server');
 const DATA_DIR = path.join(currentDir, 'data');
 const CONTENT_FILE = path.join(DATA_DIR, 'content.json');
 const PORTRAITS_DIR = path.join(DATA_DIR, 'portraits');

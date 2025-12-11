@@ -5,8 +5,10 @@ import { fileURLToPath } from 'node:url';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-const currentFile = fileURLToPath(import.meta.url);
-const utilsDir = path.dirname(currentFile);
+const utilsDir =
+  typeof import.meta !== 'undefined' && import.meta.url
+    ? path.dirname(fileURLToPath(import.meta.url))
+    : path.resolve(process.cwd(), 'server');
 
 const USERS_FILE_PATH = path.join(utilsDir, 'users.json');
 const BACKUP_DIR = path.join(utilsDir, 'backups');

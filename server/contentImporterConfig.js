@@ -4,8 +4,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const CONFIG_FILENAME = 'content-importer.config.json';
-const currentFile = fileURLToPath(import.meta.url);
-const currentDir = path.dirname(currentFile);
+const currentDir =
+  typeof import.meta !== 'undefined' && import.meta.url
+    ? path.dirname(fileURLToPath(import.meta.url))
+    : path.resolve(process.cwd(), 'server');
 const CONFIG_PATH = path.resolve(path.join(currentDir, '..', CONFIG_FILENAME));
 
 const DEFAULT_CONFIG = {

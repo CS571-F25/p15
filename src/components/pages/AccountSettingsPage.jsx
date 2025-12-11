@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 function AccountSettingsPage() {
   const { user, role, updateAccount, refreshUser } = useAuth();

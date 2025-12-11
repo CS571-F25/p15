@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const ROLE_OPTIONS = [
   { value: 'pending', label: 'Pending' },
   { value: 'editor', label: 'Editor' },

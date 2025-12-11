@@ -6,7 +6,8 @@ let cachedHandler;
 export const handler = async (event, context) => {
   if (!cachedHandler) {
     const app = await createApp();
-    cachedHandler = serverless(app, { basePath: '/.netlify/functions/api' });
+    // Netlify will mount the function at /.netlify/functions/api; let routing stay as-is (/api/*) via redirects.
+    cachedHandler = serverless(app);
   }
   return cachedHandler(event, context);
 };

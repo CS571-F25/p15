@@ -28,8 +28,10 @@ async function optionalAuth(req) {
   }
 }
 
-const currentFile = fileURLToPath(import.meta.url);
-const viewDir = path.dirname(currentFile);
+const viewDir =
+  typeof import.meta !== 'undefined' && import.meta.url
+    ? path.dirname(fileURLToPath(import.meta.url))
+    : path.resolve(process.cwd(), 'server');
 
 const getNpcs = async () => {
   try {

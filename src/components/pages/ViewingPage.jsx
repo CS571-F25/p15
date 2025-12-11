@@ -8,7 +8,7 @@ import { useContent } from '../../context/ContentContext';
 import { canView as canViewHelper } from '../../utils/permissions';
 import '../UI/PageUI.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const TABS = ['npcs', 'players'];
 const CAMPAIGNS = ['All', 'Main', 'Side'];
 const SECRET_OPTIONS = [

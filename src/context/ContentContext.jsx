@@ -10,7 +10,7 @@ import { normalizeContentList } from '../constants/contentConstants';
 import fallbackContent from '../data/content.json';
 
 const ContentContext = createContext(null);
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export function ContentProvider({ children }) {
   const [entries, setEntries] = useState([]);

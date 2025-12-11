@@ -7,8 +7,10 @@ import { randomUUID } from 'node:crypto';
 import { adminRequired, authRequired } from './utils.js';
 
 const router = Router();
-const currentFile = fileURLToPath(import.meta.url);
-const currentDir = path.dirname(currentFile);
+const currentDir =
+  typeof import.meta !== 'undefined' && import.meta.url
+    ? path.dirname(fileURLToPath(import.meta.url))
+    : path.resolve(process.cwd(), 'server');
 const DATA_DIR = path.join(currentDir, 'data');
 
 const FILES = {

@@ -8,8 +8,10 @@ import { parseNoteFile } from './contentParser.js';
 import { validateEntries } from './contentValidator.js';
 import { loadImporterConfig } from './contentImporterConfig.js';
 
-const currentFile = fileURLToPath(import.meta.url);
-const currentDir = path.dirname(currentFile);
+const currentDir =
+  typeof import.meta !== 'undefined' && import.meta.url
+    ? path.dirname(fileURLToPath(import.meta.url))
+    : path.resolve(process.cwd(), 'server');
 const DATA_DIR = path.join(currentDir, 'data');
 const CONTENT_FILE = path.join(DATA_DIR, 'content.json');
 const DIAGNOSTICS_FILE = path.join(DATA_DIR, 'content-diagnostics.json');

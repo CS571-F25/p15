@@ -34,8 +34,16 @@ import locationsData from '../../data/locations.json';
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const ASSET_BASE_URL = import.meta.env.BASE_URL || '/';
 const ICON_BASE_URL = `${ASSET_BASE_URL}icons/cities/`;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions/api';
-const getFallbackLocations = () => locationsData.map((location) => ({ ...location }));
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const getFallbackLocations = () => {
+  if (Array.isArray(locationsData?.locations)) {
+    return locationsData.locations.map((location) => ({ ...location }));
+  }
+  if (Array.isArray(locationsData)) {
+    return locationsData.map((location) => ({ ...location }));
+  }
+  return [];
+};
 
 // Fix for default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
