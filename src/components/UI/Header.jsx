@@ -128,7 +128,6 @@ const baseNavLinks = [
       { to: "/compendium/heroes", label: "Heroes" },
     ]
   },
-<<<<<<< HEAD
   {
     to: "/players",
     label: "Players",
@@ -139,13 +138,9 @@ const baseNavLinks = [
       { to: "/progress", label: "Progress" },
     ]
   },
-  { to: "/about", label: "About", icon: NAV_ICONS.about },
-=======
   { to: "/people", label: "People", icon: NAV_ICONS.viewing },
   { to: "/players", label: "Players", icon: NAV_ICONS.players },
   { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
-  
->>>>>>> temp-branch
 ];
 
 export default function Header() {
