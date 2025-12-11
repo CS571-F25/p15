@@ -1663,18 +1663,15 @@ html, body, #root {
 
 
 .animate-fog-primary {
-  /* Changed from 120s to 40s */
   animation: driftPrimary 40s linear infinite; 
   will-change: background-position;
 }
 
 .animate-fog-secondary {
-  /* Changed from 90s to 30s */
   animation: driftSecondary 30s linear infinite; 
   will-change: background-position;
 }
 
-/* You don't need to change the keyframes, just the timing above */
 @keyframes driftPrimary {
   from { background-position: 0 0; }
   to { background-position: -1000px 200px; }
