@@ -154,18 +154,6 @@
   gap: 0.75rem;
 }
 
-.sheet-column--stats {
-  /* Left column - Core Stats */
-}
-
-.sheet-column--skills {
-  /* Center column - Skills & Combat */
-}
-
-.sheet-column--actions {
-  /* Right column - Actions & Tabs */
-}
-
 /* ============================================
    Card Styling (Dual Border Glow)
    ============================================ */

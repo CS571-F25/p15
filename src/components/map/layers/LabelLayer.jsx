@@ -12,18 +12,25 @@ const escapeHtml = (value = "") =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-function LabelLayer({ labels = [], zoomLevel = 4, isEditable = false, onDragLabel }) {
+function LabelLayer({ labels = [], zoomLevel = 4, isEditable = false, isEditorMode = false, onDragLabel }) {
   const iconMarkers = useMemo(
     () =>
       labels.map((label) => {
         const baseSize = 28 * (label.size || 1);
-        const zoomScale = label.scaleWithZoom === false ? 1 : Math.pow(1.12, zoomLevel - 4);
+        const zoomDelta = clamp(zoomLevel - 4, -4, 4);
+        const zoomScale = label.scaleWithZoom === false ? 1 : 1 + zoomDelta * 0.06;
         const scaledSize = baseSize * (label.zoomScale || 1) * zoomScale;
-        const fadeStart = Number.isFinite(label.fadeInStart) ? label.fadeInStart : 2.8;
-        const fadeEnd = Number.isFinite(label.fadeInEnd) ? label.fadeInEnd : fadeStart + 1.2;
-        const opacity = fadeEnd > fadeStart
+        const rawStart = Number.isFinite(label.fadeInStart) ? label.fadeInStart : 2.8;
+        const rawEnd = Number.isFinite(label.fadeInEnd) ? label.fadeInEnd : rawStart + 1.8;
+        const fadeStart = rawStart;
+        const minGap = 0.2;
+        const fadeEnd = rawEnd <= fadeStart + minGap ? fadeStart + minGap : rawEnd;
+        let opacity = fadeEnd > fadeStart
           ? clamp((zoomLevel - fadeStart) / (fadeEnd - fadeStart), 0, 1)
           : 1;
+        if (isEditorMode) {
+          opacity = Math.max(opacity, 0.2);
+        }
         const color = label.color || "#fef3c7";
         const fontFamily = label.font || "'Cinzel','Cormorant Garamond',serif";
         const text = escapeHtml(label.text || "Label");
@@ -36,7 +43,7 @@ function LabelLayer({ labels = [], zoomLevel = 4, isEditable = false, onDragLabe
           anchor: [size[0] / 2, size[1] / 2],
         };
       }),
-    [labels, zoomLevel]
+    [labels, zoomLevel, isEditorMode]
   );
 
   return (
@@ -70,3 +77,6 @@ function LabelLayer({ labels = [], zoomLevel = 4, isEditable = false, onDragLabe
 }
 
 export default LabelLayer;
+
+
+

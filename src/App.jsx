@@ -1,4 +1,4 @@
-import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MapPage from './components/pages/MapPage';
 import AlmanacPage from './components/pages/AlmanacPage';
 import CharactersPage from './components/pages/CharactersPage';
@@ -23,11 +23,11 @@ import Header from './components/UI/Header';
 import PageLayout from './components/UI/PageLayout';
 import './components/UI/PageUI.css';
 import AuthCallback from './components/auth/AuthCallback';
-import AuthLandingPage from './components/pages/AuthLandingPage';
 import CharacterSheetPage from './components/pages/CharacterSheetPage';
 import CampaignPage from './components/pages/CampaignPage';
 import MagicHubPage from './components/pages/MagicHubPage';
 import MagicSystemPage from './components/pages/MagicSystemPage';
+import LandingRedirectPage from './components/pages/LandingRedirectPage';
 
 // Placeholder components for missing tabs
 const Placeholder = ({ title }) => (
@@ -36,9 +36,11 @@ const Placeholder = ({ title }) => (
   </div>
 );
 
-function HashApp() {
+function App() {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/';
+
   return (
-    <HashRouter>
+    <BrowserRouter basename={base}>
       <div className="app-shell">
         <a className="skip-link" href="#main-content">
           Skip to main content
@@ -46,8 +48,12 @@ function HashApp() {
         <Header />
         <main id="main-content" className="app-content" role="main">
           <Routes>
-            {/* 1. Map (Default Home) */}
-            <Route path="/" element={<MapPage />} />
+            {/* Landing */}
+            <Route path="/p15" element={<LandingRedirectPage />} />
+            <Route path="/p15/*" element={<LandingRedirectPage />} />
+
+            {/* 1. Map */}
+            <Route path="/" element={<MapPage/>} />
             <Route path="/map" element={<Navigate to="/" replace />} />
 
             {/* About */}
@@ -60,24 +66,41 @@ function HashApp() {
             <Route path="/character-sheet" element={<CharacterSheetPage />} />
 
             {/* 3. ATLAS (Promoted to its own top-level view) */}
-            <Route path="/atlas" element={<PageLayout title="World Atlas" tabs={[
-                { to: "", label: "View Map", end: true },
-                { to: "editor", label: "Map Editor" },
-            ]} />}>
-                <Route index element={<LocationsAtlasPage />} />
-                <Route path="editor" element={<LocationsEditorPage />} />
+            <Route
+              path="/atlas"
+              element={
+                <PageLayout
+                  title="World Atlas"
+                  tabs={[
+                    { to: '', label: 'View Map', end: true },
+                    { to: 'editor', label: 'Map Editor' },
+                  ]}
+                />
+              }
+            >
+              <Route index element={<LocationsAtlasPage />} />
+              <Route path="editor" element={<LocationsEditorPage />} />
             </Route>
 
             {/* 4. COMPENDIUM (The Big Merge) */}
             {/* We merge People, Magic, and Almanac here to clean up the Sidebar */}
-            <Route path="/compendium" element={<PageLayout title="Azterra Compendium" renderBottomTabs tabs={[
-                { to: "", label: "Almanac", end: true },
-                { to: "societies", label: "Societies" },
-                { to: "heroes", label: "Heroes" },
-            ]} />}>
-                <Route index element={<AlmanacPage />} />
-                <Route path="societies" element={<WorldRaces />} />
-                <Route path="heroes" element={<CharactersPage />} />
+            <Route
+              path="/compendium"
+              element={
+                <PageLayout
+                  title="Azterra Compendium"
+                  renderBottomTabs
+                  tabs={[
+                    { to: '', label: 'Almanac', end: true },
+                    { to: 'societies', label: 'Societies' },
+                    { to: 'heroes', label: 'Heroes' },
+                  ]}
+                />
+              }
+            >
+              <Route index element={<AlmanacPage />} />
+              <Route path="societies" element={<WorldRaces />} />
+              <Route path="heroes" element={<CharactersPage />} />
             </Route>
 
             {/* Magic Systems */}
@@ -97,7 +120,7 @@ function HashApp() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            <Route path="/auth/callback" element={<AuthLandingPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
             {/* Players */}
             <Route path="/players" element={<PlayersPage />} />
@@ -116,28 +139,13 @@ function HashApp() {
 
             {/* Admin */}
             <Route path="/admin" element={<AdminDashboard />} />
+
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/map" replace />} />
           </Routes>
         </main>
       </div>
-    </HashRouter>
+    </BrowserRouter>
   );
-}
-
-function App() {
-  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
-  const isAuthCallback =
-    typeof window !== 'undefined' && window.location.pathname === `${base}/auth/callback`;
-
-  if (isAuthCallback) {
-    return (
-      <BrowserRouter basename={base || '/'}>
-        <Routes>
-          <Route path="/auth/callback" element={<AuthCallback />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-  return <HashApp />;
 }
 export default App;

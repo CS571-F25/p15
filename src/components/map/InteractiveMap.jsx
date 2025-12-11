@@ -128,6 +128,32 @@ const getTypeConfig = (type) => {
 const resolveIconKey = (location) => location.iconKey || getDefaultIconKey(location.type);
 const buildIconSrc = (iconKey) => `${ICON_BASE_URL}${iconKey}.png`;
 
+const MARKER_PLACEHOLDER_COLORS = {
+  city: '#facc15',
+  town: '#93c5fd',
+  dungeon: '#c084fc',
+  landmark: '#fb923c',
+  generic: '#e5e7eb',
+};
+
+const buildNavStyleMarker = (color, letter) => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40"><path d="M16 3C9.4 3 4 8.4 4 15c0 8.7 12 20 12 20s12-11.3 12-20C28 8.4 22.6 3 16 3Z" fill="white" stroke="${color}" stroke-width="2" /><circle cx="16" cy="15" r="7" fill="${color}" stroke="#0f172a" stroke-width="2"/><text x="16" y="19" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="9" font-weight="700" fill="#0f172a">${letter}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+
+const PLACEHOLDER_MARKER_SRC = {
+  city: buildNavStyleMarker(MARKER_PLACEHOLDER_COLORS.city, 'C'),
+  town: buildNavStyleMarker(MARKER_PLACEHOLDER_COLORS.town, 'T'),
+  dungeon: buildNavStyleMarker(MARKER_PLACEHOLDER_COLORS.dungeon, 'D'),
+  landmark: buildNavStyleMarker(MARKER_PLACEHOLDER_COLORS.landmark, 'L'),
+  generic: buildNavStyleMarker(MARKER_PLACEHOLDER_COLORS.generic, 'M'),
+};
+
+const getPlaceholderMarkerSrc = (type) => {
+  const typeConfig = getTypeConfig(type);
+  return PLACEHOLDER_MARKER_SRC[typeConfig.id] || PLACEHOLDER_MARKER_SRC.generic;
+};
+
 const normalizeLocationEntry = (location) => {
   const typeConfig = getTypeConfig(location.type);
   const iconKey = location.iconKey || getDefaultIconKey(typeConfig.id);
@@ -197,10 +223,11 @@ const MAP_BOUNDS = L.latLngBounds(
   [-MAP_PADDING, -MAP_PADDING],
   [MAP_PIXEL_HEIGHT + MAP_PADDING, MAP_PIXEL_WIDTH + MAP_PADDING]
 );
+const EDITOR_MAX_BOUNDS = null;
 const BOUNDS_VISCOSITY = 0.35; // gentle resistance for a boomerang effect
-const ZOOM_SNAP = 1;
-const ZOOM_DELTA = 1;
-const WHEEL_PX_PER_ZOOM_LEVEL = 120;
+const ZOOM_SNAP = 0.5;
+const ZOOM_DELTA = 0.5;
+const WHEEL_PX_PER_ZOOM_LEVEL = 240;
 const MAX_SCALE = Math.pow(2, TILE_MAX_ZOOM_LEVEL);
 const TILESET_CRS = L.extend({}, L.CRS.Simple, {
   scale: (zoom) => Math.pow(2, zoom) / MAX_SCALE,
@@ -251,6 +278,9 @@ function InvertedYTileLayer({
       tileSize,
       noWrap: true,
       keepBuffer,
+      reuseTiles: true,
+      updateWhenIdle: false,
+      updateWhenZooming: true,
     });
     layer.addTo(map);
 
@@ -446,6 +476,24 @@ function LabelPlacementHandler({ isActive, onPlace }) {
   return null;
 }
 
+function ZoomWatcher({ onZoomChange }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map || !onZoomChange) return;
+    const sync = () => onZoomChange(map.getZoom());
+    sync();
+    map.on('zoom', sync);
+    map.on('zoomend', sync);
+    map.on('zoomlevelschange', sync);
+    return () => {
+      map.off('zoom', sync);
+      map.off('zoomend', sync);
+      map.off('zoomlevelschange', sync);
+    };
+  }, [map, onZoomChange]);
+  return null;
+}
+
 // LocationMarker handles its own hover/selection state
 function LocationMarker({
   location,
@@ -464,9 +512,9 @@ function LocationMarker({
     return clamp(base * scale, 20, 64);
   })();
 
-  const fallbackSrc = buildIconSrc(DEFAULT_TYPE_ICON.generic);
   const resolvedIcon = resolveIcon ? resolveIcon(location) : { src: buildIconSrc(resolveIconKey(location)) };
-  const iconSrc = resolvedIcon?.src || fallbackSrc;
+  const placeholderSrc = resolvedIcon?.placeholder || getPlaceholderMarkerSrc(location?.type);
+  const iconSrc = resolvedIcon?.src || placeholderSrc;
   const safeName = (location.name || '').replace(/"/g, '&quot;');
 
   return (
@@ -482,7 +530,7 @@ function LocationMarker({
             <img src="${iconSrc}" alt="${safeName}"
               class="custom-marker__image" loading="lazy"
               style="width:${iconSize}px;height:${iconSize}px;"
-              onerror="this.onerror=null;this.dataset.missing='1';this.src='${fallbackSrc}'" />
+              onerror="this.onerror=null;this.dataset.missing='1';this.src='${placeholderSrc}'" />
           </div>
         `,
         iconSize: [iconSize, iconSize],
@@ -529,7 +577,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
   const [importError, setImportError] = useState('');
   const [isIntroVisible, setIsIntroVisible] = useState(() => !introShownThisSession);
   const [mapInstance, setMapInstance] = useState(null);
-  const [mapZoom, setMapZoom] = useState(2);
+  const [mapZoom, setMapZoom] = useState(INTERACTIVE_MIN_ZOOM_LEVEL);
   const [isRegionMode, setIsRegionMode] = useState(false);
   const [regionDraftPoints, setRegionDraftPoints] = useState([]);
   const [regionDraftTargetId, setRegionDraftTargetId] = useState(null);
@@ -570,7 +618,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
   const [iconStatuses, setIconStatuses] = useState({});
   const isAdmin = role === 'admin';
   const center = MAP_CENTER;
-  const zoom = 2;
+  const zoom = INTERACTIVE_MIN_ZOOM_LEVEL;
   const activeMarkerType = MARKER_TYPES.find((type) => type.id === activePlacementTypeId) || null;
   const serializedLocations = useMemo(() => JSON.stringify(locations), [locations]);
   const serializedRegions = useMemo(() => JSON.stringify(regions), [regions]);
@@ -599,6 +647,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     [regions, regionFilters, isRegionMode, activeRegionId, showRegionsLayer]
   );
   const regionLabelsEnabled = filteredRegions.some((region) => region.labelEnabled !== false);
+  const zoomProgress = clamp((mapZoom - INTERACTIVE_MIN_ZOOM_LEVEL) / (INTERACTIVE_MAX_ZOOM_LEVEL - INTERACTIVE_MIN_ZOOM_LEVEL), 0, 1);
   const reportDiagnostics = useCallback((key, entry) => {
     setDiagnostics((prev) => {
       const current = prev[key] || {};
@@ -623,13 +672,11 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
     (location) => {
       const iconKey = resolveIconKey(location);
       const status = iconStatuses[iconKey];
+      const placeholderSrc = getPlaceholderMarkerSrc(location?.type);
       if (status?.status === 'ok') {
-        return { key: iconKey, src: status.src };
+        return { key: iconKey, src: status.src, placeholder: placeholderSrc };
       }
-      if (status?.status === 'error') {
-        return { key: iconKey, src: buildIconSrc(DEFAULT_TYPE_ICON.generic), fallback: true };
-      }
-      return { key: iconKey, src: buildIconSrc(iconKey) };
+      return { key: iconKey, src: placeholderSrc, placeholder: placeholderSrc, fallback: true };
     },
     [iconStatuses]
   );
@@ -997,8 +1044,27 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
           const parsed = Number(value);
           nextValue = Number.isFinite(parsed) ? parsed : 0;
         } else if (booleanFields.includes(field)) {
-          nextValue = Boolean(value);
+          nextValue = value === false || value === 'false' ? false : Boolean(value);
         }
+
+        if (field === 'fadeInStart' || field === 'fadeInEnd') {
+          const epsilon = 0.05;
+          const currentStart = field === 'fadeInStart' ? nextValue : label.fadeInStart ?? 2.8;
+          let currentEnd = field === 'fadeInEnd' ? nextValue : label.fadeInEnd ?? currentStart + 1.2;
+          if (currentEnd <= currentStart + epsilon) {
+            currentEnd = currentStart + epsilon;
+            if (field === 'fadeInEnd') nextValue = currentEnd;
+          }
+          if (field === 'fadeInStart' && nextValue >= currentEnd - epsilon) {
+            nextValue = currentEnd - epsilon;
+          }
+          return {
+            ...label,
+            fadeInStart: field === 'fadeInStart' ? nextValue : currentStart,
+            fadeInEnd: field === 'fadeInEnd' ? nextValue : currentEnd,
+          };
+        }
+
         return { ...label, [field]: nextValue };
       })
     );
@@ -1406,12 +1472,14 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
   ) : null;
   useEffect(() => {
     if (!mapInstance) return;
-    setMapZoom(mapInstance.getZoom());
-    const handleZoomLevel = () => {
-      setMapZoom(mapInstance.getZoom());
+    const syncZoom = () => setMapZoom(mapInstance.getZoom());
+    syncZoom();
+    mapInstance.on('zoom', syncZoom);
+    mapInstance.on('zoomend', syncZoom);
+    return () => {
+      mapInstance.off('zoom', syncZoom);
+      mapInstance.off('zoomend', syncZoom);
     };
-    mapInstance.on('zoomend', handleZoomLevel);
-    return () => mapInstance.off('zoomend', handleZoomLevel);
   }, [mapInstance]);
 
   useEffect(() => {
@@ -1529,10 +1597,50 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 
   useEffect(() => {
     if (!mapInstance) return;
-    mapInstance.setMaxBounds(MAP_BOUNDS);
-    mapInstance.options.maxBoundsViscosity = BOUNDS_VISCOSITY;
-    mapInstance.panInsideBounds(MAP_BOUNDS, { animate: true, duration: 0.35 });
-  }, [mapInstance]);
+
+    if (!mapInstance.__origLimitFns) {
+      mapInstance.__origLimitFns = {
+        limitCenter: mapInstance._limitCenter,
+        limitOffset: mapInstance._limitOffset,
+        limitBounds: mapInstance._limitBounds,
+        enforceMaxBounds: mapInstance._enforceMaxBounds,
+        getBoundsOffset: mapInstance._getBoundsOffset,
+        panInsideBounds: mapInstance.panInsideBounds,
+      };
+    }
+
+    if (isEditorMode) {
+      // Clear bounds and bypass limiters for free panning.
+      mapInstance.setMaxBounds(null);
+      mapInstance.options.maxBounds = null;
+      mapInstance.options.maxBoundsViscosity = 0;
+      mapInstance._bounds = null;
+      if (mapInstance.dragging && mapInstance.dragging._draggable) {
+        mapInstance.dragging._draggable._bounds = null;
+      }
+      mapInstance._limitCenter = (center) => center;
+      mapInstance._limitOffset = (offset) => offset;
+      mapInstance._limitBounds = (bounds) => bounds;
+      mapInstance._enforceMaxBounds = () => mapInstance;
+      mapInstance._getBoundsOffset = () => L.point(0, 0);
+      mapInstance.panInsideBounds = () => mapInstance;
+    } else {
+      // Restore normal limiting behavior.
+      const { limitCenter, limitOffset, limitBounds, enforceMaxBounds, getBoundsOffset, panInsideBounds } = mapInstance.__origLimitFns || {};
+      if (limitCenter) mapInstance._limitCenter = limitCenter;
+      if (limitOffset) mapInstance._limitOffset = limitOffset;
+      if (limitBounds) mapInstance._limitBounds = limitBounds;
+      if (enforceMaxBounds) mapInstance._enforceMaxBounds = enforceMaxBounds;
+      if (getBoundsOffset) mapInstance._getBoundsOffset = getBoundsOffset;
+      if (panInsideBounds) mapInstance.panInsideBounds = panInsideBounds;
+      mapInstance.setMaxBounds(MAP_BOUNDS);
+      mapInstance.options.maxBounds = MAP_BOUNDS;
+      mapInstance.options.maxBoundsViscosity = BOUNDS_VISCOSITY;
+      if (typeof mapInstance.panInsideBounds === 'function') {
+        mapInstance.panInsideBounds(MAP_BOUNDS, { animate: true, duration: 0.35 });
+      }
+    }
+  }, [mapInstance, isEditorMode]);
 
   return (
     <div className={`map-wrapper ${isIntroVisible ? 'map-wrapper--locked' : ''}`}>
@@ -1540,12 +1648,13 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
         <div className="map-layout__canvas">
           <div className="map-container-wrapper" ref={mapContainerRef}>
             <MapContainer
+              key={`map-${isEditorMode ? 'edit' : 'view'}`}
               center={center}
               zoom={zoom}
               minZoom={INTERACTIVE_MIN_ZOOM_LEVEL}
               maxZoom={INTERACTIVE_MAX_ZOOM_LEVEL}
-              maxBounds={MAP_BOUNDS}
-              maxBoundsViscosity={BOUNDS_VISCOSITY}
+              maxBounds={isEditorMode ? undefined : MAP_BOUNDS}
+              maxBoundsViscosity={isEditorMode ? 0 : BOUNDS_VISCOSITY}
               crs={TILESET_CRS}
               className="leaflet-map"
               scrollWheelZoom={true}
@@ -1555,6 +1664,12 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
               zoomSnap={ZOOM_SNAP}
               zoomDelta={ZOOM_DELTA}
               wheelPxPerZoomLevel={WHEEL_PX_PER_ZOOM_LEVEL}
+              wheelDebounceTime={0}
+              zoomAnimation={true}
+              zoomAnimationThreshold={8}
+              markerZoomAnimation={true}
+              inertia={true}
+              inertiaDeceleration={1800}
               whenCreated={setMapInstance}
               style={{ height: '100%', width: '100%' }}
             >
@@ -1575,6 +1690,7 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                 }
                 onPlaceMarker={handlePlaceMarker}
               />
+              <ZoomWatcher onZoomChange={setMapZoom} />
               <RegionDrawingHandler
                 isActive={isEditorMode && isRegionMode}
                 onAddPoint={handleRegionPointAdd}
@@ -1599,9 +1715,10 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                 />
               ))}
               <LabelLayer
-                labels={showMapLabels ? mapLabels : []}
+                labels={isEditorMode ? mapLabels : showMapLabels ? mapLabels : []}
                 zoomLevel={mapZoom}
                 isEditable={isEditorMode}
+                isEditorMode={isEditorMode}
                 onDragLabel={handleLabelDrag}
               />
               <RegionLayer
@@ -1614,6 +1731,14 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                 zoomLevel={mapZoom}
               />
             </MapContainer>
+            {isEditorMode && (
+              <div className="editor-zoom-bar" aria-hidden="true">
+                <div className="editor-zoom-bar__track">
+                  <div className="editor-zoom-bar__fill" style={{ width: `${Math.round(zoomProgress * 100)}%` }} />
+                </div>
+                <span className="editor-zoom-bar__value">Zoom {mapZoom.toFixed(1)}</span>
+              </div>
+            )}
             <VignetteLayer
               enabled={vignetteEnabled}
               intensity={intensities.vignette}
@@ -1683,15 +1808,15 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
                 onDeleteLabel={handleDeleteLabel}
                 mapZoom={mapZoom}
               />
+              <button
+                type="button"
+                className="editor-panel-shell__toggle-tab"
+                aria-expanded={isEditorPanelOpen}
+                onClick={() => setIsEditorPanelOpen((prev) => !prev)}
+              >
+                Tools
+              </button>
             </div>
-            <button
-              type="button"
-              className="editor-panel-shell__handle"
-              aria-expanded={isEditorPanelOpen}
-              onClick={() => setIsEditorPanelOpen((prev) => !prev)}
-            >
-              Tools
-            </button>
           </div>
         )}
       </div>
@@ -1734,6 +1859,16 @@ function InteractiveMap({ isEditorMode = false, filtersOpen = false, onToggleFil
 }
 
 export default InteractiveMap;
+
+
+
+
+
+
+
+
+
+
 
 
 

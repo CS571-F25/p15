@@ -128,9 +128,16 @@ const baseNavLinks = [
       { to: "/compendium/heroes", label: "Heroes" },
     ]
   },
-  { to: "/people", label: "People", icon: NAV_ICONS.viewing },
-  { to: "/players", label: "Players", icon: NAV_ICONS.players },
-  { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
+  {
+    to: "/players",
+    label: "Players",
+    icon: NAV_ICONS.players,
+    children: [
+      { to: "/people", label: "People" },
+      { to: "/players", label: "Player Characters" },
+      { to: "/progress", label: "Progress" },
+    ]
+  },
   { to: "/about", label: "About", icon: NAV_ICONS.about },
 ];
 

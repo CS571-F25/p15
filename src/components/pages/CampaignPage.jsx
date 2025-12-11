@@ -6,7 +6,7 @@ import './CampaignPage.css';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export default function CampaignPage() {
-  const { user } = useAuth();
+  const { user, role, token } = useAuth();
   const navigate = useNavigate();
   const isGuest = !token || role === 'guest';
   
@@ -66,8 +66,13 @@ export default function CampaignPage() {
   }, [user]);
 
   useEffect(() => {
+    if (isGuest) {
+      setCampaigns(guestCampaigns);
+      setLoading(false);
+      return;
+    }
     fetchCampaigns();
-  }, [fetchCampaigns]);
+  }, [fetchCampaigns, guestCampaigns, isGuest]);
 
   // Get all characters from all campaigns (flattened)
   const allCharacters = campaigns.flatMap((campaign) =>
