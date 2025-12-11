@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { canView as baseCanView } from '../utils/permissions';
+import { supabase } from '../lib/supabaseClient';
 
 const AuthContext = createContext({
   user: null,
@@ -7,6 +8,11 @@ const AuthContext = createContext({
   token: null,
   loading: false,
   login: async () => {},
+  loginWithGoogle: async () => {},
+  loginWithEmail: async () => {},
+  signupWithGoogle: async () => {},
+  signupWithEmail: async () => {},
+  setPendingUsername: () => {},
   loginGuest: () => {},
   updateAccount: async () => {},
   googleLogin: async () => {},
@@ -18,6 +24,21 @@ const AuthContext = createContext({
 });
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+const PENDING_USERNAME_KEY = 'azterra:pending-username';
+
+function rememberPendingUsername(username) {
+  if (typeof window === 'undefined') return;
+  if (username && username.trim()) {
+    window.sessionStorage.setItem(PENDING_USERNAME_KEY, username.trim());
+  } else {
+    window.sessionStorage.removeItem(PENDING_USERNAME_KEY);
+  }
+}
+
+function readPendingUsername() {
+  if (typeof window === 'undefined') return '';
+  return window.sessionStorage.getItem(PENDING_USERNAME_KEY) || '';
+}
 
 const normalizeUser = (incoming) => {
   if (!incoming) return null;
@@ -100,7 +121,7 @@ export function AuthProvider({ children }) {
     window.location.href = `${API_BASE_URL}/auth/login${query}`;
   }, []);
 
-  const updateAccount = async ({ username, profilePicture, profile }) => {
+  const updateAccount = useCallback(async ({ username, profilePicture, profile }) => {
     setError(null);
     try {
       const data = await request({
@@ -114,10 +135,30 @@ export function AuthProvider({ children }) {
       setError(err.message);
       throw err;
     }
-  };
+  }, []);
 
-  const signup = async () => startOAuth({});
-  const login = async () => startOAuth({});
+  const loginWithEmail = useCallback(
+    async ({ email, username }) => {
+      const trimmedEmail = (email || '').trim();
+      if (!trimmedEmail) {
+        throw new Error('Email is required.');
+      }
+      setError(null);
+      return request({
+        path: '/auth/login/email',
+        method: 'POST',
+        body: { email: trimmedEmail, username: username?.trim() },
+      });
+    },
+    []
+  );
+
+  const loginWithGoogle = useCallback(() => startOAuth({ provider: 'google' }), [startOAuth]);
+  const signupWithGoogle = loginWithGoogle;
+  const signupWithEmail = loginWithEmail;
+
+  const signup = async () => signupWithGoogle();
+  const login = async () => loginWithGoogle();
 
   const logout = useCallback(async () => {
     try {
@@ -145,6 +186,31 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
+  useEffect(() => {
+    if (!normalizedUser || !normalizedUser.id) return;
+    const pending = readPendingUsername();
+    if (!pending) return;
+    if (normalizedUser.username && normalizedUser.username.trim()) {
+      if (normalizedUser.username.trim().toLowerCase() === pending.toLowerCase()) {
+        rememberPendingUsername('');
+      }
+      return;
+    }
+    let cancelled = false;
+    updateAccount({ username: pending })
+      .then(() => {
+        if (!cancelled) {
+          rememberPendingUsername('');
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to apply pending username', err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [normalizedUser, updateAccount]);
+
   const value = useMemo(
     () => ({
       user: normalizedUser,
@@ -153,6 +219,11 @@ export function AuthProvider({ children }) {
       loading,
       error,
       login,
+      loginWithGoogle,
+      loginWithEmail,
+      signupWithGoogle,
+      signupWithEmail,
+      setPendingUsername: rememberPendingUsername,
       updateAccount,
       googleLogin: startOAuth,
       signup,
@@ -163,7 +234,21 @@ export function AuthProvider({ children }) {
         Array.isArray(normalizedUser?.unlockedSecrets) && normalizedUser.unlockedSecrets.includes(secretId),
       canView: (config) => baseCanView(normalizedUser, config),
     }),
-    [normalizedUser, role, token, loading, error, startOAuth, logout]
+    [
+      normalizedUser,
+      role,
+      token,
+      loading,
+      error,
+      startOAuth,
+      logout,
+      loginGuest,
+      updateAccount,
+      loginWithEmail,
+      loginWithGoogle,
+      signupWithGoogle,
+      signupWithEmail,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

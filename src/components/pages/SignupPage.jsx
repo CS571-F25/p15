@@ -4,9 +4,13 @@ import { useAuth } from '../../context/AuthContext';
 
 function SignupPage() {
   const navigate = useNavigate();
-  const { user, signup } = useAuth();
+  const { user, signupWithGoogle, signupWithEmail, setPendingUsername } = useAuth();
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [info, setInfo] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
+  const [oauthSubmitting, setOauthSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -14,15 +18,44 @@ function SignupPage() {
     }
   }, [user, navigate]);
 
-  const handleSignUp = async () => {
+  const requireUsername = () => {
+    const trimmed = username.trim();
+    if (!trimmed) {
+      setError('Please choose a username to display in Azterra.');
+      return null;
+    }
+    return trimmed;
+  };
+
+  const handleEmailSignUp = async () => {
     setError('');
-    if (submitting) return;
-    setSubmitting(true);
+    setInfo('');
+    const chosenUsername = requireUsername();
+    if (!chosenUsername || emailSubmitting) return;
+    setEmailSubmitting(true);
     try {
-      await signup();
+      setPendingUsername(chosenUsername);
+      await signupWithEmail({ email, username: chosenUsername });
+      setInfo('Magic link sent. Check your email to finish creating your account.');
     } catch (err) {
       setError(err?.message || 'Unable to start signup.');
-      setSubmitting(false);
+    } finally {
+      setEmailSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setError('');
+    setInfo('');
+    const chosenUsername = requireUsername();
+    if (!chosenUsername || oauthSubmitting) return;
+    setOauthSubmitting(true);
+    try {
+      setPendingUsername(chosenUsername);
+      await signupWithGoogle();
+    } catch (err) {
+      setError(err?.message || 'Unable to start signup.');
+      setOauthSubmitting(false);
     }
   };
 
@@ -34,16 +67,50 @@ function SignupPage() {
         </header>
         <div className="auth-modal__form">
           <p className="auth-modal__note">
-            You&apos;ll be redirected to Supabase OAuth (e.g. GitHub) to create your account.
+            Pick a username, then sign up with a magic link or Google OAuth.
           </p>
+          <label htmlFor="signup-username">
+            Username
+            <input
+              id="signup-username"
+              type="text"
+              placeholder="Guildmaster"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={emailSubmitting || oauthSubmitting}
+              required
+            />
+          </label>
+          <label htmlFor="signup-email">
+            Email
+            <input
+              id="signup-email"
+              type="email"
+              placeholder="adventurer@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={emailSubmitting || oauthSubmitting}
+              required
+            />
+          </label>
+          <button
+            type="button"
+            className="auth-modal__submit"
+            onClick={handleEmailSignUp}
+            disabled={emailSubmitting || oauthSubmitting || !email.trim()}
+          >
+            {emailSubmitting ? 'Sending magic link...' : 'Send magic link'}
+          </button>
+          <div className="auth-modal__divider">or</div>
           <button
             type="button"
             className="auth-modal__google"
-            onClick={handleSignUp}
-            disabled={submitting}
+            onClick={handleGoogleSignUp}
+            disabled={oauthSubmitting}
           >
-            {submitting ? 'Opening sign-up...' : 'Continue with OAuth'}
+            {oauthSubmitting ? 'Opening Google...' : 'Continue with Google'}
           </button>
+          {info && <p className="auth-modal__note">{info}</p>}
           {error && <p className="auth-modal__error">{error}</p>}
         </div>
         <p className="auth-modal__note">New accounts start as pending until an admin approves them.</p>

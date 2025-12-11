@@ -12,7 +12,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: 'http://azterra.us-east-2.elasticbeanstalk.com',
         changeOrigin: true
       }
     }
