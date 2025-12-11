@@ -131,7 +131,6 @@ const baseNavLinks = [
   { to: "/people", label: "People", icon: NAV_ICONS.viewing },
   { to: "/players", label: "Players", icon: NAV_ICONS.players },
   { to: "/progress", label: "Progress", icon: NAV_ICONS.progress },
-  
 ];
 
 export default function Header() {
