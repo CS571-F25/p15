@@ -11,7 +11,7 @@ Interactive campaign OS for Dungeon Masters: a Leaflet-powered world map, atlas,
 - **Admin tools**: Visibility toggles for characters/locations/NPCs, asset uploads with download auditing, map/region saves with rotating backups, and a default admin auto-seeded from env.
 
 ## How it works (frontend)
-- Built with Vite + React + React Router (HashRouter by default; BrowserRouter only for the auth callback).
+- Built with Vite + React + React Router (BrowserRouter with `base: '/p15/'`; static hosts need SPA rewrites).
 - Leaflet map (`src/components/map/InteractiveMap.jsx`) uses layered effects, marker palette, filters, and region hover cards. Tiles live in `docs/tiles` so the built site can run from static hosting under `base: '/p15/'`.
 - Contexts coordinate data + effects (`src/context/*`): auth, content, map effects, regions, and locations. API calls go to `VITE_API_BASE_URL` with graceful fallbacks to `src/data/*.json` when the backend is down.
 - Feature surfaces: Map, Atlas (viewer + editor), Compendium (almanac/societies/cosmos/heroes), Campaign, Players + public profiles, Secrets pages, Admin dashboard, and detail routes for regions/locations.
@@ -82,5 +82,7 @@ Create `.env` for the server:
 - `npm run lint` – lint the project.
 
 ### Deploying
+- Public site: https://azterra.netlify.app (latest build and canonical URL). `/p15` and `/p15/*` on that domain show a landing card pointing to the new home for anyone following old GitHub Pages links.
+- GitHub Pages fallback: https://cs571-f25.github.io/p15/ (built from `docs/`; add a rewrite if serving SPA routes).
 - The Vite `base` is `/p15/`; keep that path when hosting (GitHub Pages-friendly).  
 - Static assets (tiles, icons) already live under `docs/`. Serve `docs/` and run the API wherever `/api` points.
