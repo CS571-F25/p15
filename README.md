@@ -6,6 +6,8 @@ Interactive campaign OS for Dungeon Masters: a Leaflet-powered world map, atlas,
 
 Status: in progress - we keep shipping updates to the live site and expanding the toolset.
 
+**Learn the story:** Open the in-app About page to see how Azterra came together, why we built it, and what's next.
+
 ## What you can do
 
 - Explore the Azterra map with fog, vignette, heatmap, and parallax effects; filter markers and jump into regions or locations for lore.
