@@ -8,9 +8,9 @@ import { normalizeContentList } from './contentSchema.js';
 
 const router = express.Router();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, 'data');
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+const DATA_DIR = path.join(currentDir, 'data');
 const CONTENT_FILE = path.join(DATA_DIR, 'content.json');
 const PORTRAITS_DIR = path.join(DATA_DIR, 'portraits');
 const IMAGE_API_KEY = process.env.IMAGE_API_KEY || process.env.OPENAI_API_KEY || '';

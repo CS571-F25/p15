@@ -8,9 +8,9 @@ import { parseNoteFile } from './contentParser.js';
 import { validateEntries } from './contentValidator.js';
 import { loadImporterConfig } from './contentImporterConfig.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, 'data');
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+const DATA_DIR = path.join(currentDir, 'data');
 const CONTENT_FILE = path.join(DATA_DIR, 'content.json');
 const DIAGNOSTICS_FILE = path.join(DATA_DIR, 'content-diagnostics.json');
 const BACKUP_LIMIT = 5;

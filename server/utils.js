@@ -5,16 +5,16 @@ import { fileURLToPath } from 'node:url';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentFile = fileURLToPath(import.meta.url);
+const utilsDir = path.dirname(currentFile);
 
-const USERS_FILE_PATH = path.join(__dirname, 'users.json');
-const BACKUP_DIR = path.join(__dirname, 'backups');
-const CHARACTER_VISIBILITY_PATH = path.join(__dirname, 'characters-visibility.json');
-const LOCATION_VISIBILITY_PATH = path.join(__dirname, 'locations-visibility.json');
-const NPC_VISIBILITY_PATH = path.join(__dirname, 'npcs-visibility.json');
-const SECRETS_FILE_PATH = path.join(__dirname, 'data', 'secrets.json');
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const USERS_FILE_PATH = path.join(utilsDir, 'users.json');
+const BACKUP_DIR = path.join(utilsDir, 'backups');
+const CHARACTER_VISIBILITY_PATH = path.join(utilsDir, 'characters-visibility.json');
+const LOCATION_VISIBILITY_PATH = path.join(utilsDir, 'locations-visibility.json');
+const NPC_VISIBILITY_PATH = path.join(utilsDir, 'npcs-visibility.json');
+const SECRETS_FILE_PATH = path.join(utilsDir, 'data', 'secrets.json');
+const UPLOADS_DIR = path.join(utilsDir, 'uploads');
 const JWT_SECRET = process.env.JWT_SECRET || 'azterra_dev_secret_change_me';
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'token';
 const getSupabaseJwtSecret = () => process.env.SUPABASE_JWT_SECRET || '';
@@ -72,7 +72,7 @@ async function ensureVisibilityFile() {
 async function ensureLocationVisibilityFile() {
   if (!existsSync(LOCATION_VISIBILITY_PATH)) {
     try {
-      const raw = await fs.readFile(path.join(__dirname, 'data', 'locations.json'), 'utf-8');
+      const raw = await fs.readFile(path.join(utilsDir, 'data', 'locations.json'), 'utf-8');
       const parsed = JSON.parse(raw);
       const ids = Array.isArray(parsed.locations) ? parsed.locations.map((loc) => loc.id).filter(Boolean) : [];
       await fs.writeFile(LOCATION_VISIBILITY_PATH, JSON.stringify(ids, null, 2));

@@ -6,9 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { authRequired, editorRequired } from './utils.js';
 
 const router = Router();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, 'data');
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+const DATA_DIR = path.join(currentDir, 'data');
 const REGIONS_FILE = path.join(DATA_DIR, 'regions.json');
 const BACKUP_PREFIX = 'regions_backup_';
 const BACKUP_LIMIT = 5;

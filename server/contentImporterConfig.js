@@ -4,9 +4,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const CONFIG_FILENAME = 'content-importer.config.json';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const CONFIG_PATH = path.resolve(path.join(__dirname, '..', CONFIG_FILENAME));
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+const CONFIG_PATH = path.resolve(path.join(currentDir, '..', CONFIG_FILENAME));
 
 const DEFAULT_CONFIG = {
   rootFolder: '../AZTERRA/DM NOTES',

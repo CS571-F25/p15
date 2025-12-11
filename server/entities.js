@@ -7,9 +7,9 @@ import { randomUUID } from 'node:crypto';
 import { adminRequired, authRequired } from './utils.js';
 
 const router = Router();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, 'data');
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+const DATA_DIR = path.join(currentDir, 'data');
 
 const FILES = {
   players: 'playerCharacters.json',

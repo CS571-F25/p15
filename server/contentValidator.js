@@ -3,9 +3,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CONTENT_TYPES } from './contentSchema.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, 'data');
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+const DATA_DIR = path.join(currentDir, 'data');
 const LOCATIONS_FILE = path.join(DATA_DIR, 'locations.json');
 const REGIONS_FILE = path.join(DATA_DIR, 'regions.json');
 

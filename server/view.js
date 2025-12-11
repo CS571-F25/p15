@@ -28,12 +28,12 @@ async function optionalAuth(req) {
   }
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentFile = fileURLToPath(import.meta.url);
+const viewDir = path.dirname(currentFile);
 
 const getNpcs = async () => {
   try {
-    const raw = await fs.readFile(path.join(__dirname, 'data', 'npcs.json'), 'utf-8');
+    const raw = await fs.readFile(path.join(viewDir, 'data', 'npcs.json'), 'utf-8');
     return JSON.parse(raw);
   } catch {
     return [];
@@ -42,7 +42,7 @@ const getNpcs = async () => {
 
 const getLocations = async () => {
   try {
-    const raw = await fs.readFile(path.join(__dirname, 'data', 'locations.json'), 'utf-8');
+    const raw = await fs.readFile(path.join(viewDir, 'data', 'locations.json'), 'utf-8');
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed.locations) ? parsed.locations : [];
   } catch {
@@ -52,7 +52,7 @@ const getLocations = async () => {
 
 const getRegions = async () => {
   try {
-    const raw = await fs.readFile(path.join(__dirname, 'regions.json'), 'utf-8');
+    const raw = await fs.readFile(path.join(viewDir, 'regions.json'), 'utf-8');
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -62,7 +62,7 @@ const getRegions = async () => {
 
 const readEntities = async (filename) => {
   try {
-    const raw = await fs.readFile(path.join(__dirname, 'data', filename), 'utf-8');
+    const raw = await fs.readFile(path.join(viewDir, 'data', filename), 'utf-8');
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -71,7 +71,7 @@ const readEntities = async (filename) => {
 };
 
 async function ensureListFile(filename) {
-  const target = path.join(__dirname, 'data', filename);
+  const target = path.join(viewDir, 'data', filename);
   if (!existsSync(target)) {
     await fs.writeFile(target, JSON.stringify([], null, 2));
   }
