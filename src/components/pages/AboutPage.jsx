@@ -60,6 +60,13 @@ export default function AboutPage() {
             <p>Email: <a href="mailto:ryanpratt16@outlook.com">ryanpratt16@outlook.com</a></p>
             <p>Discord: velere.</p>
           </article>
+          <article className="about-card">
+            <div className="about-card__shine" aria-hidden="true" />
+            <h3>Youngjun Moon</h3>
+            <p>Co-builder</p>
+            <p>Email: <a href="mailto:youngjunmoon05@gmail.com">youngjunmoon05@gmail.com</a></p>
+            <p>Discord: youngjunm</p>
+          </article>
         </div>
       </section>
 
