@@ -59,39 +59,32 @@ html, body, #root {
   position: relative;
 }
 
-/* TODO: Hook in a future parallax/3D heightmap layer here (e.g. using WebGL or layered canvases). */
-
-/* For MapContainer itself */
+/* 1. Main Container */
 .leaflet-map {
   height: 100% !important;
   width: 100% !important;
   position: relative;
   overflow: hidden;
-  background: transparent;
+  background-color: #020408; 
 }
 
 .leaflet-map::before {
   content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center,
-    #1b4c7d 0%,
-    #0f2a4c 55%,
-    #04040a 100%);
-  z-index: 0;
+  position: absolute; 
+  inset: -50px;
+  width: calc(100% + 100px);
+  height: calc(100% + 100px);
+  background-image: url('/textures/ocean-background.png'); 
+  background-repeat: repeat;
+  background-size:  auto; 
+  opacity: 0.6; 
+  z-index: 0; 
   pointer-events: none;
 }
 
 .leaflet-map::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle,
-    rgba(7, 15, 27, 0) 45%,
-    rgba(5, 12, 23, 0.45) 75%,
-    rgba(0, 0, 0, 0.85) 100%);
-  z-index: 3;
-  pointer-events: none;
+  display: none;
+  content: none;
 }
 
 .leaflet-map > * {
