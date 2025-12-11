@@ -49,12 +49,12 @@ function App() {
         <main id="main-content" className="app-content" role="main">
           <Routes>
             {/* Landing */}
-            <Route path="/" element={<LandingRedirectPage />} />
             <Route path="/p15" element={<LandingRedirectPage />} />
             <Route path="/p15/*" element={<LandingRedirectPage />} />
 
             {/* 1. Map */}
-            <Route path="/map" element={<MapPage />} />
+            <Route path="/" element={<MapPage/>} />
+            <Route path="/map" element={<Navigate to="/" replace />} />
 
             {/* About */}
             <Route path="/about" element={<AboutPage />} />
