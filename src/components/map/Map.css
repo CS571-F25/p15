@@ -1663,8 +1663,17 @@ html, body, #root {
 }
 
 
+.animate-fog-primary {
+  animation: driftPrimary 40s linear infinite; 
+  will-change: background-position;
+}
 
+.animate-fog-secondary {
+  animation: driftSecondary 30s linear infinite; 
+  will-change: background-position;
+}
 
+<<<<<<< HEAD
 
 
 .editor-panel-shell__toggle-tab {
@@ -1744,3 +1753,13 @@ html, body, #root {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
+@keyframes driftPrimary {
+  from { background-position: 0 0; }
+  to { background-position: -1000px 200px; }
+}
+
+@keyframes driftSecondary {
+  from { background-position: 0 0; }
+  to { background-position: 500px -200px; }
+}
+
