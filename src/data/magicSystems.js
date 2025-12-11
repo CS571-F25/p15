@@ -10,7 +10,7 @@ export const MAGIC_SYSTEMS = [
   {
     id: 'gods',
     name: 'Magic of the Gods',
-    tagline: 'Twin draconic gods, sunset and midnight, with dukes who trade boons for allegiance.',
+    tagline: 'Twin mountain-sized dragon gods whose death at Year 0 scattered divine power into their dukes.',
     colors: {
       primary: '#f97316',
       secondary: '#0f172a',
@@ -18,12 +18,13 @@ export const MAGIC_SYSTEMS = [
       background: 'linear-gradient(135deg, #1c0f0b 0%, #0f172a 40%, #1f2937 100%)',
       card: 'rgba(255, 237, 213, 0.04)',
     },
-    summary: 'Kaya (light, control) and Krovi (darkness, freedom) lend power through dukes, gifting feats that bend battles and choices.',
-    focus: 'Oaths to dukes; control vs freedom; draconic resonance after Year 0.',
+    summary:
+      'Magic in Azterra flows from two ancient dragon gods - Kaya and Krovi - whose death in their final clash marked Year 0. Their mountain-sized bodies fell; their hill-sized dukes carry the last echoes of divine power.',
+    focus: 'Oaths to fallen dukes; fragments of draconic power; bones as temples and sanctuaries.',
     highlights: [
-      'Dukes act as pact anchors, granting feats that reshape action economy and morale.',
-      'Kaya\'s boons spike when you dominate; Krovi\'s when you refuse restraint.',
-      'Sunset (amber) and midnight (deep blue) auras mark empowered magic.',
+      'Year 0: Kaya and Krovi slew each other; calendars reset.',
+      'Dukes - hill-sized dragons - serve as lieutenants; some bones now temples or hidden vaults.',
+      'Oaths channel fragments of the gods, bending fate, morale, and action economy.',
     ],
     sections: commonLayout.sections,
     dukes: {
@@ -78,8 +79,7 @@ export const MAGIC_SYSTEMS = [
       'Magic of Azterra is the living green energy of the world-life condensed into power. When concentrated, it transforms animals into magical creatures and causes nature to rise in defense, creating the giant beasts and wild wonders of the world.',
     focus: 'Life condensed into power; balance enforced by instinct; druids listen rather than command.',
     highlights: [
-      'Raw life-force flows through forests, oceans, storms, and every native creature.',
-      'Condensed currents reshape nature-sky whales, colossal worms, thinking storms, walking forests.',
+      'Raw life-force flows through every native creature; when it condenses, nature reshapes into sky whales, colossal worms, thinking storms, walking forests.',
       'When balance is threatened, green magic concentrates into guardians and leviathans.',
       'Druids harmonize with the current; they translate rather than control.',
     ],
@@ -179,8 +179,7 @@ export const MAGIC_SYSTEMS = [
     highlights: [
       'Timeless beings with no biology or lifespan; they exist because of story, emotion, or place.',
       'Every spirit wields a sigil motion - circles, curls, ripples - that trigger innate abilities.',
-      'Mortals have only mimicked weak sigils: tiny flames, breezes, ripples, mana absorption.',
-      'Golden magic shows as light rings, ripples, soft chimes, dreamlike motion.',
+      'Mortals only mimic weak sigils (tiny flames, breezes, ripples); true spirit magic flashes as golden rings, ripples, chimes, and dreamlike motion.',
     ],
     essence: [
       'Ancient, emotional beings whose magic does not come from Azterra.',
@@ -221,13 +220,12 @@ export const MAGIC_SYSTEMS = [
       card: 'rgba(168, 85, 247, 0.1)',
     },
     summary:
-      'Wild Magic is the unstable purple energy that appears only when rifts connect Azterra to other realms—magic that breaks every rule, cannot be explained, and behaves differently every time it is observed.',
+      'Wild Magic is the unstable purple energy that appears only when rifts connect Azterra to other realms - magic that breaks every rule, cannot be explained, and behaves differently every time it is observed.',
     focus: 'Rift-born anomalies; volatility that defies study; effects that never repeat.',
     highlights: [
       'Appears only when rifts briefly open to other realms.',
-      'Twists mana, space, and time with no consistent pattern.',
-      'Cannot be stabilized or contained; no two surges behave alike.',
-      'Best treated as narrative spice - potent, fleeting, and untrusted.',
+      'Twists mana, space, and time with no consistent pattern; no two surges behave alike.',
+      'Cannot be stabilized or contained; best treated as potent, fleeting, and untrusted spice.',
     ],
     sections: commonLayout.sections,
   },
